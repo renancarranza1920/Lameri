@@ -32,7 +32,6 @@ class TipoExamenResource extends Resource
                             ->placeholder('Ej: Hematología, Microbiología...')
                             ->required()
                             ->reactive()
-                            ->afterStateUpdated(fn (string $state, callable $set) => $set('nombre', strtoupper($state)))
                             ->maxLength(255),
 
                         Forms\Components\Toggle::make('estado')
