@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\TipoExamen;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Hash;
@@ -21,6 +22,31 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@gmail.com',
             'password' => Hash::make('admin'),
         ]);
-       
+
+        // Lista ordenada alfabéticamente y con tildes
+        $tipos = [
+            'Bacteriología',
+            'Coagulación',
+            'Coprología',
+            'Electrolitos',
+            'Endocrinología',
+            'Hematología',
+            'Inmunología',
+            'Marcadores Tumorales',
+            'Perfil de Rutina',
+            'Perfil Hepático',
+            'Perfil Prenatal',
+            'Perfil Renal',
+            'Química Sanguínea',
+            'Química Urinaria',
+            'Uroanálisis',
+        ];
+
+        foreach ($tipos as $nombre) {
+            TipoExamen::create([
+                'nombre' => $nombre,
+                'estado' => true,
+            ]);
+        }
     }
 }
