@@ -16,7 +16,8 @@ return new class extends Migration
             $table->string('NumeroExp')->unique();
             $table->string('nombre');
             $table->string('apellido');
-            $table->string('telefono')->unique()->nullable();
+            $table->date('fecha_nacimiento')->nullable();
+            $table->string('telefono')->nullable();
             $table->string('correo')->unique()->nullable();
             $table->string('direccion')->nullable();
             $table->string('estado');

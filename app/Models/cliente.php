@@ -12,6 +12,7 @@ class cliente extends Model
         'NumeroExp',
         'nombre',
         'apellido',
+        'fecha_nacimiento',
         'telefono',
         'correo',
         'direccion',
