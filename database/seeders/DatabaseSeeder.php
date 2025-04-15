@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\TipoExamen;
 use App\Models\Examen;
 use App\Models\User;
+use App\Models\cliente;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Hash;
 use Illuminate\Database\Seeder;
