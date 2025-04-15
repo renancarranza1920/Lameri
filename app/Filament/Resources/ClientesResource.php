@@ -98,15 +98,8 @@ class ClientesResource extends Resource
                     ->label('Editar')
                     ->icon('heroicon-o-pencil')
                     ->color('primary'),
-                Tables\Actions\DeleteAction::make()
-                    ->label('Eliminar')
-                    ->icon('heroicon-o-trash')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(function (Cliente $record) {
-                        $record->delete();
-                        
-                    }),
+                //accion para activar y desactivar al cliente
+                
             ])
             ->bulkActions([
                 //Tables\Actions\BulkActionGroup::make([
