@@ -16,8 +16,13 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class PerfilResource extends Resource
 {
     protected static ?string $model = Perfil::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    //definiendo el nombre de la opción en el menu
+    protected static ?string $navigationLabel = 'Perfiles';
+    //nombre plural
+    protected static ?string $pluralModelLabel = 'Perfiles';
+    //nombre singular
+    protected static ?string $modelLabel = 'Perfil';
+    protected static ?string $navigationIcon = 'heroicon-o-beaker';
 
     public static function form(Form $form): Form
     {
