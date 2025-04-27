@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
+use SelectorExamenes;
 
 class AppServiceProvider extends ServiceProvider
 {

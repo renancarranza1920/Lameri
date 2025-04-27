@@ -17,5 +17,9 @@ class Examen extends Model
     {
         return $this->belongsTo(TipoExamen::class, 'tipo_examen_id');
     }
+    public function perfiles()
+    {
+        return $this->belongsToMany(Perfil::class, 'detalle_perfil', 'examen_id', 'perfil_id');
+    }
 
 }

@@ -13,5 +13,9 @@ class TipoExamen extends Model
         'estado',
     ];
 
+    public function examenes()
+    {
+        return $this->hasMany(Examen::class, 'tipo_examen_id');
+    }
 }
 
