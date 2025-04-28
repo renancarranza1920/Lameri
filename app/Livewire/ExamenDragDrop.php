@@ -2,28 +2,78 @@
 
 namespace App\Livewire;
 
+use App\Models\DetallePerfil;
 use App\Models\Examen;
+// Removed duplicate import
 use App\Models\Perfil;
 use Livewire\Component;
 use Illuminate\Support\Str;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Concerns\InteractsWithForms;
+use function dd;
 
-
-class ExamenDragDrop extends Component
+class ExamenDragDrop extends Component implements HasForms
 {
+    use InteractsWithForms;
+    public $data = []; // Añade esta línea para tener la propiedad data
     public $examenesDisponibles;  // Aquí guardamos todos los exámenes
     public $examenesSeleccionados = [];
     public $busquedaDisponible = '';
     public $busquedaSeleccionado = [];
+    public $perfilId;
+
 
     public $colapsadoDisponible = false;
     public $colapsadoSeleccionado = false;
     public $colapsadoGlobal = false;
 
-    public function mount()
+    public function mount($examenesIniciales = [], $perfilId = null)
     {
-        // Cargar todos los exámenes disponibles al inicio
+      //  dd($perfilId); // Esto mostrará el valor de $perfilId cuando el componente se monte
+    $this->perfilId = $perfilId;
+        
+        // Si perfilId está disponible, carga los exámenes seleccionados
+        if ($this->perfilId) {
+            $this->examenesSeleccionados = $this->getExamenesPorPerfil($this->perfilId);
+            // Llamar a la función de agrupar seleccionados
+           // dd($this->examenesSeleccionados);
+         //   $this->examenesSeleccionados = $this->getAgrupadosSeleccionados()->toArray();
+        }
+    
+        // Si ya vienen exámenes iniciales desde la vista (como en la edición), cargalos
+        if (!empty($examenesIniciales)) {
+            $this->examenesSeleccionados = $examenesIniciales;
+               
+        }
+
+         // Sincronizar con $data
+    
+        
+        // Carga los exámenes disponibles
         $this->examenesDisponibles = Examen::with('tipoExamen')->get();
     }
+    
+    private function getExamenesPorPerfil($perfilId)
+    {
+        $perfil = Perfil::with('examenes.tipoExamen')->find($perfilId);
+    
+        if (!$perfil) {
+            return [];
+        }
+    
+        // Transformar los exámenes al formato esperado
+        return $perfil->examenes->map(function ($examen) {
+            return [
+                'id' => $examen->id,
+                'nombre' => $examen->nombre,
+                'tipo' => $examen->tipoExamen->nombre ?? 'Sin Tipo', // Aseguramos que siempre haya un valor
+            ];
+        })->toArray();
+       
+    }
+    
+
+        // Método para obtener los exámenes seleccionados de un perfil
 
     // Método para obtener los exámenes disponibles filtrados
     public function getAgrupadosDisponibles()
@@ -125,8 +175,20 @@ class ExamenDragDrop extends Component
 
     /////////////////////////////logica guardado
     // Agrega estos métodos al componente
-    protected $listeners = ['saveProfile' => 'prepareForSave'];
+    protected $listeners = [
+        'examenesSeleccionadosUpdated' => 'updateExamenesSeleccionados',
+        'saveProfile' => 'prepareForSave',
+    ];
+    
 
+
+    public function updateExamenesSeleccionados($examenes)
+{
+    if (json_encode($this->examenesSeleccionados) !== json_encode($examenes)) {
+        $this->examenesSeleccionados = $examenes;
+        $this->dispatch('examenesSeleccionadosUpdated', examenes: $this->examenesSeleccionados);
+    }
+}
    // Método para preparar datos antes de guardar
    public function prepareForSave()
    {
@@ -150,4 +212,15 @@ class ExamenDragDrop extends Component
        $this->examenesDisponibles = Examen::with('tipoExamen')->get();
        $this->emitSelectionUpdated();
    }
+
+   public function hydrate()
+{
+    $this->examenesSeleccionados = $this->examenesSeleccionados ?? [];
+}
+
+public function dehydrate()
+{
+    $this->examenesSeleccionados = $this->examenesSeleccionados ?? [];
+}
+   
 }

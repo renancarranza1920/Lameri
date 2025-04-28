@@ -1,42 +1,27 @@
-<div class="w-full">
-    @livewire('examen-drag-drop', key('examen-drag-drop-'.uniqid()))
+
+
+{{-- <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script> --}}
+
+<div>
+    {{-- imprimir lo que trae --}}
+@livewire('examen-drag-drop', ['perfilId' => $perfilId], key('examen-drag-drop-' . uniqid()))
+
+
+
 
     @push('scripts')
     <script>
 document.addEventListener('livewire:initialized', () => {
-    // Debug inicial
-    console.log('Livewire inicializado - ExamenDragDrop');
-    
     Livewire.on('examenesSeleccionadosUpdated', ({ examenes }) => {
-        console.log('Evento recibido con exámenes:', examenes);
+        const formComponents = Array.from(document.querySelectorAll('[wire\\:id]'));
         
-        if (!examenes || examenes.length === 0) {
-            console.warn('Array de exámenes vacío recibido');
-            return;
-        }
-        
-        let form = document.querySelector('form[wire\\:submit="create"]');
-        if (!form) {
-            console.error('Formulario no encontrado');
-            return;
-        }
-        
-        let hiddenInput = form.querySelector('input[name="examenes_seleccionados"]');
-        if (!hiddenInput) {
-            console.log('Creando input hidden...');
-            hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'examenes_seleccionados';
-            form.appendChild(hiddenInput);
-        }
-        
-        hiddenInput.value = JSON.stringify(examenes);
-        console.log('Datos guardados en input:', hiddenInput.value);
-    });
-    
-    // Disparar evento inicial con los exámenes actuales
-    Livewire.dispatch('examenesSeleccionadosUpdated', { 
-        examenes: @json($examenesSeleccionados ?? []) 
+        formComponents.forEach(component => {
+            const formComponent = Livewire.find(component.getAttribute('wire:id'));
+            
+            if (formComponent) {
+                formComponent.set('data.examenes_seleccionados', JSON.stringify(examenes), false);
+            }
+        });
     });
 });
 </script>
