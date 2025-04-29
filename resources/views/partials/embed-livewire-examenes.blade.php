@@ -17,7 +17,8 @@ document.addEventListener('livewire:initialized', () => {
         
         formComponents.forEach(component => {
             const formComponent = Livewire.find(component.getAttribute('wire:id'));
-            
+             // Log para ver el contenido de formComponents
+             console.log('formComponents:', formComponents);
             if (formComponent) {
                 formComponent.set('data.examenes_seleccionados', JSON.stringify(examenes), false);
             }

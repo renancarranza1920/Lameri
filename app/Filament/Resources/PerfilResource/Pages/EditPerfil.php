@@ -5,13 +5,14 @@ namespace App\Filament\Resources\PerfilResource\Pages;
 use App\Filament\Resources\PerfilResource;
 use App\Models\Perfil;
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 
 class EditPerfil extends EditRecord
 {
 
     protected static string $resource = PerfilResource::class;
-
+    
     protected function mutateFormDataBeforeFill(array $data): array
     {
         
@@ -36,8 +37,61 @@ class EditPerfil extends EditRecord
        
         return $data;
     }
-// En EditPerfil.php (o tu clase del recurso)
-public function mount(int|string $record): void
+
+    public function save(bool $shouldRedirect = true, bool $shouldSendSavedNotification = true): void
+    {
+        \DB::beginTransaction();
+
+        try {
+            // Guardar los cambios en el perfil
+            $this->record->save();
+
+            // Obtener los exámenes seleccionados desde el campo correspondiente
+            $examenesJSON = $this->data['examenes_seleccionados'] ?? '[]';
+
+            \Log::debug('Contenido del textarea en EditPerfil:', ['json' => $examenesJSON]);
+
+            // Decodificar el JSON
+            $examenes = json_decode($examenesJSON, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception('Formato JSON inválido en examenes_seleccionados');
+            }
+
+            // Extraer los IDs de los exámenes
+            $ids = array_column($examenes, 'id');
+
+            \Log::debug('IDs extraídos en EditPerfil:', $ids);
+
+            // Sincronizar los exámenes con el perfil
+            $this->record->examenes()->sync($ids);
+
+            \DB::commit();
+
+            // Redirigir si se solicita
+            if ($shouldRedirect) {
+                $this->redirectRoute('filament.admin.resources.perfils.index');
+            }
+             // Enviar notificación si se solicita
+             if ($shouldSendSavedNotification) {
+                Notification::make()
+                    ->title('Perfil actualizado correctamente.')
+                    ->success()
+                    ->send();
+            }
+            
+         
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Error al guardar perfil en EditPerfil:', [
+                'error' => $e->getMessage(),
+                'data' => $this->data,
+            ]);
+            throw $e;
+        }
+    }
+
+  public function mount(int|string $record): void
 {
     parent::mount($record);
     

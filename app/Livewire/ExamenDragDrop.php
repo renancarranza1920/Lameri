@@ -27,30 +27,25 @@ class ExamenDragDrop extends Component implements HasForms
     public $colapsadoSeleccionado = false;
     public $colapsadoGlobal = false;
 
-    public function mount($examenesIniciales = [], $perfilId = null)
+    public function mount( $perfilId = null)
     {
       //  dd($perfilId); // Esto mostrará el valor de $perfilId cuando el componente se monte
     $this->perfilId = $perfilId;
         
-        // Si perfilId está disponible, carga los exámenes seleccionados
-        if ($this->perfilId) {
-            $this->examenesSeleccionados = $this->getExamenesPorPerfil($this->perfilId);
-            // Llamar a la función de agrupar seleccionados
-           // dd($this->examenesSeleccionados);
-         //   $this->examenesSeleccionados = $this->getAgrupadosSeleccionados()->toArray();
-        }
+    if ($this->perfilId) {
+        $this->examenesSeleccionados = $this->getExamenesPorPerfil($this->perfilId);
+       }
     
-        // Si ya vienen exámenes iniciales desde la vista (como en la edición), cargalos
-        if (!empty($examenesIniciales)) {
-            $this->examenesSeleccionados = $examenesIniciales;
-               
-        }
 
          // Sincronizar con $data
-    
+        // $this->data['examenes_seleccionados'] = json_encode($this->examenesSeleccionados);
+
         
         // Carga los exámenes disponibles
         $this->examenesDisponibles = Examen::with('tipoExamen')->get();
+      // 🔥 Añadir esta línea para sincronizar desde el principio:
+      $this->emitSelectionUpdated();
+    
     }
     
     private function getExamenesPorPerfil($perfilId)
@@ -119,6 +114,7 @@ class ExamenDragDrop extends Component implements HasForms
                 'nombre' => $examen->nombre,
                 'tipo' => $examen->tipoExamen->nombre ?? 'Sin Tipo',
             ];
+            
             $this->emitSelectionUpdated(); // Nuevo
         }
     }
@@ -184,6 +180,7 @@ class ExamenDragDrop extends Component implements HasForms
 
     public function updateExamenesSeleccionados($examenes)
 {
+    
     if (json_encode($this->examenesSeleccionados) !== json_encode($examenes)) {
         $this->examenesSeleccionados = $examenes;
         $this->dispatch('examenesSeleccionadosUpdated', examenes: $this->examenesSeleccionados);
