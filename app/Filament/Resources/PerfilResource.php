@@ -3,11 +3,16 @@
 namespace App\Filament\Resources;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Illuminate\Validation\ClosureValidationRule;
+use PhpParser\Node\Stmt\Label;
 use Savannabits\Filament\BladeField\Forms\Components\BladeField;
 use Filament\Forms\Components\ViewField;
+use Filament\Infolists\Components\Infolist;
 
 use App\Filament\Resources\PerfilResource\Pages;
 use App\Filament\Resources\PerfilResource\RelationManagers;
@@ -62,10 +67,10 @@ class PerfilResource extends Resource
                 Forms\Components\Toggle::make('estado')
                     ->label('Estado')
                     ->default(true),
-                    TextInput::make('perfil_id')
-                    ->afterStateHydrated(function (TextInput $component) {
-                        $component->state($component->getLivewire()->record->id ?? null);
-                    }),
+                   
+
+
+
                 
 
                        // Tu sección especial de exámenes
@@ -98,7 +103,7 @@ class PerfilResource extends Resource
                         $decoded = json_decode($state, true) ?? [];
                         $set('examenes_seleccionados', json_encode(array_values($decoded)));
                     })
-                  //  ->extraAttributes(['style' => 'display:none']),
+                    ->extraAttributes(['style' => 'display:none']),
 
 
 
@@ -199,6 +204,48 @@ class PerfilResource extends Resource
             'index' => Pages\ListPerfils::route('/'),
             'create' => Pages\CreatePerfil::route('/create'),
             'edit' => Pages\EditPerfil::route('/{record}/edit'),
+            
         ];
     }
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+      return $infolist
+    ->schema([
+       
+        TextEntry::make('nombre_perfil')
+            ->label('Nombre del Perfil')
+            ->getStateUsing(fn($record) => $record->nombre),
+        
+        TextEntry::make('precio_perfil')
+            ->label('Precio')
+            ->getStateUsing(fn($record) => $record->precio)
+            ->money('USD')
+            ->color('success')
+            ->extraAttributes(['class' => 'text-lg font-bold']),
+        
+        IconEntry::make('estado_perfil')
+            ->label('Estado')
+            ->getStateUsing(fn($record) => $record->estado)
+            ->boolean(),
+        
+        ViewEntry::make('examenes')
+            ->view('filament.resources.perfil-resource.partials.examenes')
+            ->columnSpanFull()
+            ->getStateUsing(function ($record) {
+                return $record->examenes->map(fn ($examen) => [
+                    'id' => $examen->id,
+                    'nombre' => $examen->nombre,
+                    'tipo' => $examen->tipoExamen->nombre ?? 'Sin tipo',
+                ])->toArray();
+            }),
+    ]);
+
+    }
+    
+    public static function getEloquentQuery(): Builder
+{
+    return parent::getEloquentQuery()->with('examenes.tipoExamen');
+}
+
+    
 }
