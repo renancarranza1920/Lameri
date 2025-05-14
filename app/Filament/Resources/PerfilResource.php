@@ -185,7 +185,24 @@ class PerfilResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
-                ])
+                Tables\Actions\Action::make('toggleEstado')
+                ->label(fn ($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
+                ->icon(fn ($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                ->color(fn ($record) => $record->estado ? 'danger' : 'success')
+                ->tooltip(fn ($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
+                ->action(function ($record) {
+                    $record->estado = $record->estado ? 0 : 1;
+                    $record->save();
+            
+                    Notification::make()
+                        ->title('Estado actualizado')
+                        ->body('El perfil fue ' . ($record->estado ? 'activado' : 'dado de baja') . ' correctamente.')
+                        ->success()
+                        ->send();
+                })
+                ->requiresConfirmation()
+                ->iconButton(),
+            ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
             ]);

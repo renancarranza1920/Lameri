@@ -44,7 +44,9 @@ class EditPerfil extends EditRecord
 
         try {
             // Guardar los cambios en el perfil
-            $this->record->save();
+               // Guardar campos del formulario (nombre, precio, estado, etc.)
+        parent::save(false, false); // Esto guarda los datos del formulario automáticamente
+
 
             // Obtener los exámenes seleccionados desde el campo correspondiente
             $examenesJSON = $this->data['examenes_seleccionados'] ?? '[]';
