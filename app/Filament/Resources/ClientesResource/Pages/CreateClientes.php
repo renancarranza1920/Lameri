@@ -36,6 +36,10 @@ protected function mutateFormDataBeforeCreate(array $data): array
     return $data;
 }
 
+protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }
 
 

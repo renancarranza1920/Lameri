@@ -35,7 +35,9 @@ class ClientesResource extends Resource
                 Forms\Components\DatePicker::make('fecha_nacimiento')
                     ->label('Fecha de Nacimiento')
                     ->required()
-                    ->placeholder('dd/mm/aaaa'),
+                    ->placeholder('dd/mm/aaaa')
+                    ->maxDate(now()->subYears(5)),
+                    
 
                 Forms\Components\TextInput::make('telefono')
                     ->maxLength(9),
