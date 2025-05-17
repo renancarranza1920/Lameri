@@ -9,13 +9,18 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Notifications\Notification;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Filters\SelectFilter;
 
 class ExamenResource extends Resource
 {
     protected static ?string $model = Examen::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document';
-
     protected static ?string $navigationLabel = 'Exámenes';
     protected static ?string $pluralModelLabel = 'Exámenes';
     protected static ?string $modelLabel = 'Examen';
@@ -80,9 +85,15 @@ class ExamenResource extends Resource
                     ->label('Precio')
                     ->money('USD'),
 
-                Tables\Columns\IconColumn::make('estado')
+                Tables\Columns\TextColumn::make('estado')
                     ->label('Estado')
-                    ->boolean(),
+                    ->formatStateUsing(function ($state) {
+                        return $state
+                            ? '✅ Activo'
+                            : '❌ Inactivo';
+                    })
+                    ->badge() // opcional para que se vea como etiqueta
+                    ->color(fn($state) => $state ? 'success' : 'danger'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creado')
@@ -97,11 +108,36 @@ class ExamenResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                SelectFilter::make('estado')
+                    ->label('Estado')
+                    ->options([
+                        '1' => 'Activos',
+                        '0' => 'Inactivos',
+                    ])
+                    ->attribute('estado')
+                    ->default(null),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
+
+                Action::make('cambiar_estado')
+                    ->label(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
+                    ->icon(fn($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->color(fn($record) => $record->estado ? 'danger' : 'success')
+                    ->tooltip(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $record->estado = !$record->estado;
+                        $record->save();
+
+                        Notification::make()
+                            ->title($record->estado ? 'Examen activado' : 'Examen desactivado')
+                            ->success()
+                            ->send();
+                    })
+                    ->requiresConfirmation()
+                    ->iconButton()
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -121,7 +157,28 @@ class ExamenResource extends Resource
             'index' => Pages\ListExamens::route('/'),
             'create' => Pages\CreateExamen::route('/create'),
             'edit' => Pages\EditExamen::route('/{record}/edit'),
-            'view' => Pages\ViewExamen::route('/{record}'),
         ];
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            TextEntry::make('nombre')
+                ->label('Nombre del Examen'),
+
+            TextEntry::make('precio')
+                ->label('Precio')
+                ->money('USD')
+                ->color('success')
+                ->extraAttributes(['class' => 'text-lg font-bold']),
+
+            IconEntry::make('estado')
+                ->label('Estado')
+                ->boolean(),
+
+            TextEntry::make('tipo_examen')
+                ->label('Tipo de Examen')
+                ->getStateUsing(fn($record) => $record->tipoExamen->nombre ?? 'Sin tipo'),
+        ]);
     }
 }

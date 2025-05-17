@@ -10,6 +10,15 @@ class EditTipoExamen extends EditRecord
 {
     protected static string $resource = TipoExamenResource::class;
 
+    protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
+    {
+        $updatedRecord = parent::handleRecordUpdate($record, $data);
+
+        $this->redirect($this->getResource()::getUrl('index'));
+
+        return $updatedRecord;
+    }
+
     protected function getHeaderActions(): array
     {
         return [

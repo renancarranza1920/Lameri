@@ -9,6 +9,9 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Notifications\Notification;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Filters\SelectFilter;
 
 class TipoExamenResource extends Resource
 {
@@ -49,11 +52,18 @@ class TipoExamenResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')
                     ->label('Nombre')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
-                Tables\Columns\IconColumn::make('estado')
+                Tables\Columns\TextColumn::make('estado')
                     ->label('Estado')
-                    ->boolean(),
+                    ->formatStateUsing(function ($state) {
+                        return $state
+                            ? '✅ Activo'
+                            : '❌ Inactivo';
+                    })
+                    ->badge() // opcional para que se vea como etiqueta
+                    ->color(fn($state) => $state ? 'success' : 'danger'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creado')
@@ -68,10 +78,36 @@ class TipoExamenResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                SelectFilter::make('estado')
+                    ->label('Estado')
+                    ->options([
+                        '1' => 'Activos',
+                        '0' => 'Inactivos',
+                    ])
+                    ->attribute('estado')
+                    ->default(null),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make(),
+
+                Action::make('toggleEstado')
+                    ->label(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
+                    ->icon(fn($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->color(fn($record) => $record->estado ? 'danger' : 'success')
+                    ->tooltip(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
+                    ->action(function ($record) {
+                        $record->estado = $record->estado ? 0 : 1;
+                        $record->save();
+
+                        Notification::make()
+                            ->title('Estado actualizado')
+                            ->body('El examen fue ' . ($record->estado ? 'activado' : 'dado de baja') . ' correctamente.')
+                            ->success()
+                            ->send();
+                    })
+                    ->requiresConfirmation()
+                    ->iconButton()
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

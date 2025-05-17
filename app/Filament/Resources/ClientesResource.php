@@ -3,15 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ClientesResource\Pages;
-use App\Filament\Resources\ClientesResource\RelationManagers;
 use App\Models\Cliente;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ClientesResource extends Resource
 {
@@ -46,7 +43,6 @@ class ClientesResource extends Resource
 
                 Forms\Components\TextInput::make('direccion')
                     ->maxLength(255),
-
             ]);
     }
 
@@ -58,33 +54,38 @@ class ClientesResource extends Resource
                     ->label('Expediente')
                     ->sortable()
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('nombre_completo')
                     ->label('Nombre')
                     ->getStateUsing(fn ($record) => $record->nombre . ' ' . $record->apellido)
                     ->sortable(['nombre', 'apellido'])
                     ->searchable(['nombre', 'apellido']),
+
                 Tables\Columns\TextColumn::make('fecha_nacimiento')
-                //edad y calcula la edad
                     ->label('Edad')
                     ->getStateUsing(fn ($record) => $record->fecha_nacimiento ? \Carbon\Carbon::parse($record->fecha_nacimiento)->age : '-')
                     ->sortable()
                     ->searchable()
-                    ->formatStateUsing(fn ($state) => $state . ' años'),      
+                    ->formatStateUsing(fn ($state) => $state . ' años'),
+
                 Tables\Columns\TextColumn::make('telefono')
                     ->label('Teléfono')
                     ->getStateUsing(fn ($record) => $record->telefono ?? '-')
                     ->sortable()
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('correo')
                     ->label('Correo')
                     ->getStateUsing(fn ($record) => $record->correo ?? '-')
                     ->sortable()
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('direccion')
                     ->label('Dirección')
                     ->getStateUsing(fn ($record) => $record->direccion ?? '-')
                     ->sortable()
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('estado')
                     ->label('Estado')
                     ->sortable()
@@ -94,17 +95,13 @@ class ClientesResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make() 
+                Tables\Actions\EditAction::make()
                     ->label('Editar')
                     ->icon('heroicon-o-pencil')
                     ->color('primary'),
-                //accion para activar y desactivar al cliente
-                
             ])
             ->bulkActions([
-                //Tables\Actions\BulkActionGroup::make([
-                  //  Tables\Actions\DeleteBulkAction::make(),
-                //]),
+                // Puedes agregar acciones masivas si quieres
             ]);
     }
 
