@@ -39,10 +39,6 @@ class CreateClientes extends CreateRecord
         // Redirige al listado principal después de guardar
         return $this->getResource()::getUrl('index');
     }
-protected function getRedirectUrl(): string
-    {
-        return $this->getResource()::getUrl('index');
-    }
 }
 
 
