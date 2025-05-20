@@ -19,7 +19,7 @@ class EditClientes extends EditRecord
 
     protected function getRedirectUrl(): string
     {
-        // Redirige al listado principal después de editar
         return $this->getResource()::getUrl('index');
     }
+
 }
