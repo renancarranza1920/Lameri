@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Notifications\Notification;
 
 class ClientesResource extends Resource
 {
@@ -44,7 +45,11 @@ class ClientesResource extends Resource
 
                 Forms\Components\TextInput::make('correo')
                     ->email()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->live(debounce: 500)
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        $set('correo', strtolower($state));
+                    }),
 
                 Forms\Components\TextInput::make('direccion')
                     ->maxLength(255),
@@ -89,19 +94,40 @@ class ClientesResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('estado')
                     ->label('Estado')
-                    ->sortable()
-                    ->searchable(),
+                    ->formatStateUsing(function ($state) {
+                        return $state
+                            ? '✅'
+                            : '❌';
+                    })
+                    ->badge() // opcional para que se vea como etiqueta
+                    ->color(fn($state) => $state ? 'success' : 'danger'),
             ])
             ->filters([
                 //
             ])
             ->actions([
                 Tables\Actions\EditAction::make() 
-                    ->label('Editar')
                     ->icon('heroicon-o-pencil')
                     ->color('primary'),
+                    
                 //accion para activar y desactivar al cliente
-                
+                 Tables\Actions\Action::make('toggleEstado')
+                ->label(fn ($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
+                ->icon(fn ($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                ->color(fn ($record) => $record->estado ? 'danger' : 'success')
+                ->tooltip(fn ($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
+                ->action(function ($record) {
+                    $record->estado = $record->estado ? 0 : 1;
+                    $record->save();
+            
+                    Notification::make()
+                        ->title('Estado actualizado')
+                        ->body('El cliente fue ' . ($record->estado ? 'activado' : 'dado de baja') . ' correctamente.')
+                        ->success()
+                        ->send();
+                })
+                ->requiresConfirmation()
+                ->iconButton(),
             ])
             ->bulkActions([
                 //Tables\Actions\BulkActionGroup::make([
