@@ -8,6 +8,12 @@ use App\Models\Cliente;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Wizard\Step;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Button;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -36,6 +42,7 @@ class OrdenResource extends Resource
                                     name: 'cliente',
                                     titleAttribute: 'nombre'
                                 )
+                                ->preload()
                                 ->searchable(['NumeroExp', 'nombre', 'apellido'])
                                 ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->NumeroExp} - {$record->nombre} {$record->apellido}")
                                 ->createOptionForm([
@@ -71,18 +78,54 @@ class OrdenResource extends Resource
                         ]),
 
                     // Paso 2: Detalles de Orden
-                    Forms\Components\Wizard\Step::make('Orden')
+                    Step::make("Orden")
                         ->schema([
-                            Forms\Components\DatePicker::make('fecha')
-                                ->label('Fecha de Orden')
-                                ->required()
-                                ->default(now()),
+                        Tabs::make('Detalles de Orden')
+                         ->tabs([
+                             Tabs\Tab::make('Perfiles')
+                                ->schema([
+                                    Select::make('perfil_seleccionado')
+                                     ->label('Buscar Perfil')
+                                     ->options(\App\Models\Perfil::pluck('nombre', 'id')->toArray())
+                                     ->searchable()
+                                     ->preload(),
 
-                            Forms\Components\Textarea::make('descripcion')
-                                ->label('Descripción')
-                                ->maxLength(500)
-                                ->columnSpan('full'),
-                        ]),
+                        Repeater::make('perfiles_seleccionados')
+                            ->label('Perfiles añadidos')
+                            ->schema([
+                                Select::make('perfil_id')
+                                    ->label('Perfil')
+                                    ->options(\App\Models\Perfil::pluck('nombre', 'id'))
+                                    ->disabled()
+                            ])
+                            ->createItemButtonLabel('Añadir Perfil')
+                            ->default([])
+                            ->disabled(),
+            ]),
+
+        // TAB: EXÁMENES
+        Tabs\Tab::make('Exámenes')
+            ->schema([
+                Select::make('examen_seleccionado')
+                    ->label('Buscar Examen')
+                    ->options(\App\Models\Examen::pluck('nombre', 'id')->toArray())
+                    ->searchable()
+                    ->preload(),
+
+                Repeater::make('examenes_seleccionados')
+                    ->label('Exámenes añadidos')
+                    ->schema([
+                        Select::make('examen_id')
+                            ->label('Examen')
+                            ->options(\App\Models\Examen::pluck('nombre', 'id'))
+                            ->disabled()
+                    ])
+                    ->createItemButtonLabel('Añadir Examen')
+                    ->default([])
+                    ->disabled(),
+            ])
+                                ])->columnSpanFull(),
+                        ])   
                 ])
                 ->columnSpanFull(),
         ]);

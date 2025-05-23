@@ -23,4 +23,10 @@ class Perfil extends Model
         return $this->belongsToMany(Examen::class, 'detalle_perfil', 'perfil_id', 'examen_id')
                     ->withTimestamps();
     }
+
+    public function ordenes()
+    {
+        return $this->belongsToMany(Orden::class, 'detalle_orden_perfils', 'perfil_id', 'orden_id')
+                    ->withTimestamps();
+    }
 }
