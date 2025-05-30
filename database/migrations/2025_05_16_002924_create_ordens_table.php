@@ -17,7 +17,7 @@ return new class extends Migration
             $table->decimal('total', 10, 2);
             $table->date('fecha');
             $table->text('observaciones')->nullable();
-            $table->enum('estado', ['pendiente', 'en proceso', 'finalizado'])->default('pendiente');
+            $table->enum('estado', ['pendiente', 'en proceso', 'finalizado', 'cancelado'])->default('pendiente');
             $table->timestamps();
         });
     }

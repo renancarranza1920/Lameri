@@ -341,8 +341,9 @@ class OrdenResource extends Resource
                 Tables\Columns\TextColumn::make('estado')
                     ->formatStateUsing(fn (string $state) => match ($state) {
                         'pendiente' => 'Pendiente',
-                        'completado' => 'Completado',
+                        'finalizado' => 'Finalizado',
                         'cancelado' => 'Cancelado',
+                        'en_proceso' => 'En Proceso',
                         default => ucfirst($state),
                     })
 
@@ -351,9 +352,29 @@ class OrdenResource extends Resource
             ])
             ->filters([])
             ->actions([
+                Tables\Actions\Action::make('ver')
+                    ->label('Ver')
+                    ->icon('heroicon-o-eye')
+                    ->modalHeading('Detalles de la Orden')
+                    ->modalSubheading(fn ($record) => 'Orden N.º ' . $record->id)
+                    ->modalButton('Completar orden') // Botón personalizado
+                    ->modalWidth('md')
+                    ->modalContent(fn ($record) => view('filament.modals.ver-orden', ['record' => $record]))
+                    ->action(function ($record) {
+                        $record->estado = 'finalizado';
+                        $record->save();
+
+                        Notification::make()
+                            ->title('Orden completada con éxito')
+                            ->success()
+                            ->send();
+        }),
+
                 Tables\Actions\EditAction::make()
                     ->label('Editar')
                     ->icon('heroicon-o-pencil'),
+                
+
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
