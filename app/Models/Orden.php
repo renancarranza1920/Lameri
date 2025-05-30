@@ -9,12 +9,13 @@ class Orden extends Model
     
     protected $table = 'ordens';
     protected $primaryKey = 'id';
-    public $incrementing = false;
+    
 
     protected $fillable = [
         'cliente_id',
         'total',
         'fecha',
+        'observaciones',
         'estado',
     ];
 
