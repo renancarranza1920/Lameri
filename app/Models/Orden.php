@@ -32,4 +32,15 @@ class Orden extends Model
     {
         return $this->belongsToMany(Perfil::class, 'detalle_orden_perfils');
     }
+
+        public function detalleOrdenExamens()
+    {
+        return $this->hasMany(DetalleOrdenExamen::class);
+    }
+
+    public function detalleOrdenPerfils()
+    {
+        return $this->hasMany(DetalleOrdenPerfil::class);
+    }
+
 }

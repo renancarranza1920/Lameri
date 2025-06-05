@@ -23,6 +23,7 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Illuminate\Support\Facades\Log;
 use Filament\Notifications\Notification;
+use Closure;
 
 
 
@@ -41,27 +42,33 @@ class OrdenResource extends Resource
         $updateProductos = function (Get $get, Set $set) {
             $productos = [];
 
-            foreach ($get('perfiles_seleccionados') ?? [] as $item) {
-                $perfil = \App\Models\Perfil::find($item['perfil_seleccionado'] ?? null);
-                if ($perfil) {
-                    $productos[] = [
-                        'tipo' => 'perfil',
-                        'id' => $perfil->id,
-                        'nombre' => $perfil->nombre,
-                        'precio' => $perfil->precio,
-                    ];
+            // Extraer perfiles directamente de los datos del repeater
+            foreach ($get('detalleOrdenPerfils') ?? [] as $item) {
+                if (!empty($item['perfil_id']) && !empty($item['precio'])) {
+                    $perfil = \App\Models\Perfil::find($item['perfil_id']);
+                    if ($perfil) {
+                        $productos[] = [
+                            'tipo' => 'perfil',
+                            'id' => $perfil->id,
+                            'nombre' => $perfil->nombre,
+                            'precio' => $item['precio'],
+                        ];
+                    }
                 }
             }
 
-            foreach ($get('examenes_seleccionados') ?? [] as $item) {
-                $examen = \App\Models\Examen::find($item['examen_seleccionado'] ?? null);
-                if ($examen) {
-                    $productos[] = [
-                        'tipo' => 'examen',
-                        'id' => $examen->id,
-                        'nombre' => $examen->nombre,
-                        'precio' => $examen->precio,
-                    ];
+            // Extraer exámenes directamente del repeater
+            foreach ($get('detalleOrdenExamens') ?? [] as $item) {
+                if (!empty($item['examen_id']) && !empty($item['precio'])) {
+                    $examen = \App\Models\Examen::find($item['examen_id']);
+                    if ($examen) {
+                        $productos[] = [
+                            'tipo' => 'examen',
+                            'id' => $examen->id,
+                            'nombre' => $examen->nombre,
+                            'precio' => $item['precio'],
+                        ];
+                    }
                 }
             }
 
@@ -69,12 +76,11 @@ class OrdenResource extends Resource
 
             $total = array_sum(array_column($productos, 'precio'));
             $set('total', $total);
-            Log::info('Actualizando productos:', $productos);
 
-
+            Log::info('Resumen actualizado en el step 3:', $productos);
         };
 
-        
+
         return $form->schema([
 
             Hidden::make('productos')
@@ -82,13 +88,13 @@ class OrdenResource extends Resource
                 ->dehydrated(true),
 
             Hidden::make('cliente_id')
-            ->default(fn () => request()->get('cliente_id')) // o puedes poner un valor fijo si es necesario
-            ->required()
-            ->dehydrated(true),
+                ->default(fn() => request()->get('cliente_id')) // o puedes poner un valor fijo si es necesario
+                ->required()
+                ->dehydrated(true),
 
             Hidden::make('total')
-            ->default(0)
-            ->dehydrated(true), // Importante para que se mande al backend
+                ->default(0)
+                ->dehydrated(true),
 
 
             Forms\Components\Wizard::make()
@@ -135,7 +141,7 @@ class OrdenResource extends Resource
                                         ->icon('heroicon-m-plus');
                                 })
                                 ->required(),
-                                // crear text area para observaciones
+                            // crear text area para observaciones
                             Forms\Components\Textarea::make('observaciones')
                                 ->label('Observaciones')
                                 ->maxLength(500)
@@ -148,32 +154,37 @@ class OrdenResource extends Resource
                         ->schema([
                             Tabs::make('Detalles de Orden')
                                 ->tabs([
+
+                                    // TAB: PERFILES
                                     Tabs\Tab::make('Perfiles')
                                         ->schema([
-
                                             Repeater::make('perfiles_seleccionados')
+                                                ->relationship('detalleOrdenPerfils')
                                                 ->schema([
                                                     Forms\Components\Grid::make(2)
                                                         ->columnSpanFull()
                                                         ->schema([
-                                                            Select::make('perfil_seleccionado')
+                                                            Select::make('perfil_id')
                                                                 ->label('Buscar Perfil')
                                                                 ->options(\App\Models\Perfil::pluck('nombre', 'id')->toArray())
                                                                 ->searchable()
                                                                 ->preload()
                                                                 ->reactive()
-                                                                ->afterStateUpdated(function ($state, Set $set, Get $get) use ($updateProductos) {
+                                                                ->afterStateHydrated(function ($state, Set $set) {
+                                                                    Log::info('Estado del perfil_id después de hydrated:', ['state' => $state]);
+                                                                    if (is_numeric($state)) {
+                                                                        $perfil = \App\Models\Perfil::find($state);
+                                                                        if ($perfil instanceof \App\Models\Perfil) {
+                                                                            $set('precio', $perfil->precio);
+                                                                        }
+                                                                    }
+                                                                })
+                                                                ->afterStateUpdated(function ($state, Set $set) {
                                                                     if ($state === null) {
-                                                                        // Se eliminó la selección
                                                                         $set('precio', null);
-                                                                        $set('preciot', null);
-                                                                        $set('id', null);
                                                                     } else {
-                                                                        // Se seleccionó un elemento
                                                                         $perfil = \App\Models\Perfil::find($state);
                                                                         $set('precio', $perfil?->precio ?? 0);
-                                                                        $set('preciot', $perfil?->precio ?? 0);
-                                                                        $set('id', $perfil->id);
                                                                     }
                                                                 }),
 
@@ -182,11 +193,9 @@ class OrdenResource extends Resource
                                                                 ->disabled(),
 
                                                             Hidden::make('tipo')->default('perfil'),
-                                                            Hidden::make('id')->default(null),
-                                                            Hidden::make('preciot')->default(null),
-                                                            
-                                                            
-                                                        ]),
+
+                                                        ])
+                                                    ,
                                                 ])
                                                 ->reorderable(false)
                                                 ->addActionLabel('Añadir Perfil')
@@ -196,37 +205,39 @@ class OrdenResource extends Resource
                                                 ->reactive()
                                                 ->afterStateUpdated(function (Get $get, Set $set) use ($updateProductos) {
                                                     $updateProductos($get, $set);
-                                                })
-
-
+                                                }),
                                         ]),
 
                                     // TAB: EXÁMENES
                                     Tabs\Tab::make('Exámenes')
                                         ->schema([
                                             Repeater::make('examenes_seleccionados')
+                                                ->relationship('detalleOrdenExamens')
                                                 ->schema([
                                                     Forms\Components\Grid::make(2)
                                                         ->columnSpanFull()
                                                         ->schema([
-                                                            Select::make('examen_seleccionado')
+                                                            Select::make('examen_id')
                                                                 ->label('Buscar Examen')
                                                                 ->options(\App\Models\Examen::pluck('nombre', 'id')->toArray())
                                                                 ->searchable()
                                                                 ->preload()
                                                                 ->reactive()
-                                                                ->afterStateUpdated(function ($state, Set $set, Get $get) use ($updateProductos) {
+                                                                ->afterStateHydrated(function ($state, Set $set) {
+                                                                    Log::info('Estado del examen después de hidratar:', ['state' => $state]);
+                                                                    if (is_numeric($state)) {
+                                                                        $examen = \App\Models\Examen::find($state);
+                                                                        if ($examen instanceof \App\Models\Examen) {
+                                                                            $set('precio', $examen->precio);
+                                                                        }
+                                                                    }
+                                                                })
+                                                                ->afterStateUpdated(function ($state, Set $set) {
                                                                     if ($state === null) {
-                                                                        // Se eliminó la selección
                                                                         $set('precio', null);
-                                                                        $set('preciot', null);
-                                                                        $set('id', null);
                                                                     } else {
-                                                                        // Se seleccionó un elemento
                                                                         $examen = \App\Models\Examen::find($state);
                                                                         $set('precio', $examen?->precio ?? 0);
-                                                                        $set('preciot', $examen?->precio ?? 0);
-                                                                        $set('id', $examen->id);
                                                                     }
                                                                 }),
 
@@ -235,8 +246,7 @@ class OrdenResource extends Resource
                                                                 ->disabled(),
 
                                                             Hidden::make('tipo')->default('examen'),
-                                                            Hidden::make('id')->default(null),
-                                                            Hidden::make('preciot')->default(null),
+
                                                         ]),
                                                 ])
                                                 ->reorderable(false)
@@ -248,65 +258,92 @@ class OrdenResource extends Resource
                                                 ->afterStateUpdated(function (Get $get, Set $set) use ($updateProductos) {
                                                     $updateProductos($get, $set);
                                                 }),
-
                                         ])
                                 ])
-                                            ]),
-                     
+                        ])
+                    ,
+
                     // Paso 3: Confirmación
 
                     Step::make('Resumen')
                         ->schema([
 
-                            // Resumen del cliente
                             Forms\Components\Placeholder::make('cliente_resumen')
                                 ->label('Cliente seleccionado')
                                 ->content(function (Get $get) {
                                     $clienteId = $get('cliente_id');
                                     $cliente = $clienteId ? Cliente::find($clienteId) : null;
-
                                     return $cliente
                                         ? "{$cliente->NumeroExp} - {$cliente->nombre} {$cliente->apellido}"
                                         : 'No se ha seleccionado un cliente.';
                                 }),
 
-                            // Resumen de productos
-                            Forms\Components\Repeater::make('productos')
-                                ->label('Resumen de productos seleccionados')
-                                ->schema([
+                            // Perfiles
+                            Forms\Components\Placeholder::make('perfiles_resumen')
+                                ->label('Perfiles seleccionados')
+                                ->content(function (Get $get) {
+                                    $perfiles = $get('perfiles_seleccionados') ?? [];
+                                    if (empty($perfiles))
+                                        return 'No se ha agregado ningún perfil.';
 
-                                    Forms\Components\TextInput::make('nombre')
-                                        ->label('Nombre')
-                                        ->disabled()
-                                        ->columnSpan(1),
+                                    $resumen = [];
+                                    foreach ($perfiles as $item) {
+                                        $perfilId = $item['perfil_id'] ?? null;
+                                        $perfil = \App\Models\Perfil::find($perfilId);
+                                        if ($perfil) {
+                                            $resumen[] = "{$perfil->nombre} ($" . number_format($perfil->precio, 2) . ")";
+                                        }
+                                    }
+                                    return implode(', ', $resumen);
+                                }),
 
-                                    Forms\Components\TextInput::make('precio')
-                                        ->label('Precio')
-                                        ->disabled()
-                                        ->columnSpan(1),
-                                ])
-                                ->columns(2) // Establece el número de columnas del repeater
-                                ->disabled() // Modo solo lectura
-                                ->columnSpanFull()
-                            ,
+                            // Exámenes
+                            Forms\Components\Placeholder::make('examenes_resumen')
+                                ->label('Exámenes seleccionados')
+                                ->content(function (Get $get) {
+                                    $examenes = $get('examenes_seleccionados') ?? [];
+                                    if (empty($examenes))
+                                        return 'No se ha agregado ningún examen.';
+
+                                    $resumen = [];
+                                    foreach ($examenes as $item) {
+                                        $examenId = $item['examen_id'] ?? null;
+                                        $examen = \App\Models\Examen::find($examenId);
+                                        if ($examen) {
+                                            $resumen[] = "{$examen->nombre} ($" . number_format($examen->precio, 2) . ")";
+                                        }
+                                    }
+                                    return implode(', ', $resumen);
+                                }),
 
                             // Total
                             Forms\Components\Placeholder::make('total')
                                 ->label('Total a pagar')
                                 ->content(function (Get $get) {
-                                    $productos = $get('productos') ?? [];
-                                    $total = array_sum(array_column($productos, 'precio'));
-                                    
+                                    $total = 0;
+
+                                    foreach ($get('perfiles_seleccionados') ?? [] as $item) {
+                                        $total += floatval($item['precio'] ?? 0);
+                                    }
+
+                                    foreach ($get('examenes_seleccionados') ?? [] as $item) {
+                                        $total += floatval($item['precio'] ?? 0);
+                                    }
+
                                     return '$' . number_format($total, 2);
                                 }),
-
                         ])
-                        
+
+
+
+
+
                 ])
-                
 
 
-        ]);
+
+        ])
+        ;
 
 
     }
@@ -333,13 +370,13 @@ class OrdenResource extends Resource
                     ->date()
                     ->sortable(),
 
-                    Tables\Columns\TextColumn::make('total')
+                Tables\Columns\TextColumn::make('total')
                     ->label('Total')
                     ->money('USD', true)
                     ->sortable(),
-                    
+
                 Tables\Columns\TextColumn::make('estado')
-                    ->formatStateUsing(fn (string $state) => match ($state) {
+                    ->formatStateUsing(fn(string $state) => match ($state) {
                         'pendiente' => 'Pendiente',
                         'finalizado' => 'Finalizado',
                         'cancelado' => 'Cancelado',
@@ -348,7 +385,7 @@ class OrdenResource extends Resource
                     })
 
                     ->sortable(),
-                
+
             ])
             ->filters([])
             ->actions([
@@ -356,10 +393,10 @@ class OrdenResource extends Resource
                     ->label('Ver')
                     ->icon('heroicon-o-eye')
                     ->modalHeading('Detalles de la Orden')
-                    ->modalSubheading(fn ($record) => 'Orden N.º ' . $record->id)
+                    ->modalSubheading(fn($record) => 'Orden N.º ' . $record->id)
                     ->modalButton('Completar orden') // Botón personalizado
                     ->modalWidth('md')
-                    ->modalContent(fn ($record) => view('filament.modals.ver-orden', ['record' => $record]))
+                    ->modalContent(fn($record) => view('filament.modals.ver-orden', ['record' => $record]))
                     ->action(function ($record) {
                         $record->estado = 'finalizado';
                         $record->save();
@@ -368,12 +405,12 @@ class OrdenResource extends Resource
                             ->title('Orden completada con éxito')
                             ->success()
                             ->send();
-        }),
+                    }),
 
                 Tables\Actions\EditAction::make()
                     ->label('Editar')
                     ->icon('heroicon-o-pencil'),
-                
+
 
             ])
             ->bulkActions([
