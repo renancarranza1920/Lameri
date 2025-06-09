@@ -13,57 +13,22 @@ class CreateOrden extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        Log::info('📝 Mutando datos antes de crear la orden:', $data);
         $total = 0;
+        
 
-        $logPerfiles = [];
-        foreach ($data['detalleOrdenPerfils'] ?? [] as $detalle) {
-            $perfilId = $detalle['perfil_id'] ?? null;
-            if ($perfilId) {
-                $perfil = \App\Models\Perfil::find($perfilId);
-                $precioPerfil = $perfil?->precio ?? 0;
-                $total += $precioPerfil;
-
-                $logPerfiles[] = [
-                    'id' => $perfilId,
-                    'nombre' => $perfil->nombre ?? 'Desconocido',
-                    'precio' => $precioPerfil,
-                ];
-            }
+        foreach ($data['perfiles_seleccionados'] ?? [] as $item) {
+            $total += floatval($item['precio'] ?? 0);
         }
 
-        $logExamenes = [];
-        foreach ($data['detalleOrdenExamens'] ?? [] as $detalle) {
-            $examenId = $detalle['examen_id'] ?? null;
-            if ($examenId) {
-                $examen = \App\Models\Examen::find($examenId);
-                $precioExamen = $examen?->precio ?? 0;
-                $total += $precioExamen;
-
-                $logExamenes[] = [
-                    'id' => $examenId,
-                    'nombre' => $examen->nombre ?? 'Desconocido',
-                    'precio' => $precioExamen,
-                ];
-            }
+        foreach ($data['examenes_seleccionados'] ?? [] as $item) {
+            $total += floatval($item['precio'] ?? 0);
         }
 
-        // Loguear todos los detalles antes de guardar
-        Log::info('🧪 Perfiles seleccionados:', $logPerfiles);
-        Log::info('🔬 Exámenes seleccionados:', $logExamenes);
-        Log::info('💲 Total calculado:', ['total' => $total]);
-
-        // Si deseas permitir el guardado, comenta o elimina la línea de abort()
         $data['total'] = $total;
         $data['fecha'] = Carbon::now();
         $data['estado'] = 'pendiente';
 
         return $data;
-    }
-
-    protected function afterCreate(): void
-    {
-        logger('✅ Orden creada con ID: ' . $this->record->id);
     }
 
     protected function getRedirectUrl(): string

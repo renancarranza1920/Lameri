@@ -39,63 +39,13 @@ class OrdenResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $updateProductos = function (Get $get, Set $set) {
-            $productos = [];
-
-            // Extraer perfiles directamente de los datos del repeater
-            foreach ($get('detalleOrdenPerfils') ?? [] as $item) {
-                if (!empty($item['perfil_id']) && !empty($item['precio'])) {
-                    $perfil = \App\Models\Perfil::find($item['perfil_id']);
-                    if ($perfil) {
-                        $productos[] = [
-                            'tipo' => 'perfil',
-                            'id' => $perfil->id,
-                            'nombre' => $perfil->nombre,
-                            'precio' => $item['precio'],
-                        ];
-                    }
-                }
-            }
-
-            // Extraer exámenes directamente del repeater
-            foreach ($get('detalleOrdenExamens') ?? [] as $item) {
-                if (!empty($item['examen_id']) && !empty($item['precio'])) {
-                    $examen = \App\Models\Examen::find($item['examen_id']);
-                    if ($examen) {
-                        $productos[] = [
-                            'tipo' => 'examen',
-                            'id' => $examen->id,
-                            'nombre' => $examen->nombre,
-                            'precio' => $item['precio'],
-                        ];
-                    }
-                }
-            }
-
-            $set('productos', $productos);
-
-            $total = array_sum(array_column($productos, 'precio'));
-            $set('total', $total);
-
-            Log::info('Resumen actualizado en el step 3:', $productos);
-        };
-
 
         return $form->schema([
 
-            Hidden::make('productos')
-                ->default([])
-                ->dehydrated(true),
-
-            Hidden::make('cliente_id')
-                ->default(fn() => request()->get('cliente_id')) // o puedes poner un valor fijo si es necesario
-                ->required()
-                ->dehydrated(true),
-
-            Hidden::make('total')
+            Forms\Components\Hidden::make('total')
                 ->default(0)
-                ->dehydrated(true),
-
+                ->dehydrated() // <- necesario para que se guarde en el modelo
+                ->required(),
 
             Forms\Components\Wizard::make()
                 ->schema([
@@ -158,7 +108,7 @@ class OrdenResource extends Resource
                                     // TAB: PERFILES
                                     Tabs\Tab::make('Perfiles')
                                         ->schema([
-                                            Repeater::make('perfiles_seleccionados')
+                                            Forms\Components\Repeater::make('perfiles_seleccionados')
                                                 ->relationship('detalleOrdenPerfils')
                                                 ->schema([
                                                     Forms\Components\Grid::make(2)
@@ -170,8 +120,8 @@ class OrdenResource extends Resource
                                                                 ->searchable()
                                                                 ->preload()
                                                                 ->reactive()
+                                                                ->placeholder('Selecciona un perfil')
                                                                 ->afterStateHydrated(function ($state, Set $set) {
-                                                                    Log::info('Estado del perfil_id después de hydrated:', ['state' => $state]);
                                                                     if (is_numeric($state)) {
                                                                         $perfil = \App\Models\Perfil::find($state);
                                                                         if ($perfil instanceof \App\Models\Perfil) {
@@ -200,18 +150,15 @@ class OrdenResource extends Resource
                                                 ->reorderable(false)
                                                 ->addActionLabel('Añadir Perfil')
                                                 ->reorderableWithButtons(false)
-                                                ->minItems(1)
-                                                ->required()
+                                                ->defaultItems(1)
                                                 ->reactive()
-                                                ->afterStateUpdated(function (Get $get, Set $set) use ($updateProductos) {
-                                                    $updateProductos($get, $set);
-                                                }),
+                                            ,
                                         ]),
 
                                     // TAB: EXÁMENES
                                     Tabs\Tab::make('Exámenes')
                                         ->schema([
-                                            Repeater::make('examenes_seleccionados')
+                                            Forms\Components\Repeater::make('examenes_seleccionados')
                                                 ->relationship('detalleOrdenExamens')
                                                 ->schema([
                                                     Forms\Components\Grid::make(2)
@@ -223,6 +170,7 @@ class OrdenResource extends Resource
                                                                 ->searchable()
                                                                 ->preload()
                                                                 ->reactive()
+                                                                ->placeholder('Selecciona un examen')
                                                                 ->afterStateHydrated(function ($state, Set $set) {
                                                                     Log::info('Estado del examen después de hidratar:', ['state' => $state]);
                                                                     if (is_numeric($state)) {
@@ -239,7 +187,9 @@ class OrdenResource extends Resource
                                                                         $examen = \App\Models\Examen::find($state);
                                                                         $set('precio', $examen?->precio ?? 0);
                                                                     }
-                                                                }),
+
+                                                                })
+                                                            ,
 
                                                             Forms\Components\TextInput::make('precio')
                                                                 ->label('Precio')
@@ -252,17 +202,13 @@ class OrdenResource extends Resource
                                                 ->reorderable(false)
                                                 ->addActionLabel('Añadir Examen')
                                                 ->reorderableWithButtons(false)
-                                                ->minItems(1)
-                                                ->required()
-                                                ->reactive()
-                                                ->afterStateUpdated(function (Get $get, Set $set) use ($updateProductos) {
-                                                    $updateProductos($get, $set);
-                                                }),
+                                                ->defaultItems(1)
+                                                ->reactive() 
+                                            ,
                                         ])
                                 ])
                         ])
                     ,
-
                     // Paso 3: Confirmación
 
                     Step::make('Resumen')

@@ -5,6 +5,8 @@ namespace App\Filament\Resources\OrdenResource\Pages;
 use App\Filament\Resources\OrdenResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class EditOrden extends EditRecord
 {
@@ -15,5 +17,10 @@ class EditOrden extends EditRecord
         return [
             Actions\DeleteAction::make(),
         ];
+    }
+
+     protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
     }
 }
