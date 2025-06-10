@@ -41,12 +41,6 @@ class OrdenResource extends Resource
     {
 
         return $form->schema([
-
-            Forms\Components\Hidden::make('total')
-                ->default(0)
-                ->dehydrated() // <- necesario para que se guarde en el modelo
-                ->required(),
-
             Forms\Components\Wizard::make()
                 ->schema([
                     // Paso 1: Cliente
@@ -102,6 +96,7 @@ class OrdenResource extends Resource
                     // Paso 2: Detalles de Orden
                     Step::make("Orden")
                         ->schema([
+
                             Tabs::make('Detalles de Orden')
                                 ->tabs([
 
@@ -203,17 +198,19 @@ class OrdenResource extends Resource
                                                 ->addActionLabel('Añadir Examen')
                                                 ->reorderableWithButtons(false)
                                                 ->defaultItems(1)
-                                                ->reactive() 
+                                                ->reactive()
                                             ,
                                         ])
-                                ])
-                        ])
-                    ,
+
+                                        
+
+                                                    ])
+                        ]),
+
                     // Paso 3: Confirmación
 
                     Step::make('Resumen')
                         ->schema([
-
                             Forms\Components\Placeholder::make('cliente_resumen')
                                 ->label('Cliente seleccionado')
                                 ->content(function (Get $get) {
@@ -263,7 +260,9 @@ class OrdenResource extends Resource
                                 }),
 
                             // Total
-                            Forms\Components\Placeholder::make('total')
+
+                            
+                            Forms\Components\Placeholder::make('totalPagar')
                                 ->label('Total a pagar')
                                 ->content(function (Get $get) {
                                     $total = 0;

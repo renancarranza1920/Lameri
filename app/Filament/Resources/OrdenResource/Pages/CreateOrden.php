@@ -13,6 +13,9 @@ class CreateOrden extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+
+        Log::info('Creating Orden with data:', $data);
+        
         $total = 0;
         
 
