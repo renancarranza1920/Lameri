@@ -87,10 +87,11 @@ class OrdenResource extends Resource
                                 ->required(),
                             // crear text area para observaciones
                             Forms\Components\Textarea::make('observaciones')
-                                ->label('Observaciones')
-                                ->maxLength(500)
+                               ->label('Observaciones')
+                                ->placeholder('Escribe cualquier comentario adicional...')
+                                ->rows(4)
                                 ->columnSpanFull()
-                                ->placeholder('Escribe aquí las observaciones del cliente'),
+                                ->extraInputAttributes(['class' => 'resize-none']),
                         ]),
 
                     // Paso 2: Detalles de Orden
@@ -104,7 +105,7 @@ class OrdenResource extends Resource
                                     Tabs\Tab::make('Perfiles')
                                         ->schema([
                                             Forms\Components\Repeater::make('perfiles_seleccionados')
-                                                ->relationship('detalleOrdenPerfils')
+                                        
                                                 ->schema([
                                                     Forms\Components\Grid::make(2)
                                                         ->columnSpanFull()
@@ -115,12 +116,17 @@ class OrdenResource extends Resource
                                                                 ->searchable()
                                                                 ->preload()
                                                                 ->reactive()
+                                                                ->required()
+                                                                ->validationMessages([
+                                                                    'required' => 'Debe seleccionar un perfil.',
+                                                                ])
                                                                 ->placeholder('Selecciona un perfil')
                                                                 ->afterStateHydrated(function ($state, Set $set) {
                                                                     if (is_numeric($state)) {
                                                                         $perfil = \App\Models\Perfil::find($state);
                                                                         if ($perfil instanceof \App\Models\Perfil) {
                                                                             $set('precio', $perfil->precio);
+                                                                             $set('precio_hidden', $perfil?->precio ?? 0);
                                                                         }
                                                                     }
                                                                 })
@@ -130,23 +136,30 @@ class OrdenResource extends Resource
                                                                     } else {
                                                                         $perfil = \App\Models\Perfil::find($state);
                                                                         $set('precio', $perfil?->precio ?? 0);
+                                                                        $set('precio_hidden', $perfil?->precio ?? 0);
                                                                     }
                                                                 }),
 
                                                             Forms\Components\TextInput::make('precio')
                                                                 ->label('Precio')
+                                                                  ->dehydrated(true)
                                                                 ->disabled(),
 
                                                             Hidden::make('tipo')->default('perfil'),
+                                                           //Hidden para precio
+                                                           Hidden::make('precio_hidden')
+                                                               ->dehydrated(true),
+                                                               
 
                                                         ])
                                                     ,
                                                 ])
                                                 ->reorderable(false)
-                                                ->addActionLabel('Añadir Perfil')
+                                                ->addActionLabel('Añadir Perfil a su Orden')
                                                 ->reorderableWithButtons(false)
-                                                ->defaultItems(1)
+                                                ->default([])
                                                 ->reactive()
+                                                ->label('Resumen de Perfiles Seleccionados')
                                             ,
                                         ]),
 
@@ -154,7 +167,7 @@ class OrdenResource extends Resource
                                     Tabs\Tab::make('Exámenes')
                                         ->schema([
                                             Forms\Components\Repeater::make('examenes_seleccionados')
-                                                ->relationship('detalleOrdenExamens')
+                                              
                                                 ->schema([
                                                     Forms\Components\Grid::make(2)
                                                         ->columnSpanFull()
@@ -165,6 +178,10 @@ class OrdenResource extends Resource
                                                                 ->searchable()
                                                                 ->preload()
                                                                 ->reactive()
+                                                                ->required()
+                                                                ->validationMessages([
+                                                                    'required' => 'Debe seleccionar un examen.',
+                                                                ])
                                                                 ->placeholder('Selecciona un examen')
                                                                 ->afterStateHydrated(function ($state, Set $set) {
                                                                     Log::info('Estado del examen después de hidratar:', ['state' => $state]);
@@ -172,6 +189,8 @@ class OrdenResource extends Resource
                                                                         $examen = \App\Models\Examen::find($state);
                                                                         if ($examen instanceof \App\Models\Examen) {
                                                                             $set('precio', $examen->precio);
+                                                                            $set('precio_hidden', $examen->precio ?? 0);
+                                                                           
                                                                         }
                                                                     }
                                                                 })
@@ -181,6 +200,7 @@ class OrdenResource extends Resource
                                                                     } else {
                                                                         $examen = \App\Models\Examen::find($state);
                                                                         $set('precio', $examen?->precio ?? 0);
+                                                                        $set('precio_hidden', $examen?->precio ?? 0);
                                                                     }
 
                                                                 })
@@ -188,23 +208,28 @@ class OrdenResource extends Resource
 
                                                             Forms\Components\TextInput::make('precio')
                                                                 ->label('Precio')
+                                                                 ->dehydrated(true)
                                                                 ->disabled(),
 
                                                             Hidden::make('tipo')->default('examen'),
+                                                             Hidden::make('precio_hidden')
+                                                               ->dehydrated(true),
 
                                                         ]),
                                                 ])
                                                 ->reorderable(false)
-                                                ->addActionLabel('Añadir Examen')
+                                                ->addActionLabel('Añadir Examen a su Orden')
                                                 ->reorderableWithButtons(false)
-                                                ->defaultItems(1)
+                                                ->default([])
+                                                ->label('Resumen de Examenes Seleccionados')
                                                 ->reactive()
                                             ,
                                         ])
 
-                                        
 
-                                                    ])
+
+
+                                ])
                         ]),
 
                     // Paso 3: Confirmación
@@ -261,7 +286,7 @@ class OrdenResource extends Resource
 
                             // Total
 
-                            
+
                             Forms\Components\Placeholder::make('totalPagar')
                                 ->label('Total a pagar')
                                 ->content(function (Get $get) {
@@ -283,7 +308,7 @@ class OrdenResource extends Resource
 
 
 
-                ])
+                ])->columnSpanFull(),
 
 
 

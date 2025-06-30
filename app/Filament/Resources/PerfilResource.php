@@ -174,6 +174,7 @@ class PerfilResource extends Resource
             'index' => Pages\ListPerfils::route('/'),
             'create' => Pages\CreatePerfil::route('/create'),
             'edit' => Pages\EditPerfil::route('/{record}/edit'),
+        
             
         ];
     }
