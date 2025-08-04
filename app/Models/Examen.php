@@ -11,6 +11,7 @@ class Examen extends Model
         'tipo_examen_id',
         'nombre',
         'precio',
+        'recipiente',
         'estado',
     ];
     public function tipoExamen()

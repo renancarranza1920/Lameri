@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('detalle_orden_examens', function (Blueprint $table) {
+        Schema::create('detalle_orden', function (Blueprint $table) {
             $table->id();
             $table->foreignId('orden_id')
                 ->constrained('ordens')
@@ -19,6 +19,17 @@ return new class extends Migration
             $table->foreignId('examen_id')
                 ->constrained('examens')
                 ->onDelete('cascade');
+            $table->foreignId('perfil_id')
+                ->nullable()
+                ->constrained('perfil')
+                ->onDelete('cascade');
+
+            $table->string('nombre_examen');
+            $table->string('nombre_perfil')->nullable();
+            $table->decimal('precio_examen', 10, 2);
+            $table->decimal('precio_perfil', 10, 2)->nullable();
+
+            $table->string('status');
             $table->timestamps();
         });
     }

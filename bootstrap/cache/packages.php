@@ -115,6 +115,17 @@
       0 => 'Livewire\\LivewireServiceProvider',
     ),
   ),
+  'mokhosh/filament-kanban' => 
+  array (
+    'aliases' => 
+    array (
+      'FilamentKanban' => 'Mokhosh\\FilamentKanban\\Facades\\FilamentKanban',
+    ),
+    'providers' => 
+    array (
+      0 => 'Mokhosh\\FilamentKanban\\FilamentKanbanServiceProvider',
+    ),
+  ),
   'nesbot/carbon' => 
   array (
     'providers' => 
@@ -136,6 +147,17 @@
       0 => 'Termwind\\Laravel\\TermwindServiceProvider',
     ),
   ),
+  'relaticle/flowforge' => 
+  array (
+    'aliases' => 
+    array (
+      'Flowforge' => 'Relaticle\\Flowforge\\Facades\\Flowforge',
+    ),
+    'providers' => 
+    array (
+      0 => 'Relaticle\\Flowforge\\FlowforgeServiceProvider',
+    ),
+  ),
   'ryangjchandler/blade-capture-directive' => 
   array (
     'aliases' => 
@@ -145,6 +167,13 @@
     'providers' => 
     array (
       0 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
+    ),
+  ),
+  'spatie/eloquent-sortable' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Spatie\\EloquentSortable\\EloquentSortableServiceProvider',
     ),
   ),
 );

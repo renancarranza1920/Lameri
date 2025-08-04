@@ -2,10 +2,13 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Pages\DetalleOrdenKanban;
 use App\Filament\Resources\OrdenResource\Pages;
 use App\Models\Orden;
 use App\Models\Cliente;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\ViewField;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms\Components\Tabs;
@@ -16,6 +19,9 @@ use Filament\Forms\Components\Button;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Hidden;
@@ -24,6 +30,7 @@ use Filament\Forms\Set;
 use Illuminate\Support\Facades\Log;
 use Filament\Notifications\Notification;
 use Closure;
+
 
 
 
@@ -87,7 +94,7 @@ class OrdenResource extends Resource
                                 ->required(),
                             // crear text area para observaciones
                             Forms\Components\Textarea::make('observaciones')
-                               ->label('Observaciones')
+                                ->label('Observaciones')
                                 ->placeholder('Escribe cualquier comentario adicional...')
                                 ->rows(4)
                                 ->columnSpanFull()
@@ -105,7 +112,7 @@ class OrdenResource extends Resource
                                     Tabs\Tab::make('Perfiles')
                                         ->schema([
                                             Forms\Components\Repeater::make('perfiles_seleccionados')
-                                        
+
                                                 ->schema([
                                                     Forms\Components\Grid::make(2)
                                                         ->columnSpanFull()
@@ -126,10 +133,17 @@ class OrdenResource extends Resource
                                                                         $perfil = \App\Models\Perfil::find($state);
                                                                         if ($perfil instanceof \App\Models\Perfil) {
                                                                             $set('precio', $perfil->precio);
-                                                                             $set('precio_hidden', $perfil?->precio ?? 0);
+                                                                            $set('precio_hidden', $perfil?->precio ?? 0);
                                                                         }
                                                                     }
                                                                 })
+                                                                ->suffixAction(
+                                                                    Action::make('crearPerfil')
+                                                                        ->icon('heroicon-m-plus')
+                                                                        ->tooltip('Agregar nuevo perfil')
+                                                                        ->url(route('filament.admin.resources.perfils.create')) // ajusta el nombre de la resource si es necesario
+                                                                        ->openUrlInNewTab() // o elimínalo si prefieres abrir en la misma pestaña
+                                                                )
                                                                 ->afterStateUpdated(function ($state, Set $set) {
                                                                     if ($state === null) {
                                                                         $set('precio', null);
@@ -142,14 +156,14 @@ class OrdenResource extends Resource
 
                                                             Forms\Components\TextInput::make('precio')
                                                                 ->label('Precio')
-                                                                  ->dehydrated(true)
+                                                                ->dehydrated(true)
                                                                 ->disabled(),
 
                                                             Hidden::make('tipo')->default('perfil'),
-                                                           //Hidden para precio
-                                                           Hidden::make('precio_hidden')
-                                                               ->dehydrated(true),
-                                                               
+                                                            //Hidden para precio
+                                                            Hidden::make('precio_hidden')
+                                                                ->dehydrated(true),
+
 
                                                         ])
                                                     ,
@@ -167,7 +181,7 @@ class OrdenResource extends Resource
                                     Tabs\Tab::make('Exámenes')
                                         ->schema([
                                             Forms\Components\Repeater::make('examenes_seleccionados')
-                                              
+
                                                 ->schema([
                                                     Forms\Components\Grid::make(2)
                                                         ->columnSpanFull()
@@ -190,7 +204,9 @@ class OrdenResource extends Resource
                                                                         if ($examen instanceof \App\Models\Examen) {
                                                                             $set('precio', $examen->precio);
                                                                             $set('precio_hidden', $examen->precio ?? 0);
-                                                                           
+                                                                            $set('nombre_examen', $examen->nombre ?? '');
+                                                                            $set('recipiente', $examen->recipiente ?? '');
+
                                                                         }
                                                                     }
                                                                 })
@@ -201,6 +217,8 @@ class OrdenResource extends Resource
                                                                         $examen = \App\Models\Examen::find($state);
                                                                         $set('precio', $examen?->precio ?? 0);
                                                                         $set('precio_hidden', $examen?->precio ?? 0);
+                                                                        $set('nombre_examen', $examen?->nombre ?? '');
+                                                                        $set('recipiente', $examen?->recipiente ?? '');
                                                                     }
 
                                                                 })
@@ -208,12 +226,15 @@ class OrdenResource extends Resource
 
                                                             Forms\Components\TextInput::make('precio')
                                                                 ->label('Precio')
-                                                                 ->dehydrated(true)
+                                                                ->dehydrated(true)
                                                                 ->disabled(),
 
                                                             Hidden::make('tipo')->default('examen'),
-                                                             Hidden::make('precio_hidden')
-                                                               ->dehydrated(true),
+                                                            Hidden::make('precio_hidden'),
+                                                            Hidden::make('nombre_examen')
+                                                                ->dehydrated(true),
+                                                            Hidden::make('recipiente')
+                                                                ->dehydrated(true),
 
                                                         ]),
                                                 ])
@@ -231,8 +252,15 @@ class OrdenResource extends Resource
 
                                 ])
                         ]),
+                    // app/Filament/Resources/OrdenResource.php
 
-                    // Paso 3: Confirmación
+                    Step::make('Etiquetas')
+                        ->schema([
+                           
+                        ]),
+
+
+                    // Paso 4: Confirmación
 
                     Step::make('Resumen')
                         ->schema([
@@ -318,50 +346,80 @@ class OrdenResource extends Resource
 
     }
 
+
     public static function table(Table $table): Table
     {
+      
         return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
-                    ->sortable(),
+        ->actionsAlignment('center')
+           ->contentGrid([
+            'md' => 5,
+            'lg' => 5,
+            'xl' => 4,
+        ])
+        ->columns([
+            Split::make([
+                Stack::make([
+                    TextColumn::make('cliente.nombre')
+                        ->label('Cliente')
+                        ->getStateUsing(fn($record) => $record->cliente->nombre . ' ' . $record->cliente->apellido)
+                        ->size('lg')
+                        ->searchable()
+                        ->weight('bold'),
 
-                Tables\Columns\TextColumn::make('cliente.NumeroExp')
-                    ->label('Expediente')
-                    ->searchable(),
+                    TextColumn::make('total')
+                        ->label('Total')
+                        ->money('USD', true)
+                        ->color('primary')
+                        ->size('xl')
+                        ->searchable()
+                        ->weight('bold'),
 
-                Tables\Columns\TextColumn::make('cliente.nombre')
-                    ->label('Nombre')
-                    ->getStateUsing(fn($record) => $record->cliente->nombre . ' ' . $record->cliente->apellido)
-                    ->searchable(),
+                    TextColumn::make('fecha')
+                        ->label('Fecha')
+                        ->date()
+                        ->searchable()
+                        ->color('gray'),
 
-                Tables\Columns\TextColumn::make('fecha')
-                    ->label('Fecha')
-                    ->date()
-                    ->sortable(),
+                    TextColumn::make('cliente.NumeroExp')
+                        ->label('Expediente')
+                        ->searchable(),
 
-                Tables\Columns\TextColumn::make('total')
-                    ->label('Total')
-                    ->money('USD', true)
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('estado')
-                    ->formatStateUsing(fn(string $state) => match ($state) {
-                        'pendiente' => 'Pendiente',
-                        'finalizado' => 'Finalizado',
-                        'cancelado' => 'Cancelado',
-                        'en_proceso' => 'En Proceso',
-                        default => ucfirst($state),
-                    })
-
-                    ->sortable(),
-
+                    TextColumn::make('estado')
+                        ->label('Estado')
+                        ->badge()
+                        ->searchable()
+                        ->color(fn ($state) => match ($state) {
+                            'pendiente' => 'warning',
+                            'finalizado' => 'success',
+                            'cancelado' => 'danger',
+                            'en_proceso' => 'info',
+                            default => 'gray',
+                        }),
+                        
+                ]),
             ])
-            ->filters([])
+           
+        ])
+            ->filters([
+                Tables\Filters\Filter::make('fecha')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')->label('Desde'),
+                        Forms\Components\DatePicker::make('until')->label('Hasta'),
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        return $query
+                            ->when($data['from'], fn ($q, $date) => $q->whereDate('fecha', '>=', $date))
+                            ->when($data['until'], fn ($q, $date) => $q->whereDate('fecha', '<=', $date));
+                    }),
+            ])
             ->actions([
+                //CENTRALIZAR ACCIONES
+               
                 Tables\Actions\Action::make('ver')
                     ->label('Ver')
                     ->icon('heroicon-o-eye')
+             
                     ->modalHeading('Detalles de la Orden')
                     ->modalSubheading(fn($record) => 'Orden N.º ' . $record->id)
                     ->modalButton('Completar orden') // Botón personalizado
@@ -376,15 +434,35 @@ class OrdenResource extends Resource
                             ->success()
                             ->send();
                     }),
+                Tables\Actions\Action::make('eliminar')
+                    ->label('Eliminar')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $record->delete();
 
-                Tables\Actions\EditAction::make()
-                    ->label('Editar')
-                    ->icon('heroicon-o-pencil'),
+                        Notification::make()
+                            ->title('Orden eliminada con éxito')
+                            ->success()
+                            ->send();
+                    }),
+
+   
+
+Tables\Actions\Action::make('kanban')
+    ->label('Etiquetas')
+    ->url(fn (Orden $record): string => DetalleOrdenKanban::getUrl(['ordenId' => $record->id]))
+    ->openUrlInNewTab(),
 
 
             ])
+            // Se eliminó disableRecordClick()
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\BulkActionGroup::make([
+                // Tables\Actions\DeleteBulkAction::make(),
+                ]),
+                
             ]);
     }
 
@@ -392,13 +470,21 @@ class OrdenResource extends Resource
     {
         return [];
     }
+    public static function getRecordUrlUsing(): Closure
+{
+    return fn ($record) => null; // 👈 esto desactiva el enlace de clic en la tarjeta
+}
+
 
     public static function getPages(): array
     {
-        return [
+     return [
             'index' => Pages\ListOrdens::route('/'),
             'create' => Pages\CreateOrden::route('/create'),
-            'edit' => Pages\EditOrden::route('/{record}/edit'),
-        ];
-    }
+          //  'edit' => Pages\EditOrden::route('/{record}/edit'),
+            
+            ];
+        }
+
+        
 }

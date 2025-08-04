@@ -3,7 +3,7 @@
         'name' => 'laravel/laravel',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '1b2334253cbb3f81d26cd07cbbfedff25bbd3c4f',
+        'reference' => '6e37dd0abbea1a23f2b7673482097416004ee1be',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -532,7 +532,7 @@
         'laravel/laravel' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '1b2334253cbb3f81d26cd07cbbfedff25bbd3c4f',
+            'reference' => '6e37dd0abbea1a23f2b7673482097416004ee1be',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -690,6 +690,15 @@
             'install_path' => __DIR__ . '/../mockery/mockery',
             'aliases' => array(),
             'dev_requirement' => true,
+        ),
+        'mokhosh/filament-kanban' => array(
+            'pretty_version' => 'v2.11.0',
+            'version' => '2.11.0.0',
+            'reference' => 'e5a92cd4a6c22c42f28f290ed7d05d0fd2e2dd4c',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../mokhosh/filament-kanban',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'monolog/monolog' => array(
             'pretty_version' => '3.8.1',
@@ -1025,6 +1034,17 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+        'relaticle/flowforge' => array(
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => 'ba1636ac2afde25260d0b84b011d7e5beaae4c46',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../relaticle/flowforge',
+            'aliases' => array(
+                0 => '9999999-dev',
+            ),
+            'dev_requirement' => false,
+        ),
         'rhumsaa/uuid' => array(
             'dev_requirement' => false,
             'replaced' => array(
@@ -1181,6 +1201,15 @@
             'reference' => '142af7fec069a420babea80a5412eb2f646dcd8c',
             'type' => 'library',
             'install_path' => __DIR__ . '/../spatie/color',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'spatie/eloquent-sortable' => array(
+            'pretty_version' => '4.5.0',
+            'version' => '4.5.0.0',
+            'reference' => '76c8fbc79e1d5eec85e7145e46c7f0a65e1f4cda',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../spatie/eloquent-sortable',
             'aliases' => array(),
             'dev_requirement' => false,
         ),

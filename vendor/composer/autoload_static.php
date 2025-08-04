@@ -9,8 +9,8 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
     public static $files = array (
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
-        'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
+        'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '8825ede83f2f289127722d4e842cf7e8' => __DIR__ . '/..' . '/symfony/polyfill-intl-grapheme/bootstrap.php',
         'b6b991a57620e2fb6b2f66f03fe9ddc2' => __DIR__ . '/..' . '/symfony/string/Resources/functions.php',
         '662a729f963d39afe703c9d9b7ab4a8c' => __DIR__ . '/..' . '/symfony/polyfill-php83/bootstrap.php',
@@ -25,8 +25,8 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
         '35a6ad97d21e794e7e22a17d806652e4' => __DIR__ . '/..' . '/nunomaduro/termwind/src/Functions.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         '2203a247e6fda86070a5e4e07aed533a' => __DIR__ . '/..' . '/symfony/clock/Resources/now.php',
-        '09f6b20656683369174dd6fa83b7e5fb' => __DIR__ . '/..' . '/symfony/polyfill-uuid/bootstrap.php',
         'a1105708a18b76903365ca1c4aa61b02' => __DIR__ . '/..' . '/symfony/translation/Resources/functions.php',
+        '09f6b20656683369174dd6fa83b7e5fb' => __DIR__ . '/..' . '/symfony/polyfill-uuid/bootstrap.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         'e39a8b23c42d4e1452234d762b03835a' => __DIR__ . '/..' . '/ramsey/uuid/src/functions.php',
         '476ca15b8d69b04665cd879be9cb4c68' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Collections/functions.php',
@@ -42,10 +42,10 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
         '9720327d09ed9a4ba00c9b5071b71c7d' => __DIR__ . '/..' . '/danharrin/date-format-converter/src/standards.php',
         '2ad94ea6f6f6013119e9abcf4e302a08' => __DIR__ . '/..' . '/filament/forms/src/helpers.php',
         'b69d5f1f95cd1ed438c038b6cbcc45b5' => __DIR__ . '/..' . '/filament/notifications/src/Testing/Autoload.php',
-        '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
-        '801c31d8ed748cfa537fa45402288c95' => __DIR__ . '/..' . '/psy/psysh/src/functions.php',
         '89e9938b64b06cc502d7ceca69a380fe' => __DIR__ . '/..' . '/filament/filament/src/global_helpers.php',
         'ebb446bb6d02e998480945fbbb73dc64' => __DIR__ . '/..' . '/filament/filament/src/helpers.php',
+        '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
+        '801c31d8ed748cfa537fa45402288c95' => __DIR__ . '/..' . '/psy/psysh/src/functions.php',
         'c72349b1fe8d0deeedd3a52e8aa814d8' => __DIR__ . '/..' . '/mockery/mockery/library/helpers.php',
         'ce9671a430e4846b44e1c68c7611f9f5' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery.php',
         'a1cfe24d14977df6878b9bf804af2d1c' => __DIR__ . '/..' . '/nunomaduro/collision/src/Adapters/Phpunit/Autoload.php',
@@ -101,12 +101,15 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
             'Symfony\\Component\\Clock\\' => 24,
             'Spatie\\LaravelPackageTools\\' => 27,
             'Spatie\\Invade\\' => 14,
+            'Spatie\\EloquentSortable\\' => 24,
             'Spatie\\Color\\' => 13,
         ),
         'R' => 
         array (
             'RyanChandler\\BladeCaptureDirective\\Database\\Factories\\' => 54,
             'RyanChandler\\BladeCaptureDirective\\' => 35,
+            'Relaticle\\Flowforge\\Database\\Factories\\' => 39,
+            'Relaticle\\Flowforge\\' => 20,
             'Ramsey\\Uuid\\' => 12,
             'Ramsey\\Collection\\' => 18,
         ),
@@ -135,6 +138,8 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
         'M' => 
         array (
             'Monolog\\' => 8,
+            'Mokhosh\\FilamentKanban\\Database\\Factories\\' => 42,
+            'Mokhosh\\FilamentKanban\\' => 23,
             'Mockery\\' => 8,
             'Masterminds\\' => 12,
         ),
@@ -370,6 +375,10 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
         array (
             0 => __DIR__ . '/..' . '/spatie/invade/src',
         ),
+        'Spatie\\EloquentSortable\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/spatie/eloquent-sortable/src',
+        ),
         'Spatie\\Color\\' => 
         array (
             0 => __DIR__ . '/..' . '/spatie/color/src',
@@ -381,6 +390,14 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
         'RyanChandler\\BladeCaptureDirective\\' => 
         array (
             0 => __DIR__ . '/..' . '/ryangjchandler/blade-capture-directive/src',
+        ),
+        'Relaticle\\Flowforge\\Database\\Factories\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/relaticle/flowforge/database/factories',
+        ),
+        'Relaticle\\Flowforge\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/relaticle/flowforge/src',
         ),
         'Ramsey\\Uuid\\' => 
         array (
@@ -446,6 +463,14 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
         'Monolog\\' => 
         array (
             0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
+        ),
+        'Mokhosh\\FilamentKanban\\Database\\Factories\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/mokhosh/filament-kanban/database/factories',
+        ),
+        'Mokhosh\\FilamentKanban\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/mokhosh/filament-kanban/src',
         ),
         'Mockery\\' => 
         array (
@@ -674,6 +699,8 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
         'AnourValar\\EloquentSerialize\\Grammars\\QueryBuilderGrammar' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Grammars/QueryBuilderGrammar.php',
         'AnourValar\\EloquentSerialize\\Package' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Package.php',
         'AnourValar\\EloquentSerialize\\Service' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Service.php',
+        'App\\Enums\\RecipienteEnum' => __DIR__ . '/../..' . '/app/Enums/RecipienteEnum.php',
+        'App\\Filament\\Pages\\DetalleOrdenKanban' => __DIR__ . '/../..' . '/app/Filament/Pages/DetalleOrdenKanban.php',
         'App\\Filament\\Resources\\ClientesResource' => __DIR__ . '/../..' . '/app/Filament/Resources/ClientesResource.php',
         'App\\Filament\\Resources\\ClientesResource\\Pages\\CreateClientes' => __DIR__ . '/../..' . '/app/Filament/Resources/ClientesResource/Pages/CreateClientes.php',
         'App\\Filament\\Resources\\ClientesResource\\Pages\\EditClientes' => __DIR__ . '/../..' . '/app/Filament/Resources/ClientesResource/Pages/EditClientes.php',
@@ -682,6 +709,11 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
         'App\\Filament\\Resources\\ExamenResource\\Pages\\CreateExamen' => __DIR__ . '/../..' . '/app/Filament/Resources/ExamenResource/Pages/CreateExamen.php',
         'App\\Filament\\Resources\\ExamenResource\\Pages\\EditExamen' => __DIR__ . '/../..' . '/app/Filament/Resources/ExamenResource/Pages/EditExamen.php',
         'App\\Filament\\Resources\\ExamenResource\\Pages\\ListExamens' => __DIR__ . '/../..' . '/app/Filament/Resources/ExamenResource/Pages/ListExamens.php',
+        'App\\Filament\\Resources\\ExamenResource\\Pages\\ViewExamen' => __DIR__ . '/../..' . '/app/Filament/Resources/ExamenResource/Pages/ViewExamen.php',
+        'App\\Filament\\Resources\\OrdenResource' => __DIR__ . '/../..' . '/app/Filament/Resources/OrdenResource.php',
+        'App\\Filament\\Resources\\OrdenResource\\Pages\\CreateOrden' => __DIR__ . '/../..' . '/app/Filament/Resources/OrdenResource/Pages/CreateOrden.php',
+        'App\\Filament\\Resources\\OrdenResource\\Pages\\EditOrden' => __DIR__ . '/../..' . '/app/Filament/Resources/OrdenResource/Pages/EditOrden.php',
+        'App\\Filament\\Resources\\OrdenResource\\Pages\\ListOrdens' => __DIR__ . '/../..' . '/app/Filament/Resources/OrdenResource/Pages/ListOrdens.php',
         'App\\Filament\\Resources\\PerfilResource' => __DIR__ . '/../..' . '/app/Filament/Resources/PerfilResource.php',
         'App\\Filament\\Resources\\PerfilResource\\Pages\\CreatePerfil' => __DIR__ . '/../..' . '/app/Filament/Resources/PerfilResource/Pages/CreatePerfil.php',
         'App\\Filament\\Resources\\PerfilResource\\Pages\\EditPerfil' => __DIR__ . '/../..' . '/app/Filament/Resources/PerfilResource/Pages/EditPerfil.php',
@@ -691,7 +723,12 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
         'App\\Filament\\Resources\\TipoExamenResource\\Pages\\EditTipoExamen' => __DIR__ . '/../..' . '/app/Filament/Resources/TipoExamenResource/Pages/EditTipoExamen.php',
         'App\\Filament\\Resources\\TipoExamenResource\\Pages\\ListTipoExamens' => __DIR__ . '/../..' . '/app/Filament/Resources/TipoExamenResource/Pages/ListTipoExamens.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
+        'App\\Livewire\\ExamenDragDrop' => __DIR__ . '/../..' . '/app/Livewire/ExamenDragDrop.php',
+        'App\\Models\\DetalleOrden' => __DIR__ . '/../..' . '/app/Models/DetalleOrden.php',
+        'App\\Models\\DetalleOrdenPerfil' => __DIR__ . '/../..' . '/app/Models/DetalleOrdenPerfil.php',
+        'App\\Models\\DetallePerfil' => __DIR__ . '/../..' . '/app/Models/DetallePerfil.php',
         'App\\Models\\Examen' => __DIR__ . '/../..' . '/app/Models/Examen.php',
+        'App\\Models\\Orden' => __DIR__ . '/../..' . '/app/Models/Orden.php',
         'App\\Models\\Perfil' => __DIR__ . '/../..' . '/app/Models/Perfil.php',
         'App\\Models\\TipoExamen' => __DIR__ . '/../..' . '/app/Models/TipoExamen.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
@@ -5214,6 +5251,15 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
         'Mockery\\Undefined' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/Undefined.php',
         'Mockery\\VerificationDirector' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/VerificationDirector.php',
         'Mockery\\VerificationExpectation' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/VerificationExpectation.php',
+        'Mokhosh\\FilamentKanban\\Commands\\MakeKanbanBoardCommand' => __DIR__ . '/..' . '/mokhosh/filament-kanban/src/Commands/MakeKanbanBoardCommand.php',
+        'Mokhosh\\FilamentKanban\\Concerns\\HasEditRecordModal' => __DIR__ . '/..' . '/mokhosh/filament-kanban/src/Concerns/HasEditRecordModal.php',
+        'Mokhosh\\FilamentKanban\\Concerns\\HasRecentUpdateIndication' => __DIR__ . '/..' . '/mokhosh/filament-kanban/src/Concerns/HasRecentUpdateIndication.php',
+        'Mokhosh\\FilamentKanban\\Concerns\\HasStatusChange' => __DIR__ . '/..' . '/mokhosh/filament-kanban/src/Concerns/HasStatusChange.php',
+        'Mokhosh\\FilamentKanban\\Concerns\\IsKanbanStatus' => __DIR__ . '/..' . '/mokhosh/filament-kanban/src/Concerns/IsKanbanStatus.php',
+        'Mokhosh\\FilamentKanban\\FilamentKanbanPlugin' => __DIR__ . '/..' . '/mokhosh/filament-kanban/src/FilamentKanbanPlugin.php',
+        'Mokhosh\\FilamentKanban\\FilamentKanbanServiceProvider' => __DIR__ . '/..' . '/mokhosh/filament-kanban/src/FilamentKanbanServiceProvider.php',
+        'Mokhosh\\FilamentKanban\\Pages\\KanbanBoard' => __DIR__ . '/..' . '/mokhosh/filament-kanban/src/Pages/KanbanBoard.php',
+        'Mokhosh\\FilamentKanban\\Testing\\TestsFilamentKanban' => __DIR__ . '/..' . '/mokhosh/filament-kanban/src/Testing/TestsFilamentKanban.php',
         'Monolog\\Attribute\\AsMonologProcessor' => __DIR__ . '/..' . '/monolog/monolog/src/Monolog/Attribute/AsMonologProcessor.php',
         'Monolog\\Attribute\\WithMonologChannel' => __DIR__ . '/..' . '/monolog/monolog/src/Monolog/Attribute/WithMonologChannel.php',
         'Monolog\\DateTimeImmutable' => __DIR__ . '/..' . '/monolog/monolog/src/Monolog/DateTimeImmutable.php',
@@ -7237,6 +7283,23 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
         'Ramsey\\Uuid\\UuidInterface' => __DIR__ . '/..' . '/ramsey/uuid/src/UuidInterface.php',
         'Ramsey\\Uuid\\Validator\\GenericValidator' => __DIR__ . '/..' . '/ramsey/uuid/src/Validator/GenericValidator.php',
         'Ramsey\\Uuid\\Validator\\ValidatorInterface' => __DIR__ . '/..' . '/ramsey/uuid/src/Validator/ValidatorInterface.php',
+        'Relaticle\\Flowforge\\Adapters\\DefaultKanbanAdapter' => __DIR__ . '/..' . '/relaticle/flowforge/src/Adapters/DefaultKanbanAdapter.php',
+        'Relaticle\\Flowforge\\Commands\\MakeKanbanBoardCommand' => __DIR__ . '/..' . '/relaticle/flowforge/src/Commands/MakeKanbanBoardCommand.php',
+        'Relaticle\\Flowforge\\Concerns\\CardFormattingTrait' => __DIR__ . '/..' . '/relaticle/flowforge/src/Concerns/CardFormattingTrait.php',
+        'Relaticle\\Flowforge\\Concerns\\CrudOperationsTrait' => __DIR__ . '/..' . '/relaticle/flowforge/src/Concerns/CrudOperationsTrait.php',
+        'Relaticle\\Flowforge\\Concerns\\QueryHandlingTrait' => __DIR__ . '/..' . '/relaticle/flowforge/src/Concerns/QueryHandlingTrait.php',
+        'Relaticle\\Flowforge\\Config\\KanbanConfig' => __DIR__ . '/..' . '/relaticle/flowforge/src/Config/KanbanConfig.php',
+        'Relaticle\\Flowforge\\Contracts\\KanbanAdapterInterface' => __DIR__ . '/..' . '/relaticle/flowforge/src/Contracts/KanbanAdapterInterface.php',
+        'Relaticle\\Flowforge\\Contracts\\KanbanBoardPageInterface' => __DIR__ . '/..' . '/relaticle/flowforge/src/Contracts/KanbanBoardPageInterface.php',
+        'Relaticle\\Flowforge\\Enums\\KanbanColor' => __DIR__ . '/..' . '/relaticle/flowforge/src/Enums/KanbanColor.php',
+        'Relaticle\\Flowforge\\Facades\\Flowforge' => __DIR__ . '/..' . '/relaticle/flowforge/src/Facades/Flowforge.php',
+        'Relaticle\\Flowforge\\Filament\\Pages\\KanbanBoardPage' => __DIR__ . '/..' . '/relaticle/flowforge/src/Filament/Pages/KanbanBoardPage.php',
+        'Relaticle\\Flowforge\\Flowforge' => __DIR__ . '/..' . '/relaticle/flowforge/src/Flowforge.php',
+        'Relaticle\\Flowforge\\FlowforgePlugin' => __DIR__ . '/..' . '/relaticle/flowforge/src/FlowforgePlugin.php',
+        'Relaticle\\Flowforge\\FlowforgeServiceProvider' => __DIR__ . '/..' . '/relaticle/flowforge/src/FlowforgeServiceProvider.php',
+        'Relaticle\\Flowforge\\Livewire\\KanbanBoard' => __DIR__ . '/..' . '/relaticle/flowforge/src/Livewire/KanbanBoard.php',
+        'Relaticle\\Flowforge\\Providers\\FlowforgeServiceProvider' => __DIR__ . '/..' . '/relaticle/flowforge/src/Providers/FlowforgeServiceProvider.php',
+        'Relaticle\\Flowforge\\Support\\EloquentSerializer' => __DIR__ . '/..' . '/relaticle/flowforge/src/Support/EloquentSerializer.php',
         'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirective' => __DIR__ . '/..' . '/ryangjchandler/blade-capture-directive/src/BladeCaptureDirective.php',
         'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider' => __DIR__ . '/..' . '/ryangjchandler/blade-capture-directive/src/BladeCaptureDirectiveServiceProvider.php',
         'SQLite3Exception' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/SQLite3Exception.php',
@@ -7464,6 +7527,10 @@ class ComposerStaticInitcd30cfa08f1daa879461c3971c153164
         'Spatie\\Color\\Rgba' => __DIR__ . '/..' . '/spatie/color/src/Rgba.php',
         'Spatie\\Color\\Validate' => __DIR__ . '/..' . '/spatie/color/src/Validate.php',
         'Spatie\\Color\\Xyz' => __DIR__ . '/..' . '/spatie/color/src/Xyz.php',
+        'Spatie\\EloquentSortable\\EloquentModelSortedEvent' => __DIR__ . '/..' . '/spatie/eloquent-sortable/src/EloquentModelSortedEvent.php',
+        'Spatie\\EloquentSortable\\EloquentSortableServiceProvider' => __DIR__ . '/..' . '/spatie/eloquent-sortable/src/EloquentSortableServiceProvider.php',
+        'Spatie\\EloquentSortable\\Sortable' => __DIR__ . '/..' . '/spatie/eloquent-sortable/src/Sortable.php',
+        'Spatie\\EloquentSortable\\SortableTrait' => __DIR__ . '/..' . '/spatie/eloquent-sortable/src/SortableTrait.php',
         'Spatie\\Invade\\Invader' => __DIR__ . '/..' . '/spatie/invade/src/Invader.php',
         'Spatie\\Invade\\StaticInvader' => __DIR__ . '/..' . '/spatie/invade/src/StaticInvader.php',
         'Spatie\\LaravelPackageTools\\Commands\\InstallCommand' => __DIR__ . '/..' . '/spatie/laravel-package-tools/src/Commands/InstallCommand.php',

@@ -24,23 +24,12 @@ class Orden extends Model
         return $this->belongsTo(Cliente::class);
     }
 
-    public function examenes()
+
+
+        public function detalleOrden()
     {
-        return $this->belongsToMany(Examen::class, 'detalle_orden_examens');
-    }
-    public function perfiles()
-    {
-        return $this->belongsToMany(Perfil::class, 'detalle_orden_perfils');
+        return $this->hasMany(DetalleOrden::class);
     }
 
-        public function detalleOrdenExamens()
-    {
-        return $this->hasMany(DetalleOrdenExamen::class);
-    }
-
-    public function detalleOrdenPerfils()
-    {
-        return $this->hasMany(DetalleOrdenPerfil::class);
-    }
 
 }

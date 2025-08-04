@@ -91,13 +91,13 @@ class DatabaseSeeder extends Seeder
 
         // Insertar exámenes de Bacteriología (ordenados alfabéticamente)
         $examenes = [
-            ['nombre' => 'Baciloscopia-BAAR', 'precio' => 10],
-            ['nombre' => 'Coloración de Gram', 'precio' => 10],
-            ['nombre' => 'Coprocultivo', 'precio' => 12],
-            ['nombre' => 'Cultivo de hongos', 'precio' => 20],
-            ['nombre' => 'Cultivo de secreciones', 'precio' => 15],
-            ['nombre' => 'Directo KOH', 'precio' => 15],
-            ['nombre' => 'Urocultivo', 'precio' => 10],
+            ['nombre' => 'Baciloscopia-BAAR', 'precio' => 10, 'recipiente' => 'rojo'],
+            ['nombre' => 'Coloración de Gram', 'precio' => 10,'recipiente' => 'lila'],
+            ['nombre' => 'Coprocultivo', 'precio' => 12, 'recipiente' => 'celeste'],
+            ['nombre' => 'Cultivo de hongos', 'precio' => 20, 'recipiente' => 'amarillo'],
+            ['nombre' => 'Cultivo de secreciones', 'precio' => 15, 'recipiente' => 'verde'],
+            ['nombre' => 'Directo KOH', 'precio' => 15, 'recipiente' => 'azul'],
+            ['nombre' => 'Urocultivo', 'precio' => 10, 'recipiente' => 'rojo'],
         ];
 
         foreach ($examenes as $examen) {
@@ -106,6 +106,7 @@ class DatabaseSeeder extends Seeder
                 'tipo_examen_id' => $tipo->id,
             ], [
                 'precio' => $examen['precio'],
+                'recipiente' => $examen['recipiente'],
                 'estado' => true,
             ]);
         }

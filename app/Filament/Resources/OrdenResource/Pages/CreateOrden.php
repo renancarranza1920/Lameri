@@ -3,6 +3,9 @@
 namespace App\Filament\Resources\OrdenResource\Pages;
 
 use App\Filament\Resources\OrdenResource;
+use Illuminate\Support\Facades\DB;
+use Throwable;
+use App\Models\Perfil;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Support\Exceptions\Halt;
@@ -12,6 +15,64 @@ use Illuminate\Support\Facades\Log;
 class CreateOrden extends CreateRecord
 {
     protected static string $resource = OrdenResource::class;
+
+
+protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
+{
+    return DB::transaction(function () use ($data) {
+        $orden = static::getModel()::create($data);
+        $this->record = $orden;
+
+        
+        $state = $this->form->getState();
+        $perfiles = $state['perfiles_seleccionados'] ?? [];
+        $examenes = $state['examenes_seleccionados'] ?? [];
+
+        foreach ($perfiles as $perfil) {
+            $examenesPerfil = [];
+            $precioPerfil = $perfil['precio_hidden'];
+            $nombrePerfil = Perfil::find($perfil['perfil_id'])?->nombre ?? 'Perfil desconocido';
+
+            Perfil::find($perfil['perfil_id'])?->examenes->each(function ($examen) use (&$examenesPerfil, $precioPerfil, $nombrePerfil) {
+                $examenesPerfil[] = [
+                    'examen_id' => $examen->id,
+                    'nombre_examen' => $examen->nombre,
+                    'precio_examen' => $examen->precio,
+                    'perfil_id' => $examen->pivot->perfil_id,
+                    'recipiente' => $examen->recipiente,
+                    'nombre_perfil' => $nombrePerfil,
+                    'precio_perfil' => $precioPerfil,
+                ];
+            });
+
+            foreach ($examenesPerfil as $examenp) {
+                $orden->detalleOrden()->create([
+                    'examen_id' => $examenp['examen_id'],
+                    'perfil_id' => $examenp['perfil_id'],
+                    'nombre_perfil' => $examenp['nombre_perfil'] ?? null,
+                    'precio_perfil' => $examenp['precio_perfil'] ?? null,
+                    'nombre_examen' => $examenp['nombre_examen'],
+                    'precio_examen' => $examenp['precio_examen'],
+                    'status' => $examenp['recipiente'] ?? null,
+                ]);
+                Log::info("✅ Examen del perfil guardado: {$examenp['examen_id']} para perfil {$perfil['perfil_id']}");
+            }
+        }
+       
+        foreach ($examenes as $examen) {
+            $orden->detalleOrden()->create([
+                'examen_id' => $examen['examen_id'],
+                'nombre_examen' => $examen['nombre_examen'],
+                'precio_examen' => $examen['precio_hidden'] ,
+                'status' => $examen['recipiente'] ?? null
+            ]);
+            Log::info("✅ Examen guardado: {$examen['examen_id']}");
+        }
+
+        return $orden;
+    });
+}
+
 
       protected function beforeCreate(): void
     {
@@ -73,32 +134,7 @@ class CreateOrden extends CreateRecord
         return $data;
     }
 
-    protected function afterCreate(): void
-{
-    $state = $this->form->getState();
-    $orden = $this->record;
 
-    $perfiles = $state['perfiles_seleccionados'] ?? [];
-    $examenes = $state['examenes_seleccionados'] ?? [];
 
-   
-    foreach ($perfiles as $perfil) {
-        $orden->detalleOrdenPerfils()->create([
-            'perfil_id' => $perfil['perfil_id'],
-        ]);
-        Log::info("✅ Perfil guardado: {$perfil['perfil_id']}");
-    }
 
-    foreach ($examenes as $examen) {
-        $orden->detalleOrdenExamens()->create([
-            'examen_id' => $examen['examen_id'],
-        ]);
-        Log::info("✅ Examen guardado: {$examen['examen_id']}");
-    }
-}
-
-    protected function getRedirectUrl(): string
-    {
-        return $this->getResource()::getUrl('index');
-    }
 }
