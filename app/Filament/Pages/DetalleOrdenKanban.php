@@ -4,16 +4,18 @@ namespace App\Filament\Pages;
 
 use App\Enums\RecipienteEnum;
 use App\Models\DetalleOrden;
+use App\Services\ZebraLabelService;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Builder;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
+
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
 use App\Models\Orden;
 use Livewire\Attributes\Url;
 
 use Illuminate\Support\Collection;
 use Log;
 use Mokhosh\FilamentKanban\Pages\KanbanBoard;
+use Notification;
 use Str;
 
 class DetalleOrdenKanban extends KanbanBoard
@@ -95,5 +97,45 @@ protected function getGridColumns(): string
         }
     }
 
+protected function getHeaderActions(): array
+{
+    return [
+        Action::make('Generar ZPL')
+            ->label('Generar Etiquetas ZPL')
+            ->icon('heroicon-o-printer')
+            ->color('warning')
+            ->action(function () {
+                if (!$this->ordenId) {
+                    Notification::make()
+                        ->title('Orden no encontrada.')
+                        ->danger()
+                        ->send();
+                    return null;
+                }
+
+                $detalles = DetalleOrden::with('orden.cliente')
+                    ->where('orden_id', $this->ordenId)
+                    ->get();
+
+                if ($detalles->isEmpty()) {
+                    Notification::make()
+                        ->title('No hay detalles para generar ZPL.')
+                        ->warning()
+                        ->send();
+                    return null;
+                }
+
+                $service = new ZebraLabelService();
+                $zpl = $service->generarZplMultiple($detalles);
+
+                return new StreamedResponse(function () use ($zpl) {
+                    echo $zpl;
+                }, 200, [
+                    'Content-Type' => 'text/plain',
+                    'Content-Disposition' => 'attachment; filename="etiquetas.zpl"',
+                ]);
+            }),
+    ];
+}
     
 }

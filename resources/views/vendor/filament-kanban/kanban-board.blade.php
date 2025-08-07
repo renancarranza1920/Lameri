@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    {{-- Contenedor principal con grid responsive --}}
+
     <div 
         x-data 
         wire:ignore.self 

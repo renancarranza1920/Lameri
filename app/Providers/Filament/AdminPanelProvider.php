@@ -42,6 +42,7 @@ class AdminPanelProvider extends PanelProvider
         ]);
         $panel->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources');
         $panel->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages');
+        
         $panel->pages([
             Pages\Dashboard::class,
             'detalle-orden-kanban' => DetalleOrdenKanban::class,
