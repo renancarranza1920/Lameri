@@ -33,13 +33,23 @@ class AdminPanelProvider extends PanelProvider
         $panel->path('admin');
         $panel->login();
         $panel->favicon('storage/iconlab.png');
-        $panel->colors([
-            'primary' => '#1E73BE',
-            'secondary' => '#F6A623',
-            'success' => '#8BC34A',
-            'dark' => '#333333',
-            'accent' => '#FFFFFF'
-        ]);
+      $panel->colors([
+    'primary'   => '#1E73BE', // Azul base
+    'primary-light' => '#3A8FD1', // Azul más claro
+    'primary-dark'  => '#155A92', // Azul más oscuro
+
+    'secondary' => '#F6A623', // Naranja base
+    'secondary-light' => '#F9BC49', // Naranja más claro
+    'secondary-dark'  => '#C6861A', // Naranja más oscuro
+
+    'success'   => '#8BC34A', // Verde base
+    'success-light' => '#A6D36A', // Verde más claro
+    'success-dark'  => '#6B9B35', // Verde más oscuro
+
+    'dark'      => '#333333',
+    'accent'    => '#FFFFFF',
+    'danger'    => '#FF3B30',
+]);
         $panel->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources');
         $panel->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages');
         
