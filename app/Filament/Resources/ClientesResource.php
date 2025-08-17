@@ -35,7 +35,7 @@ class ClientesResource extends Resource
                     ->required()
                     ->placeholder('dd/mm/aaaa')
                     ->maxDate(now()->subYears(5)),
-                    
+
 
                 Forms\Components\TextInput::make('telefono')
                     ->maxLength(9),
@@ -64,32 +64,32 @@ class ClientesResource extends Resource
 
                 Tables\Columns\TextColumn::make('nombre_completo')
                     ->label('Nombre')
-                    ->getStateUsing(fn ($record) => $record->nombre . ' ' . $record->apellido)
+                    ->getStateUsing(fn($record) => $record->nombre . ' ' . $record->apellido)
                     ->sortable(['nombre', 'apellido'])
                     ->searchable(['nombre', 'apellido']),
 
                 Tables\Columns\TextColumn::make('fecha_nacimiento')
                     ->label('Edad')
-                    ->getStateUsing(fn ($record) => $record->fecha_nacimiento ? \Carbon\Carbon::parse($record->fecha_nacimiento)->age : '-')
+                    ->getStateUsing(fn($record) => $record->fecha_nacimiento ? \Carbon\Carbon::parse($record->fecha_nacimiento)->age : '-')
                     ->sortable()
                     ->searchable()
-                    ->formatStateUsing(fn ($state) => $state . ' años'),
+                    ->formatStateUsing(fn($state) => $state . ' años'),
 
                 Tables\Columns\TextColumn::make('telefono')
                     ->label('Teléfono')
-                    ->getStateUsing(fn ($record) => $record->telefono ?? '-')
+                    ->getStateUsing(fn($record) => $record->telefono ?? '-')
                     ->sortable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('correo')
                     ->label('Correo')
-                    ->getStateUsing(fn ($record) => $record->correo ?? '-')
+                    ->getStateUsing(fn($record) => $record->correo ?? '-')
                     ->sortable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('direccion')
                     ->label('Dirección')
-                    ->getStateUsing(fn ($record) => $record->direccion ?? '-')
+                    ->getStateUsing(fn($record) => $record->direccion ?? '-')
                     ->sortable()
                     ->searchable(),
 
@@ -107,28 +107,27 @@ class ClientesResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make() 
-                    ->icon('heroicon-o-pencil')
+                Tables\Actions\EditAction::make()
                     ->color('primary'),
-                    
+
                 //accion para activar y desactivar al cliente
-                 Tables\Actions\Action::make('toggleEstado')
-                ->label(fn ($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
-                ->icon(fn ($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
-                ->color(fn ($record) => $record->estado ? 'danger' : 'success')
-                ->tooltip(fn ($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
-                ->action(function ($record) {
-                    $record->estado = $record->estado ? 0 : 1;
-                    $record->save();
-            
-                    Notification::make()
-                        ->title('Estado actualizado')
-                        ->body('El cliente fue ' . ($record->estado ? 'activado' : 'dado de baja') . ' correctamente.')
-                        ->success()
-                        ->send();
-                })
-                ->requiresConfirmation()
-                ->iconButton(),
+                Tables\Actions\Action::make('toggleEstado')
+                    ->label(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
+                    ->icon(fn($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->color(fn($record) => $record->estado ? 'danger' : 'success')
+                    ->tooltip(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
+                    ->action(function ($record) {
+                        $record->estado = $record->estado ? 0 : 1;
+                        $record->save();
+
+                        Notification::make()
+                            ->title('Estado actualizado')
+                            ->body('El cliente fue ' . ($record->estado ? 'activado' : 'dado de baja') . ' correctamente.')
+                            ->success()
+                            ->send();
+                    })
+                    ->requiresConfirmation()
+                    ->iconButton(),
             ])
             ->bulkActions([
                 // Puedes agregar acciones masivas si quieres

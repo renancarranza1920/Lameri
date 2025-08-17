@@ -4,14 +4,12 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ExamenResource\Pages;
 use App\Models\Examen;
+use App\Models\TipoExamen;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\IconEntry;
 use Filament\Notifications\Notification;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\SelectFilter;
@@ -44,6 +42,19 @@ class ExamenResource extends Resource
                             ->required()
                             ->reactive()
                             ->maxLength(255),
+
+                        Forms\Components\Select::make('recipiente')
+                            ->label('Recipiente')
+                            ->options([
+                                'rojo' => 'Rojo',
+                                'celeste' => 'Celeste',
+                                'morado' => 'Morado',
+                                'orina' => 'Orina',
+                                'heces' => 'Heces',
+                                'hisopado' => 'Hisopado',
+                            ])
+                            ->required()
+                            ->searchable(),
 
                         Forms\Components\TextInput::make('precio')
                             ->label('Precio')
@@ -87,12 +98,8 @@ class ExamenResource extends Resource
 
                 Tables\Columns\TextColumn::make('estado')
                     ->label('Estado')
-                    ->formatStateUsing(function ($state) {
-                        return $state
-                            ? '✅ Activo'
-                            : '❌ Inactivo';
-                    })
-                    ->badge() // opcional para que se vea como etiqueta
+                    ->formatStateUsing(fn($state) => $state ? '✅ Activo' : '❌ Inactivo')
+                    ->badge()
                     ->color(fn($state) => $state ? 'success' : 'danger'),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -119,7 +126,34 @@ class ExamenResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make(),
+
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading('Detalle del Examen')
+                    ->modalWidth('lg')
+                    ->form([
+                        Forms\Components\TextInput::make('nombre')
+                            ->label('Nombre del Examen')
+                            ->disabled(),
+
+                        Forms\Components\Select::make('tipo_examen_id')
+                            ->label('Tipo de Examen')
+                            ->options(TipoExamen::pluck('nombre', 'id'))
+                            ->disabled(),
+
+                        Forms\Components\TextInput::make('recipiente')
+                            ->label('Recipiente')
+                            ->disabled(),
+
+                        Forms\Components\TextInput::make('precio')
+                            ->label('Precio')
+                            ->prefix('$')
+                            ->disabled(),
+
+                        Forms\Components\Toggle::make('estado')
+                            ->label('Estado')
+                            ->disabled()
+                            ->formatStateUsing(fn($state) => $state ? 'Activo' : 'Inactivo'),
+                    ]),
 
                 Action::make('cambiar_estado')
                     ->label(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
@@ -157,29 +191,6 @@ class ExamenResource extends Resource
             'index' => Pages\ListExamens::route('/'),
             'create' => Pages\CreateExamen::route('/create'),
             'edit' => Pages\EditExamen::route('/{record}/edit'),
-            'view' => Pages\ViewExamen::route('/{record}'),
         ];
-    }
-
-    public static function infolist(Infolist $infolist): Infolist
-    {
-        return $infolist->schema([
-            TextEntry::make('nombre')
-                ->label('Nombre del Examen'),
-
-            TextEntry::make('precio')
-                ->label('Precio')
-                ->money('USD')
-                ->color('success')
-                ->extraAttributes(['class' => 'text-lg font-bold']),
-
-            IconEntry::make('estado')
-                ->label('Estado')
-                ->boolean(),
-
-            TextEntry::make('tipo_examen')
-                ->label('Tipo de Examen')
-                ->getStateUsing(fn($record) => $record->tipoExamen->nombre ?? 'Sin tipo'),
-        ]);
     }
 }

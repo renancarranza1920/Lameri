@@ -10,11 +10,12 @@ enum RecipienteEnum: string
     use IsKanbanStatus;
 
     case rojo = 'rojo';
-    case lila = 'lila';
     case celeste = 'celeste';
-    case amarillo = 'amarillo';
-    case verde = 'verde';
-    case azul = 'azul';
+    case morado = 'morado';
+    case orina = 'orina';
+    case heces = 'heces';
+    case hisopado = 'hisopado';
+    case extra = 'extra';
    
     
    public function getTitle(): string
