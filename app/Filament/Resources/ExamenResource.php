@@ -191,7 +191,6 @@ class ExamenResource extends Resource
             'index' => Pages\ListExamens::route('/'),
             'create' => Pages\CreateExamen::route('/create'),
             'edit' => Pages\EditExamen::route('/{record}/edit'),
-            'view' => Pages\ViewExamen::route('/{record}'),
         ];
     }
 }
