@@ -3,50 +3,125 @@
 namespace App\Services;
 
 use App\Models\DetalleOrden;
+use Log;
 
 class ZebraLabelService
 {
+    public function generarZplMultiple($detalles): string
+    {
+        Log::info('Generando etiquetas ZPL agrupadas por color.');
+
+        // Agrupar por color (recipiente)
+        $agrupados = $detalles->groupBy(function ($detalle) {
+            return $detalle->status ?? 'Sin color';
+        });
+
+        Log::info('Agrupados por color:', $agrupados->toArray());
+
+        // Generar etiquetas por cada color y sus detalles
+        return $agrupados->map(function ($items, $color) {
+            return $this->generarZplPorColor($color, $items);
+        })->implode("\n\n");
+    }
 public function generarZpl(DetalleOrden $detalle): string
 {
-    $logoGrf = file_get_contents(storage_path('app/public/logo.grf')); // asegúrate de que exista
     $examen = strtoupper(substr($detalle->nombre_examen, 0, 30));
     $paciente = strtoupper(substr($detalle->orden->cliente->nombre ?? 'PACIENTE', 0, 30));
+        // Fecha actual en formato dd/mm/yyyy
+        $fecha = date('d/m/Y');
     $recipiente = strtoupper(substr($detalle->status, 0, 30));
     $ordenId = $detalle->orden->id;
 
-    return "$logoGrf
-
+    return "
 ^XA
-^CF0,30
-^FO30,20^GB720,380,2^FS
+^PW400
+^LL200
 
-^FO580,30^XGE:LOGO.GRF,1,1^FS
+^FO5,5^GB390,190,2^FS
 
-^FO50,40^ADN,30,20^FDLABORATORIO CLÍNICO^FS
-^FO50,80^ADN,28,14^FDExamen:^FS
-^FO180,80^ADN,28,14^FD$examen^FS
+^FO20,20^ADN,18,10^FDLABORATORIO CLINICO MERINO^FS
 
-^FO50,120^ADN,28,14^FDPaciente:^FS
-^FO180,120^ADN,28,14^FD$paciente^FS
+^FO20,50^ADN,14,7^FDPaciente:^FS
+^FO130,50^ADN,14,7^FD{$paciente}^FS
 
-^FO50,160^ADN,28,14^FDRecipiente:^FS
-^FO180,160^ADN,28,14^FD$recipiente^FS
+^FO20,70^ADN,14,7^FDRecipiente:^FS
+^FO155,70^ADN,14,7^FD{$recipiente}^FS
 
-^FO50,210^ADN,28,14^FDOrden ID:^FS
-^FO180,210^ADN,28,14^FD$ordenId^FS
+^FO360,40^ADR,8,4^FD{$fecha}^FS
 
-^BY2,2,60
-^FO180,260^BCN,60,Y,N,N
-^FD$ordenId^FS
+^FO030,100^ADN,8,4^FD-{$examen}^FS
 
-^XZ";
+^XZ\n\n";
+
+
 }
 
 
 
 
-    public function generarZplMultiple($detalles): string
+
+
+
+    private function generarZplPorColor($color, $items): string
     {
-        return $detalles->map(fn($d) => $this->generarZpl($d))->implode("\n\n");
+        // === Paciente (primer nombre + primer apellido) ===
+        $nombre = $items->first()->orden->cliente->nombre ?? 'PACIENTE';
+        $apellido = $items->first()->orden->cliente->apellido ?? '';
+
+        $tokensNombre = preg_split('/\s+/', trim($nombre));
+        $primerNombre = $tokensNombre[0] ?? '';
+
+        $tokensApellido = preg_split('/\s+/', trim($apellido));
+        $primerApellido = $tokensApellido[0] ?? '';
+
+        $paciente = strtoupper(trim($primerNombre . ' ' . $primerApellido));
+
+        // Recipiente (color)
+        $recipiente = strtoupper(substr($color, 0, 12));
+
+        // Fecha actual en formato dd/mm/yyyy
+        $fecha = date('d/m/Y');
+
+        // === Agrupar exámenes en bloques de 4 ===
+        $bloques = $items->chunk(4);
+
+        $zpl = '';
+
+        foreach ($bloques as $bloque) {
+            $examenLines = '';
+            $startY = 100;   // inicio fijo debajo del encabezado y fecha
+            $lineHeight = 25;
+            $posX = 30;
+
+            foreach ($bloque->values() as $index => $detalle) {
+                $examen = strtoupper(substr($detalle->nombre_examen, 0, 25));
+                $posY = $startY + ($lineHeight * $index);
+                // 📌 fuente más pequeña
+                $examenLines .= "^FO{$posX},{$posY}^ADN,8,4^FD-{$examen}^FS\n";
+            }
+
+            // Plantilla fija de la etiqueta
+            $zpl .= "^XA
+^PW400
+^LL200
+
+^FO5,5^GB390,190,2^FS
+
+^FO20,20^ADN,18,10^FDLABORATORIO CLINICO MERINO^FS
+
+^FO20,50^ADN,14,7^FDPaciente:^FS
+^FO130,50^ADN,14,7^FD{$paciente}^FS
+
+^FO20,70^ADN,14,7^FDRecipiente:^FS
+^FO155,70^ADN,14,7^FD{$recipiente}^FS
+
+^FO360,40^ADR,8,4^FD{$fecha}^FS
+
+{$examenLines}
+
+^XZ\n\n";
+        }
+
+        return $zpl;
     }
 }

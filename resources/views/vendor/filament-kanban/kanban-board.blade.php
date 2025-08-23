@@ -9,11 +9,25 @@
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4  px-3">
          
              @foreach($statuses as $status)
-                @include(static::$statusView, [
-                    'columnWidth' => $this->getColumnWidth() ?? 'w-full' // Ancho controlado por el grid
-                ])
-            @endforeach
+    <div class="relative">
+        <!-- Botón para imprimir toda la columna -->
+     
+       
+        
+        <div>
+
+
+        @include(static::$statusView, [
+            'columnWidth' => $this->getColumnWidth() ?? 'w-full'
+
+        ])
+    
+           
         </div>
+    </div>
+@endforeach
+        </div>
+        
 
         <div wire:ignore>
             @include(static::$scriptsView)
