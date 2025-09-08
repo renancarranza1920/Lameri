@@ -254,10 +254,7 @@ class OrdenResource extends Resource
                         ]),
                     // app/Filament/Resources/OrdenResource.php
 
-                    Step::make('Etiquetas')
-                        ->schema([
-                           
-                        ]),
+                    
 
 
                     // Paso 4: Confirmación
