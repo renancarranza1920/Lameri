@@ -13,6 +13,7 @@ use Filament\Notifications\Notification;
 
 class ClientesResource extends Resource
 {
+    
     protected static ?string $model = Cliente::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-identification';
