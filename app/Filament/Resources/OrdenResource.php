@@ -9,6 +9,7 @@ use App\Models\Cliente;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\ViewField;
+use Filament\Forms\Components\Wizard;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms\Components\Tabs;
@@ -44,16 +45,24 @@ class OrdenResource extends Resource
     protected static ?string $modelLabel = 'Orden';
     protected static ?string $pluralModelLabel = 'Órdenes';
 
-    public static function form(Form $form): Form
+      public static function form(Form $form): Form
     {
+        return $form
+            ->schema([
 
-        return $form->schema([
-            Forms\Components\Wizard::make()
-                ->schema([
-                    // Paso 1: Cliente
-                    Step::make('Cliente')
-                        ->schema([
-                            Forms\Components\Select::make('cliente_id')
+                Wizard::make()
+                    ->schema([
+
+
+                    ])
+                    ->columnSpanFull(),
+            ]);
+    }
+
+    public static function getClienteStep(): array
+    {
+        return [
+            Forms\Components\Select::make('cliente_id')
                                 ->label('Seleccionar o agregar cliente')
                                 ->relationship(
                                     name: 'cliente',
@@ -99,13 +108,14 @@ class OrdenResource extends Resource
                                 ->rows(4)
                                 ->columnSpanFull()
                                 ->extraInputAttributes(['class' => 'resize-none']),
-                        ]),
+                        
+        ];
+    }
 
-                    // Paso 2: Detalles de Orden
-                    Step::make("Orden")
-                        ->schema([
-
-                            Tabs::make('Detalles de Orden')
+    public static function getOrdenStep(): array
+    {
+        return [
+            Tabs::make('Detalles de Orden')
                                 ->tabs([
 
                                     // TAB: PERFILES
@@ -251,17 +261,13 @@ class OrdenResource extends Resource
 
 
                                 ])
-                        ]),
-                    // app/Filament/Resources/OrdenResource.php
+        ];
+    }
 
-                    
-
-
-                    // Paso 4: Confirmación
-
-                    Step::make('Resumen')
-                        ->schema([
-                            Forms\Components\Placeholder::make('cliente_resumen')
+    public static function getResumenStep(): array
+    {
+        return [
+            Forms\Components\Placeholder::make('cliente_resumen')
                                 ->label('Cliente seleccionado')
                                 ->content(function (Get $get) {
                                     $clienteId = $get('cliente_id');
@@ -327,21 +333,10 @@ class OrdenResource extends Resource
 
                                     return '$' . number_format($total, 2);
                                 }),
-                        ])
 
-
-
-
-
-                ])->columnSpanFull(),
-
-
-
-        ])
-        ;
-
-
+        ];
     }
+
 
 
     public static function table(Table $table): Table

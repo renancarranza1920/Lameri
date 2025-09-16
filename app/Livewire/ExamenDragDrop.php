@@ -21,7 +21,7 @@ class ExamenDragDrop extends Component implements HasForms
     public $busquedaDisponible = '';
     public $busquedaSeleccionado = [];
     public $perfilId;
-
+ public bool $isProcessing = false;
 
     public $colapsadoDisponible = false;
     public $colapsadoSeleccionado = false;
@@ -107,6 +107,10 @@ class ExamenDragDrop extends Component implements HasForms
     // Método para agregar examen a la lista de seleccionados
     public function addExamen($id)
     {
+         if ($this->isProcessing) { return; } // Si está ocupado, no hagas nada.
+        $this->isProcessing = true; // Levanta la bandera.
+
+        try {
         $examen = $this->examenesDisponibles->firstWhere('id', $id);
         if ($examen) {
             $this->examenesSeleccionados[] = [
@@ -117,16 +121,26 @@ class ExamenDragDrop extends Component implements HasForms
             
             $this->emitSelectionUpdated(); // Nuevo
         }
+    } finally {
+        $this->isProcessing = false; // Baja la bandera
     }
+}
 
     // Método para remover examen (actualizado)
     public function removeExamen($id)
     {
+        if ($this->isProcessing) { return; } // Si está ocupado, no hagas nada.
+        $this->isProcessing = true; // Levanta la bandera.
+
+        try {
         $this->examenesSeleccionados = array_filter(
             $this->examenesSeleccionados, 
             fn ($examen) => $examen['id'] !== $id
         );
         $this->emitSelectionUpdated(); // Nuevo
+    } finally {
+        $this->isProcessing = false; // Baja la bandera
+    }
     }
 
        // Nuevo método para emitir la actualización
