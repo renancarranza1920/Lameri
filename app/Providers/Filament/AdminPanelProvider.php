@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\DetalleOrdenKanban;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -71,15 +72,22 @@ class AdminPanelProvider extends PanelProvider
             SubstituteBindings::class,
             DisableBladeIconComponents::class,
             DispatchServingFilamentEvent::class,
+        ])
+
+        ;
+       
+
+
+        $panel->plugins([
+            FilamentShieldPlugin::make(),
         ]);
-
-
-
         $panel->authMiddleware([
             Authenticate::class,
         ]);
         $panel->brandLogo(fn () => view('components.logo'));
+        $panel->favicon(asset('storage/iconlab.png'));
 
+        
         // Finalmente, devuelve el objeto $panel configurado
         return $panel;
     }

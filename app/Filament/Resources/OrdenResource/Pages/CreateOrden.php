@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\OrdenResource\Pages;
 
 use App\Filament\Resources\OrdenResource;
+use Filament\Resources\Pages\CreateRecord\Concerns\HasWizard; 
+use Filament\Forms\Components\Wizard\Step;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 use App\Models\Perfil;
@@ -14,9 +16,24 @@ use Illuminate\Support\Facades\Log;
 
 class CreateOrden extends CreateRecord
 {
+  use HasWizard;
+
+   
     protected static string $resource = OrdenResource::class;
+ protected function getSteps(): array
+    {
+        return [
+            // 👇 Los nombres deben ser simples y consistentes 👇
+            Step::make('Cliente') 
+                ->schema(OrdenResource::getClienteStep()),
 
+            Step::make('Orden')
+                ->schema(OrdenResource::getOrdenStep()),
 
+            Step::make('Resumen')
+                ->schema(OrdenResource::getResumenStep()),
+        ];
+    }
 protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
 {
     return DB::transaction(function () use ($data) {

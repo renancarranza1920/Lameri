@@ -20,7 +20,14 @@ class DetalleOrdenKanban extends KanbanBoard
     protected static ?string $title = 'Etiquetas de Exámenes';
     protected static string $model = DetalleOrden::class;
     protected static string $recordTitleAttribute = 'nombre_examen';
+
     protected static string $statusEnum = App\Enums\RecipienteEnum::class;
+
+    public static function shouldRegisterNavigation(): bool
+{
+    return false;
+}
+
 
     public array $extraRecipientes = [];
 
