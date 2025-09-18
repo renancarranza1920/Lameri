@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use Route;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 use App\Models\TipoExamen;
 use App\Models\Examen;
 use App\Models\User;
@@ -9,6 +12,8 @@ use App\Models\cliente;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Hash;
 use Illuminate\Database\Seeder;
+use Log;
+use Spatie\Permission\PermissionRegistrar;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,14 +22,39 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+             Log::info('Iniciando el seeder...');
 
-        User::factory()->create([
+        // Crear usuario administrador
+        $admin = User::factory()->create([
             'name' => 'Administrador',
             'email' => 'admin@gmail.com',
             'password' => Hash::make('admin'),
         ]);
 
+        Log::info('Usuario administrador creado:', ['email' => $admin->email]);
+
+        // Crear rol "admin"
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
+        Log::info('Rol admin creado o encontrado.');
+
+        // Generar permisos automáticamente
+        $this->generatePermissions();
+
+       
+
+        // 🔑 Limpiar caché de permisos antes de asignar
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        // Asignar todos los permisos al rol "admin"
+        $adminRole->syncPermissions(Permission::all());
+
+        // Asignar el rol "admin" al usuario
+        $admin->assignRole($adminRole);
+
+        Log::info('Rol y permisos asignados al usuario administrador.');
+    
+
+    
         cliente::insert([
             [
             'NumeroExp' => 'EA25001',
@@ -395,4 +425,61 @@ class DatabaseSeeder extends Seeder
             ]);
         }
     }
+    private function generatePermissions()
+{
+    $resources = [
+        'clientes',
+        'examen',
+        'orden',
+        'perfil',
+        'role',
+        'tipo::examen',
+        'user',
+    ];
+
+    // Permisos por recurso
+    foreach ($resources as $resource) {
+        $permissions = [
+            "view_{$resource}",
+            "view_any_{$resource}",
+            "create_{$resource}",
+            "update_{$resource}",
+            "restore_{$resource}",
+            "restore_any_{$resource}",
+            "replicate_{$resource}",
+            "reorder_{$resource}",
+            "delete_{$resource}",
+            "delete_any_{$resource}",
+            "force_delete_{$resource}",
+            "force_delete_any_{$resource}",
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        Log::info("Permisos generados para el recurso: {$resource}");
+    }
+
+    // Permisos especiales/globales
+    $specialPermissions = [
+        'impersonate_user',
+        'access_admin_panel',
+        'manage_settings',
+        'export_data',
+        'import_data',
+        'view_reports',
+    ];
+
+    foreach ($specialPermissions as $permission) {
+        Permission::firstOrCreate(['name' => $permission]);
+    }
+
+    Log::info('Permisos especiales generados.', ['count' => count($specialPermissions)]);
+
+    Log::info('Permisos totales generados automáticamente:', ['total' => Permission::count()]);
 }
+
+}
+
+
