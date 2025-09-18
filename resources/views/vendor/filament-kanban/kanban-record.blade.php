@@ -14,18 +14,15 @@
         "
     @endif
 >
-
-    <!-- Botón imprimir individual: evita que el click burbujee al contenedor -->
-
     {{ $record->{static::$recordTitleAttribute} }}
-    <a
-        href="{{ route('detalles.zpl', $record->getKey()) }}"
-        target="_blank"
-        rel="noopener"
-        onclick="event.stopPropagation();"
+
+    <!-- Botón imprimir individual usando Livewire -->
+    <button
+        wire:click.stop="printSingle({{ $record->getKey() }})"
+        type="button"
         class="ml-2 inline-flex items-center gap-2 px-2 py-1 text-xs font-medium text-primary-700 bg-primary-100 rounded hover:bg-primary-200 dark:bg-primary-800 dark:text-primary-200"
         title="Imprimir etiqueta"
     >
-       <x-heroicon-o-printer class="w-4 h-4" />
-    </a>
+        <x-heroicon-o-printer class="w-4 h-4" />
+    </button>
 </div>
