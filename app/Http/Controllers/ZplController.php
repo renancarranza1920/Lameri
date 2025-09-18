@@ -14,14 +14,18 @@ class ZplController extends Controller
 
     private function sendToPrinter($zpl)
     {
-        // Abre el recurso de impresión
-        $handle = @popen("print /D:{$this->printerName}", "w");
+        // Crear archivo temporal con el contenido ZPL
+        $tempFile = tempnam(sys_get_temp_dir(), 'zpl');
+        file_put_contents($tempFile, $zpl);
 
-        if ($handle) {
-            fwrite($handle, $zpl);
-            pclose($handle);
-        } else {
-            throw new \Exception("No se pudo conectar a la impresora {$this->printerName}");
+        // Ejecutar el comando de impresión
+        exec("print /D:{$this->printerName} " . escapeshellarg($tempFile), $output, $resultCode);
+
+        // Eliminar el archivo temporal
+        @unlink($tempFile);
+
+        if ($resultCode !== 0) {
+            throw new \Exception("No se pudo imprimir el archivo en la impresora {$this->printerName}");
         }
     }
 
@@ -38,13 +42,13 @@ class ZplController extends Controller
                 ->title('Etiqueta enviada a la impresora')
                 ->success()
                 ->send();
-            return response()->json(['success' => true, 'msg' => 'Etiqueta enviada a la impresora']);
+            return null;
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Error al enviar la etiqueta: ' . $e->getMessage())
                 ->danger()
                 ->send();
-            return response()->json(['success' => false, 'msg' => $e->getMessage()], 500);
+            return null;
         }
     }
 
@@ -60,7 +64,7 @@ class ZplController extends Controller
                 ->title('No hay etiquetas para este grupo en esta orden.')
                 ->danger()
                 ->send();
-            return response()->json(['error' => 'No hay etiquetas para este grupo en esta orden.'], 404);
+            return null;
         }
 
         $service = new ZebraLabelService();
@@ -72,13 +76,13 @@ class ZplController extends Controller
                 ->title('Etiquetas enviadas a la impresora')
                 ->success()
                 ->send();
-            return response()->json(['success' => true, 'msg' => 'Etiquetas enviadas a la impresora']);
+            return null;
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Error al enviar las etiquetas: ' . $e->getMessage())
                 ->danger()
                 ->send();
-            return response()->json(['success' => false, 'msg' => $e->getMessage()], 500);
+            return null;
         }
     }
 }

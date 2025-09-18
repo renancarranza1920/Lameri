@@ -13,7 +13,11 @@ class ZebraLabelService
 
         // Agrupar por color (recipiente)
         $agrupados = $detalles->groupBy(function ($detalle) {
-            return $detalle->status ?? 'Sin color';
+            $recipiente = $detalle->status ?? 'Sin color';
+            if (enum_exists(\App\Enums\RecipienteEnum::class) && \App\Enums\RecipienteEnum::tryFrom($recipiente)) {
+                $recipiente = \App\Enums\RecipienteEnum::tryFrom($recipiente)?->getTitle();
+            }
+            return $recipiente;
         });
 
         Log::info('Agrupados por color:', $agrupados->toArray());
@@ -33,7 +37,11 @@ class ZebraLabelService
         // Fecha actual en formato dd/mm/yyyy
         $fecha = date('d/m/Y');
         $hora = date('h:i A');
-        $recipiente = strtoupper(substr($detalle->status, 0, 30));
+        // Usar el título del enum si es válido
+        $recipiente = $detalle->status;
+        if (enum_exists(\App\Enums\RecipienteEnum::class) && \App\Enums\RecipienteEnum::tryFrom($detalle->status)) {
+            $recipiente = \App\Enums\RecipienteEnum::tryFrom($detalle->status)?->getTitle();
+        }
         $ordenId = $detalle->orden->id;
 
         return "
@@ -68,7 +76,10 @@ class ZebraLabelService
         $paciente = strtoupper(trim($primerNombre . ' ' . $primerApellido));
 
         // Recipiente (color)
-        $recipiente = strtoupper(substr($color, 0, 12));
+        $recipiente = $color;
+        if (enum_exists(\App\Enums\RecipienteEnum::class) && \App\Enums\RecipienteEnum::tryFrom($color)) {
+            $recipiente = \App\Enums\RecipienteEnum::tryFrom($color)?->getTitle();
+        }
 
         // Fecha actual en formato dd/mm/yyyy
         $fecha = date('d/m/Y');

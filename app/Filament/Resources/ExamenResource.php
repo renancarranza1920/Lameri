@@ -46,12 +46,12 @@ class ExamenResource extends Resource
                         Forms\Components\Select::make('recipiente')
                             ->label('Recipiente')
                             ->options([
-                                'rojo' => 'Rojo',
-                                'celeste' => 'Celeste',
-                                'morado' => 'Morado',
-                                'orina' => 'Orina',
-                                'heces' => 'Heces',
-                                'hisopado' => 'Hisopado',
+                                'quimica_sanguinea' => 'Quimica Sanginea',
+                                'cuagulacion' => 'Cuagulacion',
+                                'hematologia' => 'Hematologia',
+                                'coprologia' => 'Coprologia',
+                                'uroanalisis' => 'Uroanalisis',
+                                'cultivo_secreciones' => 'Cultivo Secreciones',
                             ])
                             ->required()
                             ->searchable(),
@@ -191,7 +191,6 @@ class ExamenResource extends Resource
             'index' => Pages\ListExamens::route('/'),
             'create' => Pages\CreateExamen::route('/create'),
             'edit' => Pages\EditExamen::route('/{record}/edit'),
-            'view' => Pages\ViewExamen::route('/{record}'),
         ];
     }
 }

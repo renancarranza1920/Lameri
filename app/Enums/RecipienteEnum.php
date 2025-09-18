@@ -9,17 +9,24 @@ enum RecipienteEnum: string
 {
     use IsKanbanStatus;
 
-    case rojo = 'rojo';
-    case celeste = 'celeste';
-    case morado = 'morado';
-    case orina = 'orina';
-    case heces = 'heces';
-    case hisopado = 'hisopado';
+    case quimica_sanguinea = 'quimica_sanguinea';
+    case cuagulacion = 'cuagulacion';
+    case hematologia = 'hematologia';
+    case coprologia = 'coprologia';
+    case uroanalisis = 'uroanalisis';
+    case cultivo_secreciones = 'cultivo_secreciones'; 
     case extra = 'extra';
-   
-    
-   public function getTitle(): string
-   {
-    return $this->name;
-   }
+
+    public function getTitle(): string
+    {
+        return match($this) {
+            self::quimica_sanguinea => 'Química Sanguínea',
+            self::cuagulacion => 'Coagulación',
+            self::hematologia => 'Hematología',
+            self::coprologia => 'Coprología',
+            self::uroanalisis => 'Uroanálisis',
+            self::cultivo_secreciones => 'Cultivo de Secreciones',
+            self::extra => 'Extra',
+        };
+    }
 }

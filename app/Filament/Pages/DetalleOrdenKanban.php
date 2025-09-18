@@ -4,28 +4,25 @@ namespace App\Filament\Pages;
 
 use App\Enums\RecipienteEnum;
 use App\Models\DetalleOrden;
+use App\Models\Orden;
 use App\Services\ZebraLabelService;
 use Filament\Actions\Action;
-use App\Models\Orden;
-use Livewire\Attributes\Url;
-use Illuminate\Support\Collection;
-use Log;
-use Mokhosh\FilamentKanban\Pages\KanbanBoard;
 use Filament\Notifications\Notification;
-use Str;
+use Illuminate\Support\Collection;
+use Mokhosh\FilamentKanban\Pages\KanbanBoard;
 
 class DetalleOrdenKanban extends KanbanBoard
 {
-    #[Url]
+    #[\Livewire\Attributes\Url]
     public ?int $ordenId = null;
 
     protected static ?string $navigationLabel = 'Kanban Etiquetas';
     protected static ?string $title = 'Etiquetas de Exámenes';
     protected static string $model = DetalleOrden::class;
     protected static string $recordTitleAttribute = 'nombre_examen';
+    protected static string $statusEnum = App\Enums\RecipienteEnum::class;
 
     public array $extraRecipientes = [];
-    protected static string $statusEnum = App\Enums\RecipienteEnum::class;
 
     protected function getBoardStyles(): string
     {
@@ -49,9 +46,7 @@ class DetalleOrdenKanban extends KanbanBoard
 
     protected function records(): Collection
     {
-        if (!$this->ordenId) {
-            return collect();
-        }
+        if (!$this->ordenId) return collect();
 
         return DetalleOrden::where('orden_id', $this->ordenId)
             ->ordered()
@@ -65,9 +60,7 @@ class DetalleOrdenKanban extends KanbanBoard
 
     public function onStatusChanged(int|string $recordId, string $status, array $fromOrderedIds, array $toOrderedIds): void
     {
-        DetalleOrden::find($recordId)->update([
-            'status' => $status,
-        ]);
+        DetalleOrden::find($recordId)->update(['status' => $status]);
         DetalleOrden::setNewOrder($toOrderedIds);
     }
 
@@ -95,43 +88,88 @@ class DetalleOrdenKanban extends KanbanBoard
                 ->label('Generar Etiquetas ZPL')
                 ->icon('heroicon-o-printer')
                 ->color('warning')
-                ->action(function () {
-                    if (!$this->ordenId) {
-                        Notification::make()
-                            ->title('Orden no encontrada.')
-                            ->danger()
-                            ->send();
-                        return null;
-                    }
-
-                    $detalles = DetalleOrden::with('orden.cliente')
-                        ->where('orden_id', $this->ordenId)
-                        ->get();
-
-                    if ($detalles->isEmpty()) {
-                        Notification::make()
-                            ->title('No hay detalles para generar ZPL.')
-                            ->warning()
-                            ->send();
-                        return null;
-                    }
-
-                    $service = new ZebraLabelService();
-                    $zpl = $service->generarZplMultiple($detalles);
-
-                    // Llamada directa a la impresora
-                    $this->sendToPrinter($zpl);
-
-                    Notification::make()
-                        ->title('Etiquetas enviadas a la impresora Zebra.')
-                        ->success()
-                        ->send();
-
-                    return null;
-                }),
+                ->action(fn() => $this->printAll()),
         ];
     }
 
+    // === NUEVO MÉTODO PARA IMPRIMIR TODAS LAS ETIQUETAS ===
+    public function printGroup(string $status): void
+    {
+        if (!$this->ordenId) {
+            Notification::make()
+                ->title('Orden no encontrada.')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $detalles = DetalleOrden::with('orden.cliente')
+            ->where('orden_id', $this->ordenId)
+            ->where('status', $status)
+            ->get();
+
+        if ($detalles->isEmpty()) {
+            Notification::make()
+                ->title('No hay detalles para generar ZPL.')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        try {
+            $service = new ZebraLabelService();
+            $zpl = $service->generarZplMultiple($detalles);
+
+            $this->sendToPrinter($zpl);
+
+            Notification::make()
+                ->title('Etiquetas enviadas a la impresora Zebra.')
+                ->success()
+                ->send();
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error al enviar las etiquetas: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    // Método de prueba para el botón "Generar Etiquetas ZPL"
+    public function printAll(): void
+    {
+        if (!$this->ordenId) return;
+
+        $detalles = DetalleOrden::with('orden.cliente')
+            ->where('orden_id', $this->ordenId)
+            ->get();
+
+        if ($detalles->isEmpty()) {
+            Notification::make()
+                ->title('No hay detalles para generar ZPL.')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        try {
+            $service = new ZebraLabelService();
+            $zpl = $service->generarZplMultiple($detalles);
+
+            $this->sendToPrinter($zpl);
+
+            Notification::make()
+                ->title('Etiquetas enviadas a la impresora Zebra.')
+                ->success()
+                ->send();
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error al enviar las etiquetas: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    // Método privado que ya existía
     private function sendToPrinter(string $zpl): void
     {
         $tempFile = tempnam(sys_get_temp_dir(), 'zpl');
@@ -141,4 +179,37 @@ class DetalleOrdenKanban extends KanbanBoard
 
         @unlink($tempFile);
     }
+
+    // === NUEVO MÉTODO PARA IMPRIMIR UN REGISTRO INDIVIDUAL ===
+public function printSingle(int $recordId): void
+{
+    $detalle = DetalleOrden::with('orden.cliente')->find($recordId);
+
+    if (!$detalle) {
+        Notification::make()
+            ->title('Detalle no encontrado.')
+            ->danger()
+            ->send();
+        return;
+    }
+
+    try {
+        $service = new ZebraLabelService();
+        $zpl = $service->generarZpl($detalle);
+
+        $this->sendToPrinter($zpl);
+
+        Notification::make()
+            ->title('Etiqueta enviada a la impresora Zebra.')
+            ->success()
+            ->send();
+    } catch (\Exception $e) {
+        Notification::make()
+            ->title('Error al enviar la etiqueta: ' . $e->getMessage())
+            ->danger()
+            ->send();
+    }
 }
+
+}
+
