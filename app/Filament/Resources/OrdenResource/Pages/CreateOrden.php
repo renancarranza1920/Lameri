@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\OrdenResource\Pages;
 
+use App\Filament\Pages\DetalleOrdenKanban;
 use App\Filament\Resources\OrdenResource;
 use Filament\Resources\Pages\CreateRecord\Concerns\HasWizard; 
 use Filament\Forms\Components\Wizard\Step;
@@ -40,7 +41,8 @@ protected function handleRecordCreation(array $data): \Illuminate\Database\Eloqu
         $orden = static::getModel()::create($data);
         $this->record = $orden;
 
-        
+         session()->flash('from_create_orden', true);
+
         $state = $this->form->getState();
         $perfiles = $state['perfiles_seleccionados'] ?? [];
         $examenes = $state['examenes_seleccionados'] ?? [];
@@ -85,7 +87,7 @@ protected function handleRecordCreation(array $data): \Illuminate\Database\Eloqu
             ]);
             Log::info("✅ Examen guardado: {$examen['examen_id']}");
         }
-
+        
         return $orden;
     });
 }
@@ -152,6 +154,10 @@ protected function handleRecordCreation(array $data): \Illuminate\Database\Eloqu
     }
 
 
-
+protected function getRedirectUrl(): string
+{
+    // Redirige a la vista de etiquetas después de guardar
+    return DetalleOrdenKanban::getUrl(['ordenId' => $this->record->id]);
+}
 
 }

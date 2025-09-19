@@ -84,6 +84,22 @@ class DetalleOrdenKanban extends KanbanBoard
             $orden = Orden::find($this->ordenId);
             if ($orden) {
                 static::$title = 'Etiquetas de Exámenes - Orden #' . $orden->id;
+                 // Mostrar notificación al cargar la página
+           
+                 
+            // Mostrar notificación solo si viene del CreateOrden
+            if (session()->get('from_create_orden')) {
+                Notification::make()
+                    ->title('Orden creada con éxito')
+                    ->body('ID de la orden: ' . $orden->id)
+                    ->success()
+                    ->persistent() // La notificación no se cierra automáticamente
+                    ->send();
+
+                // Eliminar la variable de sesión para futuras visitas
+                session()->forget('from_create_orden');
+            }
+           
             }
         }
     }
