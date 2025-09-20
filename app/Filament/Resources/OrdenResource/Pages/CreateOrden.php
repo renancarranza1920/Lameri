@@ -4,9 +4,16 @@ namespace App\Filament\Resources\OrdenResource\Pages;
 
 use App\Filament\Pages\DetalleOrdenKanban;
 use App\Filament\Resources\OrdenResource;
+use App\Models\cliente;
+use App\Models\Examen;
+use Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Get;
 use Filament\Resources\Pages\CreateRecord\Concerns\HasWizard; 
 use Filament\Forms\Components\Wizard\Step;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 use App\Models\Perfil;
 use Filament\Notifications\Notification;
@@ -32,8 +39,25 @@ class CreateOrden extends CreateRecord
                 ->schema(OrdenResource::getOrdenStep()),
 
             Step::make('Resumen')
-                ->schema(OrdenResource::getResumenStep()),
-        ];
+                ->schema(fn(Get $get): array => [ // <-- La clave es usar una Closure aquí
+
+                   
+
+
+                    // Y aquí está el ViewField con la corrección final
+                    \Filament\Forms\Components\View::make('resumen_detallado')
+                        ->label('Resumen de la Orden')
+                        ->view('filament.forms.components.resumen-orden')
+                        ->viewData([ // <-- Ahora pasamos un array, como debe ser
+
+                            'cliente' => cliente::find($get('cliente_id')),
+                            'perfilesSeleccionados' => $get('perfiles_seleccionados') ?? [],
+                            'examenesSeleccionados' => $get('examenes_seleccionados') ?? [],
+                        ])
+                        ->columnSpanFull(),
+                ]),
+       
+            ];
     }
 protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
 {
@@ -91,7 +115,53 @@ protected function handleRecordCreation(array $data): \Illuminate\Database\Eloqu
         return $orden;
     });
 }
+ public function generatePdfPreview(): StreamedResponse
+    {
+        // 1. Recolectar el estado actual del formulario
+        $state = $this->form->getState();
 
+        $cliente = Cliente::find($state['cliente_id'] ?? null);
+        $perfilesSeleccionados = $state['perfiles_seleccionados'] ?? [];
+        $examenesSeleccionados = $state['examenes_seleccionados'] ?? [];
+        $total = 0;
+         // ---> ¡NUEVO! Obtenemos el usuario autenticado
+        $usuarioNombre = Auth::user() ? Auth::user()->name : 'N/A';
+        $dataPerfiles = [];
+        foreach ($perfilesSeleccionados as $item) {
+            $perfil = Perfil::with('examenes')->find($item['perfil_id']);
+            if ($perfil) {
+                $precio = floatval($item['precio_hidden'] ?? $perfil->precio);
+                $dataPerfiles[] = ['nombre' => $perfil->nombre, 'precio' => $precio, 'examenes' => $perfil->examenes];
+                $total += $precio;
+            }
+        }
+
+        $dataExamenes = [];
+        foreach ($examenesSeleccionados as $item) {
+            $examen = Examen::find($item['examen_id']);
+            if ($examen) {
+                $precio = floatval($item['precio_hidden'] ?? $examen->precio);
+                $dataExamenes[] = ['nombre' => $examen->nombre, 'precio' => $precio];
+                $total += $precio;
+            }
+        }
+
+        // 2. Preparar datos y generar el PDF
+        $data = [
+            'cliente' => $cliente,
+            'perfiles' => $dataPerfiles,
+            'examenes' => $dataExamenes,
+            'total' => $total,
+             'usuario_nombre' => $usuarioNombre,
+        ];
+        
+        $pdf = Pdf::loadView('pdf.comprobante', $data)->setPaper('letter', 'portrait');
+
+        // 3. Enviar el PDF al navegador para descarga
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'comprobante-preliminar-' . date('Y-m-d') . '.pdf');
+    }
 
       protected function beforeCreate(): void
     {
