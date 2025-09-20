@@ -3,62 +3,35 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CotizacionResource\Pages;
-use App\Filament\Resources\CotizacionResource\RelationManagers;
-use App\Models\Cotizacion;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CotizacionResource extends Resource
 {
-    protected static ?string $model = Cotizacion::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $model = null;
+    
+    protected static ?string $navigationIcon = 'heroicon-o-calculator';
+    protected static ?string $navigationLabel = 'Cotizaciones';
+    protected static ?string $modelLabel = 'Cotización';
+    protected static ?string $pluralModelLabel = 'Cotizaciones';
+    protected static ?string $slug = 'cotizaciones';
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                //
-            ]);
+        return $form->schema([]);
     }
 
     public static function table(Table $table): Table
     {
-        return $table
-            ->columns([
-                //
-            ])
-            ->filters([
-                //
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
+        return $table;
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCotizacions::route('/'),
-            'create' => Pages\CreateCotizacion::route('/create'),
-            'edit' => Pages\EditCotizacion::route('/{record}/edit'),
+            // Apuntamos a la ruta de creación como la página principal de este resource
+             'index' => Pages\CreateCotizacion::route('/'),
         ];
     }
 }
