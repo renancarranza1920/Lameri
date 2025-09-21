@@ -81,6 +81,7 @@ class ExamenResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->recordUrl(null)
             ->columns([
                 Tables\Columns\TextColumn::make('tipoExamen.nombre')
                     ->label('Tipo de Examen')
@@ -126,35 +127,6 @@ class ExamenResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                // Acción personalizada para mostrar el modal
-                Action::make('ver-modal')
-                    ->label('Ver')
-                    ->icon('heroicon-s-eye')
-                    ->modalHeading('Detalle del Examen')
-                    ->color('gray')
-                    ->modalWidth('lg')
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Cerrar')
-                    ->form([
-                        Forms\Components\TextInput::make('nombre')
-                            ->label('Nombre del Examen')
-                            ->disabled()
-                            ->default(fn($record) => $record->nombre),
-                        Forms\Components\Select::make('tipo_examen_id')
-                            ->label('Tipo de Examen')
-                            ->options(TipoExamen::pluck('nombre', 'id'))
-                            ->disabled()
-                            ->default(fn($record) => $record->tipo_examen_id),
-                        Forms\Components\TextInput::make('recipiente')
-                            ->label('Recipiente')
-                            ->disabled()
-                            ->default(fn($record) => $record->recipiente),
-                        Forms\Components\TextInput::make('precio')
-                            ->label('Precio')
-                            ->prefix('$')
-                            ->disabled()
-                            ->default(fn($record) => $record->precio),
-                    ]),
                 Action::make('cambiar_estado')
                     ->label(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                     ->icon(fn($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
