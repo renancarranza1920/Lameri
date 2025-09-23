@@ -1,6 +1,16 @@
 @php
     // Agrupamos la lógica al inicio para mantener el HTML limpio
     $agrupadoPorPerfil = $record->detalleOrden->groupBy('perfil_id');
+
+    // Mapeo de colores para los estados, igual que en la tabla de órdenes
+    $statusColor = match($record->estado) {
+        'pendiente' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400',
+        'en_proceso' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400',
+        'pausada' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400',
+        'finalizado' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
+        'cancelado' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-400',
+        default => 'bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-400',
+    };
 @endphp
 
 <div class="space-y-6 text-sm">
@@ -15,7 +25,22 @@
         <div>
             <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Orden</h3>
             <p><strong>Fecha:</strong> {{ \Carbon\Carbon::parse($record->fecha)->format('d/m/Y') }}</p>
-            <p><strong>Estado:</strong> {{ ucfirst($record->estado) }}</p>
+            
+            {{-- 👇 ***** ¡AQUÍ ESTÁ LA MODIFICACIÓN! ***** 👇 --}}
+            <div class="flex items-center space-x-2">
+                <strong>Estado:</strong>
+                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $statusColor }}">
+                    {{ ucfirst(str_replace('_', ' ', $record->estado)) }}
+                </span>
+            </div>
+
+            {{-- El bloque para el motivo de la pausa se mantiene igual --}}
+            @if ($record->estado === 'pausada' && $record->motivo_pausa)
+                <div class="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-500 rounded-r-lg">
+                    <p class="font-semibold text-yellow-800 dark:text-yellow-300">Motivo de la Pausa:</p>
+                    <p class="text-yellow-700 dark:text-yellow-400">{{ $record->motivo_pausa }}</p>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -45,12 +70,11 @@
                                 <tr class="text-gray-600 dark:text-gray-400">
                                     <td class="py-2 pl-6 pr-3">
                                         - {{ $detalle->nombre_examen }}
-                                        {{-- ✅ ¡CORRECCIÓN! Solo muestra el recipiente si existe --}}
                                         @if($detalle->status)
                                             <span class="text-xs text-gray-500">({{ $detalle->status }})</span>
                                         @endif
                                     </td>
-                                    <td></td> {{-- Columna de precio vacía para los sub-items --}}
+                                    <td></td>
                                 </tr>
                             @endforeach
                         @endif
@@ -60,9 +84,8 @@
                     @if ($agrupadoPorPerfil->has(null) || $agrupadoPorPerfil->has(''))
                         @foreach ($agrupadoPorPerfil[null] ?? [] as $detalle)
                              <tr>
-                                <td class="p-3 font-bold">
+                                <td class="p-3">
                                     {{ $detalle->nombre_examen }}
-                                    {{-- ✅ ¡CORRECCIÓN! Solo muestra el recipiente si existe --}}
                                     @if($detalle->status)
                                         <span class="text-xs text-gray-500">({{ $detalle->status }})</span>
                                     @endif
@@ -84,3 +107,4 @@
         </div>
     </div>
 </div>
+

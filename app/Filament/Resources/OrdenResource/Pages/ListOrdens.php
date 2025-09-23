@@ -23,7 +23,8 @@ class ListOrdens extends ListRecords
         $count = OrdenResource::getEloquentQuery()
          ->selectRaw('COUNT(*) as total')
          ->selectRaw('SUM(CASE WHEN estado = "pendiente" THEN 1 ELSE 0 END) as pending')
-            ->selectRaw('SUM(CASE WHEN estado = "en_proceso" THEN 1 ELSE 0 END) as en_proceso')
+            ->selectRaw('SUM(CASE WHEN estado = "en proceso" THEN 1 ELSE 0 END) as en_proceso')
+            ->selectRaw('SUM(CASE WHEN estado = "pausada" THEN 1 ELSE 0 END) as pausada')
             ->selectRaw('SUM(CASE WHEN estado = "finalizado" THEN 1 ELSE 0 END) as finalizado')
             ->selectRaw('SUM(CASE WHEN estado = "cancelado" THEN 1 ELSE 0 END) as cancelado')
          ->first();
@@ -40,11 +41,16 @@ class ListOrdens extends ListRecords
             ->badge(fn () => $count->pending)
             ->modifyQueryUsing(fn ($query) => $query->where('estado', 'pendiente')),
 
-            'en_proceso' => Tab::make('En proceso')
+            'en proceso' => Tab::make('En proceso')
                 ->badgeColor('info')
                 ->badgeIcon('heroicon-o-cog')
                ->badge(fn () => $count->en_proceso)
-               ->modifyQueryUsing(fn ($query) => $query->where('estado', 'en_proceso')),
+               ->modifyQueryUsing(fn ($query) => $query->where('estado', 'en proceso')),
+            'pausada' => Tab::make('Pausadas')
+                ->badgeColor('danger')
+                ->badgeIcon('heroicon-o-pause-circle')
+                ->badge(fn () => $count->pausada)
+                ->modifyQueryUsing(fn ($query) => $query->where('estado', 'pausada')),
 
             'finalizado' => Tab::make('Finalizadas')
                 ->badgeColor('success')

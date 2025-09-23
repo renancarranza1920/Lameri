@@ -40,21 +40,30 @@ class ExamenResource extends Resource
                             ->label('Nombre del Examen')
                             ->placeholder('Ej: Glucosa, Creatinina...')
                             ->required()
-                            ->reactive()
                             ->maxLength(255),
 
-                        Forms\Components\Select::make('recipiente')
-                            ->label('Recipiente')
-                            ->options([
-                                'quimica_sanguinea' => 'Quimica Sanginea',
-                                'cuagulacion' => 'Cuagulacion',
-                                'hematologia' => 'Hematologia',
-                                'coprologia' => 'Coprologia',
-                                'uroanalisis' => 'Uroanalisis',
-                                'cultivo_secreciones' => 'Cultivo Secreciones',
+                        // 👇 ***** ¡AQUÍ ESTÁ LA NUEVA SECCIÓN INTEGRADA! ***** 👇
+                        // Reemplazamos el antiguo campo 'recipiente'.
+                        Forms\Components\Select::make('muestras')
+                            ->label('Muestras Biológicas Requeridas')
+                            ->relationship('muestras', 'nombre') // Conecta con la relación en el modelo Examen
+                            ->multiple() // Permite seleccionar varias
+                            ->preload()
+                            ->searchable()
+                            ->placeholder('Seleccione una o más muestras')
+                            // Esta es la función que te permite crear muestras sobre la marcha
+                            ->createOptionForm([
+                                Forms\Components\TextInput::make('nombre')
+                                    ->label('Nombre de la Nueva Muestra')
+                                    ->placeholder('Ej: Líquido Cefalorraquídeo')
+                                    ->required()
+                                    ->unique('muestras', 'nombre'),
                             ])
-                            ->required()
-                            ->searchable(),
+                            ->createOptionAction(function (Forms\Components\Actions\Action $action) {
+                                return $action
+                                    ->modalHeading('Añadir Nueva Muestra Biológica')
+                                    ->modalSubmitActionLabel('Crear Muestra');
+                            }),
 
                         Forms\Components\TextInput::make('precio')
                             ->label('Precio')
@@ -91,6 +100,12 @@ class ExamenResource extends Resource
                     ->label('Nombre')
                     ->sortable()
                     ->searchable(),
+                
+                // 👇 ***** AÑADIMOS ESTA COLUMNA PARA VER LAS MUESTRAS ***** 👇
+                Tables\Columns\TextColumn::make('muestras.nombre')
+                    ->label('Muestras')
+                    ->badge()
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('precio')
                     ->label('Precio')
@@ -126,7 +141,8 @@ class ExamenResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                // Acción personalizada para mostrar el modal
+                
+                // Tus acciones personalizadas se mantienen intactas
                 Action::make('ver-modal')
                     ->label('Ver')
                     ->icon('heroicon-s-eye')
@@ -145,10 +161,13 @@ class ExamenResource extends Resource
                             ->options(TipoExamen::pluck('nombre', 'id'))
                             ->disabled()
                             ->default(fn($record) => $record->tipo_examen_id),
-                        Forms\Components\TextInput::make('recipiente')
-                            ->label('Recipiente')
+                        
+                        // 👇 Mostramos las muestras en el modal de "Ver"
+                        Forms\Components\TagsInput::make('muestras_nombres')
+                            ->label('Muestras Requeridas')
                             ->disabled()
-                            ->default(fn($record) => $record->recipiente),
+                            ->default(fn($record) => $record->muestras->pluck('nombre')->all()),
+
                         Forms\Components\TextInput::make('precio')
                             ->label('Precio')
                             ->prefix('$')

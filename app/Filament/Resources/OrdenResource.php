@@ -381,7 +381,7 @@ class OrdenResource extends Resource
                             ->searchable()
                             ->color(fn ($state) => match ($state) {
                                 'pendiente' => 'warning',
-                                'en_proceso' => 'info',
+                                'en proceso' => 'info',
                                 'pausada' => 'danger',
                                 'finalizado' => 'success',
                                 'cancelado' => 'gray',
@@ -414,7 +414,7 @@ class OrdenResource extends Resource
                         return view('filament.modals.tomar-muestras', ['muestrasConsolidadas' => $muestrasRequeridas]);
                     })
                     ->action(function (Orden $record) {
-                        $record->estado = 'en_proceso';
+                        $record->estado = 'en proceso';
                         $record->fecha_toma_muestra = Carbon::now();
                         $record->save();
                         Notification::make()->title('Muestras confirmadas')->success()->send();
@@ -426,7 +426,7 @@ class OrdenResource extends Resource
                         ->label('Pausar Orden')
                         ->icon('heroicon-o-pause-circle')
                         ->color('warning')
-                        ->visible(fn(Orden $record): bool => $record->estado === 'en_proceso')
+                        ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
                         ->requiresConfirmation()
                         ->form([
                             Textarea::make('motivo_pausa')
@@ -448,7 +448,7 @@ class OrdenResource extends Resource
                         ->visible(fn(Orden $record): bool => $record->estado === 'pausada')
                         ->requiresConfirmation()
                         ->action(function (Orden $record) {
-                            $record->estado = 'en_proceso';
+                            $record->estado = 'en proceso';
                             $record->motivo_pausa = null; // Limpia el motivo
                             $record->save();
                             Notification::make()->title('Orden Reanudada')->success()->send();
@@ -458,7 +458,7 @@ class OrdenResource extends Resource
                         ->label('Finalizar Orden')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
-                        ->visible(fn(Orden $record): bool => $record->estado === 'en_proceso')
+                        ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
                         ->requiresConfirmation()
                         ->action(function (Orden $record) {
                             $record->estado = 'finalizado';
@@ -477,7 +477,7 @@ class OrdenResource extends Resource
                         ->label('Cancelar Orden')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
-                        ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en_proceso', 'pausada']))
+                        ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso', 'pausada']))
                         ->requiresConfirmation()
                         ->action(function (Orden $record) {
                             $record->estado = 'cancelado';
