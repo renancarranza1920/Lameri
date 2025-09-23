@@ -170,7 +170,7 @@ class DatabaseSeeder extends Seeder
         // Insertar exámenes de Coprología (ordenados alfabéticamente)
         $examenes = [
             ['nombre' => 'Azul de metileno', 'precio' => 10, 'recipiente' => 'coprologia'],
-            ['nombre' => 'General de coprologia', 'precio' => 2, 'recipiente' => 'coprologia'],
+            ['nombre' => 'General de heces', 'precio' => 2, 'recipiente' => 'coprologia'],
             ['nombre' => 'Helicobacter Pylori-Ag', 'precio' => 15, 'recipiente' => 'coprologia'],
             ['nombre' => 'Sangre oculta', 'precio' => 10, 'recipiente' => 'coprologia'],
             ['nombre' => 'Sustancia Reductora', 'precio' => 20, 'recipiente' => 'coprologia'],
@@ -386,14 +386,14 @@ class DatabaseSeeder extends Seeder
         $tipoQuimicaUrinaria = TipoExamen::where('nombre', 'Química Urinaria')->first();
 
         $examenesQuimicaUrinaria = [
-            ['nombre' => 'Acido úrico uroanalisis 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
-            ['nombre' => 'Calcio uroanalisis de 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
-            ['nombre' => 'Cloro uroanalisis de 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
+            ['nombre' => 'Acido úrico orina 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
+            ['nombre' => 'Calcio orina de 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
+            ['nombre' => 'Cloro orina de 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
             ['nombre' => 'Depuración de creatinina 24h', 'precio' => 15, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Fósforo uroanalisis 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
-            ['nombre' => 'Nitrógeno ureico uroanalisis de 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
-            ['nombre' => 'Potasio uroanalisis de 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
-            ['nombre' => 'Proteínas en uroanalisis de 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
+            ['nombre' => 'Fósforo orina 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
+            ['nombre' => 'Nitrógeno ureico orina de 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
+            ['nombre' => 'Potasio orina de 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
+            ['nombre' => 'Proteínas en orina de 24h', 'precio' => 15, 'recipiente' => 'uroanalisis'],
         ];
 
         usort($examenesQuimicaUrinaria, fn($a, $b) => strcmp($a['nombre'], $b['nombre']));
@@ -411,8 +411,8 @@ class DatabaseSeeder extends Seeder
         $tipoUroanalisis = TipoExamen::where('nombre', 'Uroanálisis')->first();
 
         $examenesUroanalisis = [
-            ['nombre' => 'Examen general uroanalisis', 'precio' => 2, 'recipiente' => 'uroanalisis'],
-            ['nombre' => 'Prueba de embarazo en uroanalisis', 'precio' => 5, 'recipiente' => 'uroanalisis'],
+            ['nombre' => 'Examen general orina', 'precio' => 2, 'recipiente' => 'uroanalisis'],
+            ['nombre' => 'Prueba de embarazo en orina', 'precio' => 5, 'recipiente' => 'uroanalisis'],
         ];
 
         foreach ($examenesUroanalisis as $examen) {
