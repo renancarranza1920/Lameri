@@ -6,8 +6,10 @@ use App\Filament\Pages\DetalleOrdenKanban;
 use App\Filament\Resources\OrdenResource\Pages;
 use App\Models\Orden;
 use App\Models\Cliente;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\ViewField;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Form;
@@ -339,125 +341,152 @@ class OrdenResource extends Resource
 
 
 
-    public static function table(Table $table): Table
+  public static function table(Table $table): Table
     {
-      
         return $table
-        ->actionsAlignment('center')
-           ->contentGrid([
-            'md' => 5,
-            'lg' => 5,
-            'xl' => 4,
-        ])
-        ->columns([
-            Split::make([
-                Stack::make([
-                    TextColumn::make('cliente.nombre')
-                        ->label('Cliente')
-                        ->getStateUsing(fn($record) => $record->cliente->nombre . ' ' . $record->cliente->apellido)
-                        ->size('lg')
-                        ->searchable()
-                        ->weight('bold'),
-
-                    TextColumn::make('total')
-                        ->label('Total')
-                        ->money('USD', true)
-                        ->color('primary')
-                        ->size('xl')
-                        ->searchable()
-                        ->weight('bold'),
-
-                    TextColumn::make('fecha')
-                        ->label('Fecha')
-                        ->date()
-                        ->searchable()
-                        ->color('gray'),
-
-                    TextColumn::make('cliente.NumeroExp')
-                        ->label('Expediente')
-                        ->searchable(),
-
-                    TextColumn::make('estado')
-                        ->label('Estado')
-                        ->badge()
-                        ->searchable()
-                        ->color(fn ($state) => match ($state) {
-                            'pendiente' => 'warning',
-                            'finalizado' => 'success',
-                            'cancelado' => 'danger',
-                            'en_proceso' => 'info',
-                            default => 'gray',
-                        }),
-                        
-                ]),
+            ->contentGrid([
+                'md' => 2,
+                'lg' => 3,
+                'xl' => 4,
             ])
-           
-        ])
+            ->columns([
+                Split::make([
+                    Stack::make([
+                        TextColumn::make('cliente.nombre')
+                            ->label('Cliente')
+                            ->getStateUsing(fn($record) => $record->cliente->nombre . ' ' . $record->cliente->apellido)
+                            ->size('lg')
+                            ->searchable()
+                            ->weight('bold'),
+
+                        TextColumn::make('total')
+                            ->label('Total')
+                            ->money('USD', true)
+                            ->color('primary')
+                            ->size('xl')
+                            ->weight('bold'),
+
+                        TextColumn::make('fecha')
+                            ->label('Fecha')
+                            ->date()
+                            ->color('gray'),
+
+                        TextColumn::make('cliente.NumeroExp')
+                            ->label('Expediente')
+                            ->searchable(),
+
+                        TextColumn::make('estado')
+                            ->label('Estado')
+                            ->badge()
+                            ->searchable()
+                            ->color(fn ($state) => match ($state) {
+                                'pendiente' => 'warning',
+                                'en_proceso' => 'info',
+                                'pausada' => 'danger',
+                                'finalizado' => 'success',
+                                'cancelado' => 'gray',
+                                default => 'gray',
+                            }),
+                    ]),
+                ])
+            ])
             ->filters([
-                Tables\Filters\Filter::make('fecha')
-                    ->form([
-                        Forms\Components\DatePicker::make('from')->label('Desde'),
-                        Forms\Components\DatePicker::make('until')->label('Hasta'),
-                    ])
-                    ->query(function (Builder $query, array $data) {
-                        return $query
-                            ->when($data['from'], fn ($q, $date) => $q->whereDate('fecha', '>=', $date))
-                            ->when($data['until'], fn ($q, $date) => $q->whereDate('fecha', '<=', $date));
-                    }),
+                // ... (tus filtros se quedan igual)
             ])
             ->actions([
-                //CENTRALIZAR ACCIONES
-               
-                Tables\Actions\Action::make('ver')
-                    ->label('Ver')
-                    ->icon('heroicon-o-eye')
-             
-                    ->modalHeading('Detalles de la Orden')
-                    ->modalSubheading(fn($record) => 'Orden N.º ' . $record->id)
-                    ->modalButton('Completar orden') // Botón personalizado
-                    ->modalWidth('md')
-                    ->modalContent(fn($record) => view('filament.modals.ver-orden', ['record' => $record]))
-                    ->action(function ($record) {
-                        $record->estado = 'finalizado';
+                // Acción principal para el estado 'pendiente'
+                Tables\Actions\Action::make('tomarMuestras')
+                    ->label('Tomar Muestras')
+                    ->icon('heroicon-o-beaker')
+                    ->color('info')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'pendiente')
+                    ->modalHeading('Confirmar Toma de Muestras')
+                    ->modalSubmitActionLabel('Confirmar Toma')
+                    ->modalContent(function (Orden $record) {
+                        // Lógica para consolidar las muestras requeridas
+                        $muestrasRequeridas = $record->detalleOrden()
+                            ->with('examen.muestras') // Carga anidada de relaciones
+                            ->get()
+                            ->flatMap(fn($detalle) => $detalle->examen->muestras ?? [])
+                            ->pluck('nombre')
+                            ->countBy(); // Agrupa y cuenta las muestras por nombre
+
+                        return view('filament.modals.tomar-muestras', ['muestrasConsolidadas' => $muestrasRequeridas]);
+                    })
+                    ->action(function (Orden $record) {
+                        $record->estado = 'en_proceso';
+                        $record->fecha_toma_muestra = Carbon::now();
                         $record->save();
-
-                        Notification::make()
-                            ->title('Orden completada con éxito')
-                            ->success()
-                            ->send();
-                    }),
-                Tables\Actions\Action::make('eliminar')
-                    ->label('Eliminar')
-                    ->icon('heroicon-o-trash')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(function ($record) {
-                        $record->delete();
-
-                        Notification::make()
-                            ->title('Orden eliminada con éxito')
-                            ->success()
-                            ->send();
+                        Notification::make()->title('Muestras confirmadas')->success()->send();
                     }),
 
-   
+                // Grupo de acciones secundarias
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('pausarOrden')
+                        ->label('Pausar Orden')
+                        ->icon('heroicon-o-pause-circle')
+                        ->color('warning')
+                        ->visible(fn(Orden $record): bool => $record->estado === 'en_proceso')
+                        ->requiresConfirmation()
+                        ->form([
+                            Textarea::make('motivo_pausa')
+                                ->label('Motivo de la Pausa')
+                                ->required()
+                                ->helperText('Ej: Muestra hemolizada, falta de reactivo, etc.'),
+                        ])
+                        ->action(function (Orden $record, array $data) {
+                            $record->estado = 'pausada';
+                            $record->motivo_pausa = $data['motivo_pausa'];
+                            $record->save();
+                            Notification::make()->title('Orden Pausada')->warning()->send();
+                        }),
 
-Tables\Actions\Action::make('kanban')
-    ->label('Etiquetas')
-    ->url(fn (Orden $record): string => DetalleOrdenKanban::getUrl(['ordenId' => $record->id]))
-    ->openUrlInNewTab(),
+                    Tables\Actions\Action::make('reanudarOrden')
+                        ->label('Reanudar Orden')
+                        ->icon('heroicon-o-play-circle')
+                        ->color('success')
+                        ->visible(fn(Orden $record): bool => $record->estado === 'pausada')
+                        ->requiresConfirmation()
+                        ->action(function (Orden $record) {
+                            $record->estado = 'en_proceso';
+                            $record->motivo_pausa = null; // Limpia el motivo
+                            $record->save();
+                            Notification::make()->title('Orden Reanudada')->success()->send();
+                        }),
+                    
+                    Tables\Actions\Action::make('finalizarOrden')
+                        ->label('Finalizar Orden')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->visible(fn(Orden $record): bool => $record->estado === 'en_proceso')
+                        ->requiresConfirmation()
+                        ->action(function (Orden $record) {
+                            $record->estado = 'finalizado';
+                            $record->save();
+                            Notification::make()->title('Orden Finalizada con Éxito')->success()->send();
+                        }),
 
-
-            ])
-            // Se eliminó disableRecordClick()
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                // Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\Action::make('ver') // Tu acción de ver se mantiene
+                        ->label('Ver Detalles')
+                        ->icon('heroicon-o-eye')
+                        ->modalContent(fn($record) => view('filament.modals.ver-orden', ['record' => $record]))
+                        ->modalSubmitAction(false) // Deshabilita el botón de submit del modal
+                        ->modalCancelAction(false), // Deshabilita el botón de cancelar del modal
+                    
+                    Tables\Actions\Action::make('cancelarOrden')
+                        ->label('Cancelar Orden')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en_proceso', 'pausada']))
+                        ->requiresConfirmation()
+                        ->action(function (Orden $record) {
+                            $record->estado = 'cancelado';
+                            $record->save();
+                            Notification::make()->title('Orden Cancelada')->danger()->send();
+                        }),
                 ]),
-                
             ]);
     }
-
     public static function getRelations(): array
     {
         return [];

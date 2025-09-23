@@ -3,9 +3,11 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CotizacionResource\Pages;
+use App\Models\User;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class CotizacionResource extends Resource
 {
@@ -16,7 +18,22 @@ class CotizacionResource extends Resource
     protected static ?string $modelLabel = 'Cotización';
     protected static ?string $pluralModelLabel = 'Cotizaciones';
     protected static ?string $slug = 'cotizaciones';
+ public static function shouldRegisterNavigation(): bool
+{
+    return true; // si quieres que aparezca en el menú
+}
+public static function getPermissionPrefixes(): array
+{
+    return [
+        'ver_pdf', // solo este permiso aparecerá
+    ];
+}
 
+
+public static function isShieldable(): bool
+{
+    return false; // <- esto le dice a Shield que lo ignore
+}
     public static function form(Form $form): Form
     {
         return $form->schema([]);

@@ -28,4 +28,9 @@ class Examen extends Model
         return $this->belongsToMany(Orden::class, 'detalle_orden_examens', 'examen_id', 'orden_id');
     }
 
+      public function muestras()
+    {
+        return $this->belongsToMany(Muestra::class, 'examen_muestra', 'examen_id', 'muestra_id');
+    }
+
 }
