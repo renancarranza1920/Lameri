@@ -55,7 +55,7 @@
                         <th class="p-3 font-semibold text-right">Precio</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y dark:divide-gray-700">
+                 <tbody class="divide-y dark:divide-gray-700">
                     {{-- Perfiles --}}
                     @foreach ($agrupadoPorPerfil as $perfilId => $items)
                         @if ($perfilId)
