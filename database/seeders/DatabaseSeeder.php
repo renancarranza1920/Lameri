@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use DB;
 use Route;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
@@ -424,6 +425,15 @@ class DatabaseSeeder extends Seeder
                 'estado' => true,
             ]);
         }
+      
+        DB::table('grupos_etarios')->insert([
+            ['nombre' => 'Adulto (Masculino)', 'edad_min' => 18, 'edad_max' => 120, 'unidad_tiempo' => 'años', 'genero' => 'Masculino'],
+            ['nombre' => 'Adulto (Femenino)', 'edad_min' => 18, 'edad_max' => 120, 'unidad_tiempo' => 'años', 'genero' => 'Femenino'],
+            ['nombre' => 'Niño (1-12 años)', 'edad_min' => 1, 'edad_max' => 12, 'unidad_tiempo' => 'años', 'genero' => 'Ambos'],
+            ['nombre' => 'Infante (1-12 meses)', 'edad_min' => 1, 'edad_max' => 12, 'unidad_tiempo' => 'meses', 'genero' => 'Ambos'],
+            ['nombre' => 'Neonato (0-28 días)', 'edad_min' => 0, 'edad_max' => 28, 'unidad_tiempo' => 'días', 'genero' => 'Ambos'],
+            ['nombre' => 'Embarazo: Semana 3-4', 'edad_min' => 3, 'edad_max' => 4, 'unidad_tiempo' => 'semanas', 'genero' => 'Femenino'],
+        ]);
     }
     private function generatePermissions()
 {
@@ -479,6 +489,7 @@ class DatabaseSeeder extends Seeder
 
     Log::info('Permisos totales generados automáticamente:', ['total' => Permission::count()]);
 }
+
 
 }
 
