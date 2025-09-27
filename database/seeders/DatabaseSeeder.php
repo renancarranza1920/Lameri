@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\PlantillaReferencia;
 use DB;
 use Route;
 use Spatie\Permission\Models\Role;
@@ -425,14 +426,56 @@ class DatabaseSeeder extends Seeder
                 'estado' => true,
             ]);
         }
-      
-        DB::table('grupos_etarios')->insert([
+         DB::table('grupos_etarios')->insert([
             ['nombre' => 'Adulto (Masculino)', 'edad_min' => 18, 'edad_max' => 120, 'unidad_tiempo' => 'años', 'genero' => 'Masculino'],
             ['nombre' => 'Adulto (Femenino)', 'edad_min' => 18, 'edad_max' => 120, 'unidad_tiempo' => 'años', 'genero' => 'Femenino'],
             ['nombre' => 'Niño (1-12 años)', 'edad_min' => 1, 'edad_max' => 12, 'unidad_tiempo' => 'años', 'genero' => 'Ambos'],
             ['nombre' => 'Infante (1-12 meses)', 'edad_min' => 1, 'edad_max' => 12, 'unidad_tiempo' => 'meses', 'genero' => 'Ambos'],
             ['nombre' => 'Neonato (0-28 días)', 'edad_min' => 0, 'edad_max' => 28, 'unidad_tiempo' => 'días', 'genero' => 'Ambos'],
             ['nombre' => 'Embarazo: Semana 3-4', 'edad_min' => 3, 'edad_max' => 4, 'unidad_tiempo' => 'semanas', 'genero' => 'Femenino'],
+        ]);
+
+          PlantillaReferencia::create([
+            'nombre' => 'Rango numérico',
+            'descripcion' => 'Valores de referencia con mínimo, máximo y unidad',
+            'estructura_formulario' => [
+                ['nombre' => 'min', 'label' => 'Valor mínimo', 'tipo' => 'number', 'required' => true],
+                ['nombre' => 'max', 'label' => 'Valor máximo', 'tipo' => 'number', 'required' => true],
+                ['nombre' => 'unidad', 'label' => 'Unidad de medida', 'tipo' => 'text', 'required' => false],
+            ],
+        ]);
+
+        // Plantilla para categorías cualitativas con umbrales
+        PlantillaReferencia::create([
+            'nombre' => 'Categorías con intervalos',
+            'descripcion' => 'Valores cualitativos definidos por rangos (ej: negativo, intermedio, positivo)',
+            'estructura_formulario' => [
+                ['nombre' => 'categoria', 'label' => 'Categoría', 'tipo' => 'select', 'opciones' => ['Negativo', 'Intermedio', 'Positivo']],
+                ['nombre' => 'umbral', 'label' => 'Umbral de referencia', 'tipo' => 'text', 'required' => false],
+            ],
+        ]);
+
+        // Plantilla para texto libre
+        PlantillaReferencia::create([
+            'nombre' => 'Texto libre',
+            'descripcion' => 'Referencia expresada en texto sin rangos definidos',
+            'estructura_formulario' => [
+                ['nombre' => 'valor', 'label' => 'Valor esperado', 'tipo' => 'text', 'required' => true],
+                ['nombre' => 'notas', 'label' => 'Notas adicionales', 'tipo' => 'textarea', 'required' => false],
+            ],
+        ]);
+
+        // Plantilla para rangos específicos por género
+        PlantillaReferencia::create([
+            'nombre' => 'Rango diferenciado por sexo',
+            'descripcion' => 'Permite registrar valores distintos para hombres y mujeres',
+            'estructura_formulario' => [
+                ['nombre' => 'min_hombre', 'label' => 'Mínimo (Hombre)', 'tipo' => 'number'],
+                ['nombre' => 'max_hombre', 'label' => 'Máximo (Hombre)', 'tipo' => 'number'],
+                ['nombre' => 'min_mujer', 'label' => 'Mínimo (Mujer)', 'tipo' => 'number'],
+                ['nombre' => 'max_mujer', 'label' => 'Máximo (Mujer)', 'tipo' => 'number'],
+                ['nombre' => 'unidad', 'label' => 'Unidad', 'tipo' => 'text'],
+            ],
         ]);
     }
     private function generatePermissions()
