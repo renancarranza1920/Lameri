@@ -15,7 +15,12 @@ class CheckExpiringReagents
     }
 
     public function handle(Login $event): void
-    {
+    {   
+
+        Reactivo::where('estado', 'disponible')
+            ->where('fecha_caducidad', '<', Carbon::now())
+            ->update(['estado' => 'caducado']);
+
         // Ya no se necesita la comprobación de sesión
         $thresholdDate = Carbon::now()->addDays(15);
         $expiringReagents = Reactivo::query()
