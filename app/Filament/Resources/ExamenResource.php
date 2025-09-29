@@ -23,69 +23,40 @@ class ExamenResource extends Resource
     protected static ?string $pluralModelLabel = 'Exámenes';
     protected static ?string $modelLabel = 'Examen';
 
-    public static function form(Form $form): Form
-    {
-        return $form
-            ->schema([
-                Forms\Components\Card::make()
-                    ->schema([
-                        Forms\Components\Select::make('tipo_examen_id')
-                            ->label('Tipo de Examen')
-                            ->relationship('tipoExamen', 'nombre')
-                            ->required()
-                            ->searchable()
-                            ->preload(),
+// En App\Filament\Resources\ExamenResource.php
+public static function form(Form $form): Form
+{
+    return $form
+        ->schema([
+            Forms\Components\Card::make()->schema([
+                Forms\Components\Select::make('tipo_examen_id')
+                    // ... (tu campo de tipo de examen se queda igual)
+                    ->relationship('tipoExamen', 'nombre')->required()->searchable()->preload(),
 
-                        Forms\Components\TextInput::make('nombre')
-                            ->label('Nombre del Examen')
-                            ->placeholder('Ej: Glucosa, Creatinina...')
-                            ->required()
-                            ->maxLength(255),
+                Forms\Components\TextInput::make('nombre')
+                    // ... (tu campo de nombre se queda igual)
+                    ->label('Nombre del Examen')->required()->maxLength(255),
 
-                        // 👇 ***** ¡AQUÍ ESTÁ LA NUEVA SECCIÓN INTEGRADA! ***** 👇
-                        // Reemplazamos el antiguo campo 'recipiente'.
-                        Forms\Components\Select::make('muestras')
-                            ->label('Muestras Biológicas Requeridas')
-                            ->relationship('muestras', 'nombre') // Conecta con la relación en el modelo Examen
-                            ->multiple() // Permite seleccionar varias
-                            ->preload()
-                            ->searchable()
-                            ->placeholder('Seleccione una o más muestras')
-                            // Esta es la función que te permite crear muestras sobre la marcha
-                            ->createOptionForm([
-                                Forms\Components\TextInput::make('nombre')
-                                    ->label('Nombre de la Nueva Muestra')
-                                    ->placeholder('Ej: Líquido Cefalorraquídeo')
-                                    ->required()
-                                    ->unique('muestras', 'nombre'),
-                            ])
-                            ->createOptionAction(function (Forms\Components\Actions\Action $action) {
-                                return $action
-                                    ->modalHeading('Añadir Nueva Muestra Biológica')
-                                    ->modalSubmitActionLabel('Crear Muestra');
-                            }),
+                // --- ¡AQUÍ ESTÁ LA NUEVA FUNCIONALIDAD! ---
+                Forms\Components\TagsInput::make('pruebas_nombres')
+                    ->label('Pruebas del Examen')
+                    ->placeholder('Añade una prueba y presiona Enter')
+                    ->helperText('Escribe el nombre de cada prueba que compone este examen.'),
 
-                        Forms\Components\TextInput::make('precio')
-                            ->label('Precio')
-                            ->prefix('$')
-                            ->numeric()
-                            ->required()
-                            ->rule('gte:0.01')
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                if ($state <= 0) {
-                                    $set('precio', null);
-                                }
-                            }),
+                // ... (el resto de tus campos como precio, estado, etc. se quedan igual)
+                Forms\Components\Select::make('muestras')
+                    ->relationship('muestras', 'nombre')->multiple()->preload()->searchable()->createOptionForm([
+                        Forms\Components\TextInput::make('nombre')->required()->unique('muestras', 'nombre'),
+                    ]),
 
-                        Forms\Components\Toggle::make('estado')
-                            ->label('Activo')
-                            ->required()
-                            ->default(true)
-                            ->inline(false),
-                    ])
-            ]);
-    }
+                Forms\Components\TextInput::make('precio')
+                    ->label('Precio')->prefix('$')->numeric()->required(),
+
+                Forms\Components\Toggle::make('estado')
+                    ->label('Activo')->required()->default(true)->inline(false),
+            ])
+        ]);
+}
 
     public static function table(Table $table): Table
     {

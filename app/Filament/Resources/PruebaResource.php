@@ -31,7 +31,12 @@ class PruebaResource extends Resource
                             ->placeholder('Ej: Glóbulos Rojos, Creatinina Sérica')
                             ->required()
                             ->maxLength(255),
-                        
+                          Forms\Components\Select::make('examen_id')
+                ->label('Examen al que Pertenece')
+                ->relationship('examen', 'nombre')
+                ->searchable()
+                ->preload()
+                ->required(),
                         // 👇 2. CAMPO SELECT CON CREACIÓN INTEGRADA
                         Forms\Components\Select::make('tipo_prueba_id')
                             ->label('Tipo de Prueba')

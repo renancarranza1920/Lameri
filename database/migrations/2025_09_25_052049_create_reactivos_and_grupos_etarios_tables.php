@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('lote')->nullable();
             $table->date('fecha_caducidad')->nullable();
             $table->text('descripcion')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->boolean('en_uso')->default(true);
             $table->timestamps();
         });
 
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->integer('edad_min');
             $table->integer('edad_max');
             $table->enum('unidad_tiempo', ['días', 'semanas', 'meses', 'años']);
-            $table->enum('genero', ['Masculino', 'Femenino', 'Ambos'])->default('Ambos');
+          
             $table->timestamps();
         });
     }

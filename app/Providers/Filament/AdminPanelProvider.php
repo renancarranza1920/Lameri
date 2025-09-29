@@ -3,7 +3,11 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\DetalleOrdenKanban;
+use App\Filament\Widgets\ReactivosPorCaducarWidget;
+use App\Models\Reactivo;
+use Auth;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Carbon\Carbon;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -21,7 +25,8 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Filament\Http\RouteRegistrar; // ¡¡¡Esta importación es CRÍTICA!!!
+use Filament\Http\RouteRegistrar; 
+use Filament\Notifications\Notification;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -61,6 +66,7 @@ class AdminPanelProvider extends PanelProvider
         $panel->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets');
         $panel->widgets([
             Widgets\AccountWidget::class,
+          
         ]);
         $panel->middleware([
             EncryptCookies::class,
@@ -88,7 +94,10 @@ class AdminPanelProvider extends PanelProvider
         $panel->favicon(asset('storage/iconlab.png'));
 
         
+        
         // Finalmente, devuelve el objeto $panel configurado
         return $panel;
     }
+
+
 }

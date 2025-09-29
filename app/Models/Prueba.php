@@ -13,4 +13,9 @@ class Prueba extends Model
     protected $fillable = ['nombre', 'tipo_prueba_id'];
 
     public function tipoPrueba(): BelongsTo { return $this->belongsTo(TipoPrueba::class); }
+
+    public function examen(): BelongsTo 
+{ 
+    return $this->belongsTo(Examen::class); 
+}
  }

@@ -1,16 +1,21 @@
 <?php
-
 namespace App\Filament\Resources\ExamenResource\Pages;
-
 use App\Filament\Resources\ExamenResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
+
 class CreateExamen extends CreateRecord
 {
     protected static string $resource = ExamenResource::class;
 
-    protected function getRedirectUrl(): string
+    protected function afterCreate(): void
     {
-        return $this->getResource()::getUrl('index');
+        $pruebasNombres = $this->data['pruebas_nombres'] ?? [];
+        if (empty($pruebasNombres)) {
+            return;
+        }
+
+        foreach ($pruebasNombres as $nombrePrueba) {
+            $this->record->pruebas()->create(['nombre' => $nombrePrueba]);
+        }
     }
 }

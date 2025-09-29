@@ -22,6 +22,10 @@ return new class extends Migration
         Schema::create('pruebas', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
+            $table->foreignId('examen_id')
+              ->nullable() // Permite que pruebas existentes no fallen
+              ->constrained('examens') // Apunta a la tabla 'examens'
+              ->cascadeOnDelete(); // Si se borra el examen, se borran sus pruebas
 
             // Columna para la relación. Puede ser nula, como pediste.
             $table->foreignId('tipo_prueba_id')->nullable()->constrained('tipos_pruebas')->onDelete('set null');

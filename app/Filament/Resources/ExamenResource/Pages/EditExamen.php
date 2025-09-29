@@ -1,28 +1,33 @@
 <?php
-
 namespace App\Filament\Resources\ExamenResource\Pages;
-
 use App\Filament\Resources\ExamenResource;
-use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditExamen extends EditRecord
 {
     protected static string $resource = ExamenResource::class;
 
-    protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
+    // Rellenamos el campo TagsInput con las pruebas existentes
+    protected function mutateFormDataBeforeFill(array $data): array
     {
-        $updatedRecord = parent::handleRecordUpdate($record, $data);
-
-        $this->redirect($this->getResource()::getUrl('index'));
-
-        return $updatedRecord;
+        $data['pruebas_nombres'] = $this->record->pruebas->pluck('nombre')->all();
+        return $data;
     }
 
-    protected function getHeaderActions(): array
+    protected function afterSave(): void
     {
-        return [
-            Actions\DeleteAction::make(),
-        ];
+        $pruebasNombres = $this->data['pruebas_nombres'] ?? [];
+
+        // Sincronizamos las pruebas:
+        // 1. Borramos las pruebas que ya no están en la lista
+        $this->record->pruebas()->whereNotIn('nombre', $pruebasNombres)->delete();
+
+        // 2. Creamos las pruebas nuevas que no existían
+        foreach ($pruebasNombres as $nombrePrueba) {
+            $this->record->pruebas()->updateOrCreate(
+                ['nombre' => $nombrePrueba], // Condición para buscar
+                ['nombre' => $nombrePrueba]  // Datos para crear/actualizar
+            );
+        }
     }
 }

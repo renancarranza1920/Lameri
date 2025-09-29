@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Examen extends Model
 {
@@ -33,4 +34,8 @@ class Examen extends Model
         return $this->belongsToMany(Muestra::class, 'examen_muestra', 'examen_id', 'muestra_id');
     }
 
+    public function pruebas(): HasMany
+{
+    return $this->hasMany(Prueba::class);
+}
 }
