@@ -98,7 +98,46 @@
             </table>
         </div>
     </div>
+    
+    {{-- --- ¡NUEVA SECCIÓN DE ESTADO DE PRUEBAS! --- --}}
+    <hr class="my-4 dark:border-gray-700">
+    <div>
+        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Estado de las Pruebas</h3>
+        <div class="space-y-4">
+            {{-- Iteramos sobre los detalles (exámenes) de la orden --}}
+            @foreach($record->detalleOrden->whereNotNull('examen_id') as $detalle)
+                @if($detalle->examen && $detalle->examen->pruebas->isNotEmpty())
+                    <div class="p-3 border rounded-lg dark:border-gray-700">
+                        <p class="font-semibold text-gray-800 dark:text-gray-200">{{ $detalle->examen->nombre }}</p>
+                        <ul class="mt-2 space-y-1 pl-4">
+                            {{-- Iteramos sobre las pruebas de cada examen --}}
+                            @foreach($detalle->examen->pruebas as $prueba)
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    @php
+                                        // Verificamos si existe un resultado para esta prueba en esta línea de detalle
+                                        $resultadoExiste = $record->resultados
+                                            ->where('detalle_orden_id', $detalle->id)
+                                            ->where('prueba_id', $prueba->id)
+                                            ->first();
+                                    @endphp
 
+                                    @if($resultadoExiste && $resultadoExiste->resultado)
+                                        {{-- Check verde si el resultado ya fue ingresado y no está vacío --}}
+                                        <x-heroicon-s-check-circle class="h-5 w-5 text-green-500 mr-2 flex-shrink-0"/>
+                                        <span>{{ $prueba->nombre }}</span>
+                                    @else
+                                        {{-- Reloj gris si está pendiente --}}
+                                        <x-heroicon-o-clock class="h-5 w-5 text-gray-400 mr-2 flex-shrink-0"/>
+                                        <span>{{ $prueba->nombre }}</span>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+            @endforeach
+        </div>
+    </div>
     <!-- Sección del Total -->
     <div class="mt-6 pt-4 border-t-2 border-gray-300 dark:border-gray-600">
         <div class="flex justify-between items-center text-xl font-bold">

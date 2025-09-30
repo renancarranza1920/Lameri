@@ -23,40 +23,44 @@ class ExamenResource extends Resource
     protected static ?string $pluralModelLabel = 'Exámenes';
     protected static ?string $modelLabel = 'Examen';
 
-// En App\Filament\Resources\ExamenResource.php
-public static function form(Form $form): Form
-{
-    return $form
-        ->schema([
-            Forms\Components\Card::make()->schema([
-                Forms\Components\Select::make('tipo_examen_id')
-                    // ... (tu campo de tipo de examen se queda igual)
-                    ->relationship('tipoExamen', 'nombre')->required()->searchable()->preload(),
+    // En App\Filament\Resources\ExamenResource.php
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\Card::make()->schema([
+                     Forms\Components\TextInput::make('nombre')
 
-                Forms\Components\TextInput::make('nombre')
-                    // ... (tu campo de nombre se queda igual)
-                    ->label('Nombre del Examen')->required()->maxLength(255),
+                        ->label('Nombre del Examen')->required()->maxLength(255),
+                    Forms\Components\Select::make('tipo_examen_id')
 
-                // --- ¡AQUÍ ESTÁ LA NUEVA FUNCIONALIDAD! ---
-                Forms\Components\TagsInput::make('pruebas_nombres')
-                    ->label('Pruebas del Examen')
-                    ->placeholder('Añade una prueba y presiona Enter')
-                    ->helperText('Escribe el nombre de cada prueba que compone este examen.'),
+                        ->relationship('tipoExamen', 'nombre')->required()->searchable()->preload(),
 
-                // ... (el resto de tus campos como precio, estado, etc. se quedan igual)
-                Forms\Components\Select::make('muestras')
-                    ->relationship('muestras', 'nombre')->multiple()->preload()->searchable()->createOptionForm([
-                        Forms\Components\TextInput::make('nombre')->required()->unique('muestras', 'nombre'),
-                    ]),
+                   
 
-                Forms\Components\TextInput::make('precio')
-                    ->label('Precio')->prefix('$')->numeric()->required(),
+                    Forms\Components\Toggle::make('es_externo')
+                        ->label('Es un examen externo/referido')
+                        ->helperText('Activa esto si el examen se procesa en otro laboratorio.'),
 
-                Forms\Components\Toggle::make('estado')
-                    ->label('Activo')->required()->default(true)->inline(false),
-            ])
-        ]);
-}
+                    Forms\Components\TagsInput::make('pruebas_nombres')
+                        ->label('Pruebas del Examen')
+                        ->placeholder('Añade una prueba y presiona Enter')
+                        ->helperText('Escribe el nombre de cada prueba que compone este examen.'),
+
+
+                    Forms\Components\Select::make('muestras')
+                        ->relationship('muestras', 'nombre')->multiple()->preload()->searchable()->createOptionForm([
+                                Forms\Components\TextInput::make('nombre')->required()->unique('muestras', 'nombre'),
+                            ]),
+
+                    Forms\Components\TextInput::make('precio')
+                        ->label('Precio')->prefix('$')->numeric()->required(),
+
+                    Forms\Components\Toggle::make('estado')
+                        ->label('Activo')->required()->default(true)->inline(false),
+                ])->columns(2),
+            ]);
+    }
 
     public static function table(Table $table): Table
     {
@@ -71,7 +75,7 @@ public static function form(Form $form): Form
                     ->label('Nombre')
                     ->sortable()
                     ->searchable(),
-                
+
                 // 👇 ***** AÑADIMOS ESTA COLUMNA PARA VER LAS MUESTRAS ***** 👇
                 Tables\Columns\TextColumn::make('muestras.nombre')
                     ->label('Muestras')
@@ -112,7 +116,7 @@ public static function form(Form $form): Form
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                
+
                 // Tus acciones personalizadas se mantienen intactas
                 Action::make('ver-modal')
                     ->label('Ver')
@@ -132,7 +136,7 @@ public static function form(Form $form): Form
                             ->options(TipoExamen::pluck('nombre', 'id'))
                             ->disabled()
                             ->default(fn($record) => $record->tipo_examen_id),
-                        
+
                         // 👇 Mostramos las muestras en el modal de "Ver"
                         Forms\Components\TagsInput::make('muestras_nombres')
                             ->label('Muestras Requeridas')

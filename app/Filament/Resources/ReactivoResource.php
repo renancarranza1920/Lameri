@@ -73,9 +73,9 @@ class ReactivoResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     // Usamos el atributo correcto para la visibilidad
-                    ->visible(fn(Reactivo $record): bool => !$record->en_uso)
+                    ->visible(fn(Reactivo $record): bool => !$record->en_uso && $record->estado === 'disponible')
                     ->requiresConfirmation()
-                    ->visible($esAccionable)
+                    
                     ->modalHeading('Activar Reactivo')
                     ->modalDescription('¿Estás seguro de que quieres establecer este reactivo como el principal? Cualquier otro reactivo para la misma prueba será desactivado.')
                     ->action(function (Reactivo $record): void {

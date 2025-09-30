@@ -44,6 +44,7 @@ class OrdenResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
     protected static ?string $navigationLabel = 'Órdenes';
+    protected static ?string $slug = 'ordenes';
     protected static ?string $modelLabel = 'Orden';
     protected static ?string $pluralModelLabel = 'Órdenes';
 
@@ -393,125 +394,117 @@ class OrdenResource extends Resource
             ->filters([
                 // ... (tus filtros se quedan igual)
             ])
-            ->actions([
-                // Acción principal para el estado 'pendiente'
-                Tables\Actions\Action::make('tomarMuestras')
-                    ->label('Tomar Muestras')
-                    ->icon('heroicon-o-beaker')
-                    ->color('info')
-                    ->visible(fn(Orden $record): bool => $record->estado === 'pendiente')
-                    ->modalHeading('Confirmar Toma de Muestras')
-                    ->modalSubmitActionLabel('Confirmar Toma')
-                    ->modalContent(function (Orden $record) {
-                        // Lógica para consolidar las muestras requeridas
-                        $muestrasRequeridas = $record->detalleOrden()
-                            ->with('examen.muestras') // Carga anidada de relaciones
-                            ->get()
-                            ->flatMap(fn($detalle) => $detalle->examen->muestras ?? [])
-                            ->pluck('nombre')
-                            ->countBy(); // Agrupa y cuenta las muestras por nombre
-            
-                        return view('filament.modals.tomar-muestras', ['muestrasConsolidadas' => $muestrasRequeridas]);
-                    })
-                    ->action(function (Orden $record) {
-                        $record->estado = 'en proceso';
-                        $record->fecha_toma_muestra = Carbon::now();
-                        $record->save();
-                        Notification::make()->title('Muestras confirmadas')->success()->send();
-                    }),
+           ->actions([
+    Tables\Actions\Action::make('tomarMuestras')
+        ->tooltip('Tomar Muestras')
+        ->icon('heroicon-o-beaker')
+        ->iconButton()
+        ->color('info')
+        ->visible(fn(Orden $record): bool => $record->estado === 'pendiente')
+        ->modalHeading('Confirmar Toma de Muestras')
+        ->modalSubmitActionLabel('Confirmar Toma')
+        ->modalContent(function (Orden $record) {
+            $muestrasRequeridas = $record->detalleOrden()->with('examen.muestras')->get()->flatMap(fn($detalle) => $detalle->examen->muestras ?? [])->pluck('nombre')->countBy();
+            return view('filament.modals.tomar-muestras', ['muestrasConsolidadas' => $muestrasRequeridas]);
+        })
+        ->action(function (Orden $record) {
+            $record->estado = 'en proceso';
+            $record->fecha_toma_muestra = Carbon::now();
+            $record->save();
+            Notification::make()->title('Muestras confirmadas')->success()->send();
+        }),
 
-                // Grupo de acciones secundarias
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\Action::make('pausarOrden')
-                        ->label('Pausar Orden')
-                        ->icon('heroicon-o-pause-circle')
-                        ->color('warning')
-                        ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
-                        ->requiresConfirmation()
-                        ->form([
-                            Textarea::make('motivo_pausa')
-                                ->label('Motivo de la Pausa')
-                                ->required()
-                                ->helperText('Ej: Muestra hemolizada, falta de reactivo, etc.'),
-                        ])
-                        ->action(function (Orden $record, array $data) {
-                            $record->estado = 'pausada';
-                            $record->motivo_pausa = $data['motivo_pausa'];
-                            $record->save();
-                            Notification::make()->title('Orden Pausada')->warning()->send();
-                        }),
+    Tables\Actions\Action::make('ingresarResultados')
+        ->tooltip('Ingresar Resultados')
+        ->icon('heroicon-o-pencil-square')
+        ->iconButton()
+        ->color('primary')
+        ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
+        ->url(fn(Orden $record): string => static::getUrl('ingresar-resultados', ['record' => $record])),
 
-                    Tables\Actions\Action::make('reanudarOrden')
-                        ->label('Reanudar Orden')
-                        ->icon('heroicon-o-play-circle')
-                        ->color('success')
-                        ->visible(fn(Orden $record): bool => $record->estado === 'pausada')
-                        ->requiresConfirmation()
-                        ->action(function (Orden $record) {
-                            $record->estado = 'en proceso';
-                            $record->motivo_pausa = null; // Limpia el motivo
-                            $record->save();
-                            Notification::make()->title('Orden Reanudada')->success()->send();
-                        }),
+    Tables\Actions\Action::make('ver')
+        ->tooltip('Ver Detalles')
+        ->icon('heroicon-o-eye')
+        ->iconButton()
+        ->color('gray')
+        ->modalContent(function (Orden $record) {
+            // Corregido para evitar error de memoria
+            $record->load(['detalleOrden.examen.pruebas', 'resultados']);
+            return view('filament.modals.ver-orden', ['record' => $record]);
+        })
+        ->modalSubmitAction(false)
+        ->modalCancelAction(false),
 
-                    Tables\Actions\Action::make('finalizarOrden')
-                        ->label('Finalizar Orden')
-                        ->icon('heroicon-o-check-circle')
-                        ->color('success')
-                        ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
-                        ->requiresConfirmation()
-                        ->action(function (Orden $record) {
-                            $record->estado = 'finalizado';
-                            $record->save();
-                            Notification::make()->title('Orden Finalizada con Éxito')->success()->send();
-                        }),
-                    Tables\Actions\Action::make('verPruebas')
-                        ->label('Ver Pruebas')
-                        ->icon('heroicon-o-document-text')
-                        ->color('gray')
-                        // El botón solo es visible si la orden está en proceso, pausada o finalizada
-                        ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado']))
-                        ->modalHeading('Pruebas a Realizar')
-                        ->modalSubmitAction(false) // Sin botón de guardar
-                        ->modalCancelActionLabel('Cerrar')
-                        ->form(function (Orden $record) {
-    // 1. Obtenemos los detalles de la orden, cargando la relación con examen y sus pruebas
-    $detalles = $record->detalleOrden()->with('examen.pruebas')->get();
+    Tables\Actions\Action::make('verPruebas')
+        ->tooltip('Ver Pruebas Realizadas')
+        ->icon('heroicon-o-document-text')
+        ->iconButton()
+        ->color('gray')
+        ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado']))
+        ->modalHeading('Pruebas a Realizar')
+        ->modalSubmitAction(false)
+        ->modalCancelActionLabel('Cerrar')
+        ->form(function (Orden $record) {
+            $detalles = $record->detalleOrden()->with('examen.pruebas')->get();
+            $examenes = $detalles->map(fn ($detalle) => $detalle->examen)->filter()->unique('id');
+            return [Forms\Components\View::make('filament.modals.ver-orden-pruebas')->viewData(['examenes' => $examenes])];
+        }),
 
-    // 2. Mapeamos para obtener una colección única de exámenes (con sus pruebas ya cargadas)
-    $examenes = $detalles->map(function ($detalle) {
-        return $detalle->examen;
-    })->filter()->unique('id'); // ->filter() quita nulos, ->unique() evita duplicados
+    Tables\Actions\Action::make('pausarOrden')
+        ->tooltip('Pausar Orden')
+        ->icon('heroicon-o-pause-circle')
+        ->iconButton()
+        ->color('warning')
+        ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
+        ->requiresConfirmation()
+        ->form([ Textarea::make('motivo_pausa')->label('Motivo de la Pausa')->required() ])
+        ->action(function (Orden $record, array $data) {
+            $record->estado = 'pausada';
+            $record->motivo_pausa = $data['motivo_pausa'];
+            $record->save();
+            Notification::make()->title('Orden Pausada')->warning()->send();
+        }),
 
-    // 3. Devolvemos la vista, pasándole la nueva colección de exámenes
-    return [
-        Forms\Components\View::make('filament.modals.ver-orden-pruebas')
-            ->viewData([
-                'examenes' => $examenes, // <-- El cambio clave está aquí
-            ]),
-    ];
-}),
+    Tables\Actions\Action::make('reanudarOrden')
+        ->tooltip('Reanudar Orden')
+        ->icon('heroicon-o-play-circle')
+        ->iconButton()
+        ->color('success')
+        ->visible(fn(Orden $record): bool => $record->estado === 'pausada')
+        ->requiresConfirmation()
+        ->action(function (Orden $record) {
+            $record->estado = 'en proceso';
+            $record->motivo_pausa = null;
+            $record->save();
+            Notification::make()->title('Orden Reanudada')->success()->send();
+        }),
+    
+    Tables\Actions\Action::make('finalizarOrden')
+        ->tooltip('Finalizar Orden')
+        ->icon('heroicon-o-check-circle')
+        ->iconButton()
+        ->color('success')
+        ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
+        ->requiresConfirmation()
+        ->action(function (Orden $record) {
+            $record->estado = 'finalizado';
+            $record->save();
+            Notification::make()->title('Orden Finalizada con Éxito')->success()->send();
+        }),
 
-                    Tables\Actions\Action::make('ver') // Tu acción de ver se mantiene
-                        ->label('Ver Detalles')
-                        ->icon('heroicon-o-eye')
-                        ->modalContent(fn($record) => view('filament.modals.ver-orden', ['record' => $record]))
-                        ->modalSubmitAction(false) // Deshabilita el botón de submit del modal
-                        ->modalCancelAction(false), // Deshabilita el botón de cancelar del modal
-
-                    Tables\Actions\Action::make('cancelarOrden')
-                        ->label('Cancelar Orden')
-                        ->icon('heroicon-o-x-circle')
-                        ->color('danger')
-                        ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso', 'pausada']))
-                        ->requiresConfirmation()
-                        ->action(function (Orden $record) {
-                            $record->estado = 'cancelado';
-                            $record->save();
-                            Notification::make()->title('Orden Cancelada')->danger()->send();
-                        }),
-                ]),
-            ]);
+    Tables\Actions\Action::make('cancelarOrden')
+        ->tooltip('Cancelar Orden')
+        ->icon('heroicon-o-x-circle')
+        ->iconButton()
+        ->color('danger')
+        ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso', 'pausada']))
+        ->requiresConfirmation()
+        ->action(function (Orden $record) {
+            $record->estado = 'cancelado';
+            $record->save();
+            Notification::make()->title('Orden Cancelada')->danger()->send();
+        }),
+    ]);
     }
     public static function getRelations(): array
     {
@@ -529,6 +522,8 @@ class OrdenResource extends Resource
             'index' => Pages\ListOrdens::route('/'),
             'create' => Pages\CreateOrden::route('/create'),
             //  'edit' => Pages\EditOrden::route('/{record}/edit'),
+            'ingresar-resultados' => Pages\IngresarResultados::route('/{record}/ingresar-resultados'), // <-- AÑADE ESTA LÍNEA
+
 
         ];
     }

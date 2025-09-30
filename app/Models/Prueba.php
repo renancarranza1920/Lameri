@@ -18,4 +18,11 @@ class Prueba extends Model
 { 
     return $this->belongsTo(Examen::class); 
 }
+public function reactivoEnUso()
+{
+    // Devuelve el único reactivo para esta prueba que está marcado como "en uso"
+    return $this->hasOne(Reactivo::class)->where('en_uso', true);
+}
+
+public function resultados() { return $this->hasMany(Resultado::class); }
  }

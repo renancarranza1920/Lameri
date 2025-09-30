@@ -11,10 +11,15 @@ class Examen extends Model
     protected $fillable = [
         'tipo_examen_id',
         'nombre',
+        'es_externo',
         'precio',
         'recipiente',
         'estado',
     ];
+
+    protected $casts = [
+    'es_externo' => 'boolean', // <-- AÑADIDO
+];
     public function tipoExamen()
     {
         return $this->belongsTo(TipoExamen::class, 'tipo_examen_id');

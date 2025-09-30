@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Orden extends Model
 {
@@ -31,5 +32,8 @@ class Orden extends Model
         return $this->hasMany(DetalleOrden::class);
     }
 
-
+    public function resultados(): HasManyThrough
+    {
+        return $this->hasManyThrough(Resultado::class, DetalleOrden::class);
+    }
 }

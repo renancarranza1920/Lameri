@@ -15,9 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tipo_examen_id')->constrained('tipo_examens')->onDelete('cascade');
             $table->string('nombre');
+               $table->boolean('es_externo')->default(false);
             $table->decimal('precio',10,2);
              $table->string('recipiente')->nullable();
             $table->boolean('estado')->default(true);
+             
             $table->timestamps();
         });
     }
