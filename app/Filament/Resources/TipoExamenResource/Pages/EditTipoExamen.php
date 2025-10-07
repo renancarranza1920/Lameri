@@ -22,7 +22,17 @@ class EditTipoExamen extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->before(function ($record, $action) {
+                    if ($record->examenes()->count() > 0) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('No se puede eliminar')
+                            ->body('No puedes eliminar este tipo de examen porque tiene exámenes asociados.')
+                            ->danger()
+                            ->send();
+                        $action->cancel();
+                    }
+                }),
         ];
     }
 }

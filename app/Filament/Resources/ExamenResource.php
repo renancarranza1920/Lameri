@@ -31,17 +31,25 @@ class ExamenResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('tipo_examen_id')
                             ->label('Tipo de Examen')
-                            ->relationship('tipoExamen', 'nombre')
+                            ->options(function () {
+                                return \App\Models\TipoExamen::where('estado', 1)->pluck('nombre', 'id');
+                            })
                             ->required()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->validationMessages([
+                                'required' => 'Seleccione un tipo de examen.',
+                            ]),
 
                         Forms\Components\TextInput::make('nombre')
                             ->label('Nombre del Examen')
                             ->placeholder('Ej: Glucosa, Creatinina...')
                             ->required()
                             ->reactive()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->validationMessages([
+                                'required' => 'Ingrese el nombre del examen.',
+                            ]),
 
                         Forms\Components\Select::make('recipiente')
                             ->label('Recipiente')
@@ -54,7 +62,10 @@ class ExamenResource extends Resource
                                 'cultivo_secreciones' => 'Cultivo Secreciones',
                             ])
                             ->required()
-                            ->searchable(),
+                            ->searchable()
+                            ->validationMessages([
+                                'required' => 'Seleccione un recipiente.',
+                            ]),
 
                         Forms\Components\TextInput::make('precio')
                             ->label('Precio')

@@ -63,44 +63,41 @@ class OrdenResource extends Resource
     {
         return [
             Forms\Components\Select::make('cliente_id')
-                                ->label('Seleccionar o agregar cliente')
-                                ->relationship(
-                                    name: 'cliente',
-                                    titleAttribute: 'nombre'
-                                )
-                                ->preload()
-                                ->searchable(['NumeroExp', 'nombre', 'apellido'])
-                                ->getOptionLabelFromRecordUsing(fn($record) => "{$record->NumeroExp} - {$record->nombre} {$record->apellido}")
-                                ->createOptionForm([
-                                    Forms\Components\TextInput::make('nombre')
-                                        ->required()
-                                        ->maxLength(255),
-
-                                    Forms\Components\TextInput::make('apellido')
-                                        ->required()
-                                        ->maxLength(255),
-
-                                    Forms\Components\DatePicker::make('fecha_nacimiento')
-                                        ->label('Fecha de Nacimiento')
-                                        ->required(),
-
-                                    Forms\Components\TextInput::make('telefono')
-                                        ->maxLength(9),
-
-                                    Forms\Components\TextInput::make('correo')
-                                        ->email()
-                                        ->maxLength(255),
-
-                                    Forms\Components\TextInput::make('direccion')
-                                        ->maxLength(255),
-                                ])
-                                ->createOptionAction(function (Forms\Components\Actions\Action $action) {
-                                    return $action
-                                        ->modalHeading('Nuevo Cliente')
-                                        ->modalSubmitActionLabel('Guardar')
-                                        ->icon('heroicon-m-plus');
-                                })
-                                ->required(),
+                ->label('Seleccionar o agregar cliente')
+                ->options(function () {
+                    return \App\Models\Cliente::where('estado', 'Activo')
+                        ->get()
+                        ->mapWithKeys(fn($cliente) => [
+                            $cliente->id => $cliente->NumeroExp . ' - ' . $cliente->nombre . ' ' . $cliente->apellido
+                        ]);
+                })
+                ->searchable()
+                ->preload()
+                ->createOptionForm([
+                    Forms\Components\TextInput::make('nombre')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('apellido')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\DatePicker::make('fecha_nacimiento')
+                        ->label('Fecha de Nacimiento')
+                        ->required(),
+                    Forms\Components\TextInput::make('telefono')
+                        ->maxLength(9),
+                    Forms\Components\TextInput::make('correo')
+                        ->email()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('direccion')
+                        ->maxLength(255),
+                ])
+                ->createOptionAction(function (Forms\Components\Actions\Action $action) {
+                    return $action
+                        ->modalHeading('Nuevo Cliente')
+                        ->modalSubmitActionLabel('Guardar')
+                        ->icon('heroicon-m-plus');
+                })
+                ->required(),
                             // crear text area para observaciones
                             Forms\Components\Textarea::make('observaciones')
                                 ->label('Observaciones')
@@ -129,7 +126,7 @@ class OrdenResource extends Resource
                                                         ->schema([
                                                             Select::make('perfil_id')
                                                                 ->label('Buscar Perfil')
-                                                                ->options(\App\Models\Perfil::pluck('nombre', 'id')->toArray())
+                                                                ->options(\App\Models\Perfil::where('estado', 1)->pluck('nombre', 'id')->toArray())
                                                                 ->searchable()
                                                                 ->preload()
                                                                 ->reactive()
@@ -198,7 +195,9 @@ class OrdenResource extends Resource
                                                         ->schema([
                                                             Select::make('examen_id')
                                                                 ->label('Buscar Examen')
-                                                                ->options(\App\Models\Examen::pluck('nombre', 'id')->toArray())
+                                                                ->options(\App\Models\Examen::where('estado', 1)
+                                                                    ->whereHas('tipoExamen', function($q) { $q->where('estado', 1); })
+                                                                    ->pluck('nombre', 'id')->toArray())
                                                                 ->searchable()
                                                                 ->preload()
                                                                 ->reactive()
