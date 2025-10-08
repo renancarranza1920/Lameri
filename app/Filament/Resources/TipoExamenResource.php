@@ -49,6 +49,7 @@ class TipoExamenResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->recordUrl(null)
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')
                     ->label('Nombre')
@@ -89,8 +90,6 @@ class TipoExamenResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make(),
-
                 Action::make('toggleEstado')
                     ->label(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                     ->icon(fn($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')

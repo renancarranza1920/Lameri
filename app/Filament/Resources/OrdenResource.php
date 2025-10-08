@@ -74,6 +74,15 @@ class OrdenResource extends Resource
                 ->preload()
                 ->searchable(['NumeroExp', 'nombre', 'apellido'])
                 ->getOptionLabelFromRecordUsing(fn($record) => "{$record->NumeroExp} - {$record->nombre} {$record->apellido}")
+                ->options(function () {
+                    return \App\Models\Cliente::where('estado', 'Activo')
+                        ->get()
+                        ->mapWithKeys(fn($cliente) => [
+                            $cliente->id => $cliente->NumeroExp . ' - ' . $cliente->nombre . ' ' . $cliente->apellido
+                        ]);
+                })
+                ->searchable()
+                ->preload()
                 ->createOptionForm([
                     Forms\Components\TextInput::make('nombre')
                         ->required()
@@ -94,6 +103,17 @@ class OrdenResource extends Resource
                         ->email()
                         ->maxLength(255),
 
+                    Forms\Components\TextInput::make('apellido')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\DatePicker::make('fecha_nacimiento')
+                        ->label('Fecha de Nacimiento')
+                        ->required(),
+                    Forms\Components\TextInput::make('telefono')
+                        ->maxLength(9),
+                    Forms\Components\TextInput::make('correo')
+                        ->email()
+                        ->maxLength(255),
                     Forms\Components\TextInput::make('direccion')
                         ->maxLength(255),
                 ])
@@ -112,6 +132,14 @@ class OrdenResource extends Resource
                 ->columnSpanFull()
                 ->extraInputAttributes(['class' => 'resize-none']),
 
+                            // crear text area para observaciones
+                            Forms\Components\Textarea::make('observaciones')
+                                ->label('Observaciones')
+                                ->placeholder('Escribe cualquier comentario adicional...')
+                                ->rows(4)
+                                ->columnSpanFull()
+                                ->extraInputAttributes(['class' => 'resize-none']),
+                        
         ];
     }
 
@@ -135,6 +163,67 @@ class OrdenResource extends Resource
                                                 ->options(\App\Models\Perfil::pluck('nombre', 'id')->toArray())
                                                 ->searchable()
                                                 ->preload()
+                                            Forms\Components\Repeater::make('perfiles_seleccionados')
+
+                                                ->schema([
+                                                    Forms\Components\Grid::make(2)
+                                                        ->columnSpanFull()
+                                                        ->schema([
+                                                            Select::make('perfil_id')
+                                                                ->label('Buscar Perfil')
+                                                                ->options(\App\Models\Perfil::where('estado', 1)->pluck('nombre', 'id')->toArray())
+                                                                ->searchable()
+                                                                ->preload()
+                                                                ->reactive()
+                                                                ->required()
+                                                                ->validationMessages([
+                                                                    'required' => 'Debe seleccionar un perfil.',
+                                                                ])
+                                                                ->placeholder('Selecciona un perfil')
+                                                                ->afterStateHydrated(function ($state, Set $set) {
+                                                                    if (is_numeric($state)) {
+                                                                        $perfil = \App\Models\Perfil::find($state);
+                                                                        if ($perfil instanceof \App\Models\Perfil) {
+                                                                            $set('precio', $perfil->precio);
+                                                                            $set('precio_hidden', $perfil?->precio ?? 0);
+                                                                        }
+                                                                    }
+                                                                })
+                                                                ->suffixAction(
+                                                                    Action::make('crearPerfil')
+                                                                        ->icon('heroicon-m-plus')
+                                                                        ->tooltip('Agregar nuevo perfil')
+                                                                        ->url(route('filament.admin.resources.perfils.create')) // ajusta el nombre de la resource si es necesario
+                                                                        ->openUrlInNewTab() // o elimínalo si prefieres abrir en la misma pestaña
+                                                                )
+                                                                ->afterStateUpdated(function ($state, Set $set) {
+                                                                    if ($state === null) {
+                                                                        $set('precio', null);
+                                                                    } else {
+                                                                        $perfil = \App\Models\Perfil::find($state);
+                                                                        $set('precio', $perfil?->precio ?? 0);
+                                                                        $set('precio_hidden', $perfil?->precio ?? 0);
+                                                                    }
+                                                                }),
+
+                                                            Forms\Components\TextInput::make('precio')
+                                                                ->label('Precio')
+                                                                ->dehydrated(true)
+                                                                ->disabled(),
+
+                                                            Hidden::make('tipo')->default('perfil'),
+                                                            //Hidden para precio
+                                                            Hidden::make('precio_hidden')
+                                                                ->dehydrated(true),
+
+
+                                                        ])
+                                                    ,
+                                                ])
+                                                ->reorderable(false)
+                                                ->addActionLabel('Añadir Perfil a su Orden')
+                                                ->reorderableWithButtons(false)
+                                                ->default([])
                                                 ->reactive()
                                                 ->required()
                                                 ->validationMessages([
@@ -204,6 +293,71 @@ class OrdenResource extends Resource
                                                 ->options(\App\Models\Examen::pluck('nombre', 'id')->toArray())
                                                 ->searchable()
                                                 ->preload()
+                                            Forms\Components\Repeater::make('examenes_seleccionados')
+
+                                                ->schema([
+                                                    Forms\Components\Grid::make(2)
+                                                        ->columnSpanFull()
+                                                        ->schema([
+                                                            Select::make('examen_id')
+                                                                ->label('Buscar Examen')
+                                                                ->options(\App\Models\Examen::where('estado', 1)
+                                                                    ->whereHas('tipoExamen', function($q) { $q->where('estado', 1); })
+                                                                    ->pluck('nombre', 'id')->toArray())
+                                                                ->searchable()
+                                                                ->preload()
+                                                                ->reactive()
+                                                                ->required()
+                                                                ->validationMessages([
+                                                                    'required' => 'Debe seleccionar un examen.',
+                                                                ])
+                                                                ->placeholder('Selecciona un examen')
+                                                                ->afterStateHydrated(function ($state, Set $set) {
+                                                                    Log::info('Estado del examen después de hidratar:', ['state' => $state]);
+                                                                    if (is_numeric($state)) {
+                                                                        $examen = \App\Models\Examen::find($state);
+                                                                        if ($examen instanceof \App\Models\Examen) {
+                                                                            $set('precio', $examen->precio);
+                                                                            $set('precio_hidden', $examen->precio ?? 0);
+                                                                            $set('nombre_examen', $examen->nombre ?? '');
+                                                                            $set('recipiente', $examen->recipiente ?? '');
+
+                                                                        }
+                                                                    }
+                                                                })
+                                                                ->afterStateUpdated(function ($state, Set $set) {
+                                                                    if ($state === null) {
+                                                                        $set('precio', null);
+                                                                    } else {
+                                                                        $examen = \App\Models\Examen::find($state);
+                                                                        $set('precio', $examen?->precio ?? 0);
+                                                                        $set('precio_hidden', $examen?->precio ?? 0);
+                                                                        $set('nombre_examen', $examen?->nombre ?? '');
+                                                                        $set('recipiente', $examen?->recipiente ?? '');
+                                                                    }
+
+                                                                })
+                                                            ,
+
+                                                            Forms\Components\TextInput::make('precio')
+                                                                ->label('Precio')
+                                                                ->dehydrated(true)
+                                                                ->disabled(),
+
+                                                            Hidden::make('tipo')->default('examen'),
+                                                            Hidden::make('precio_hidden'),
+                                                            Hidden::make('nombre_examen')
+                                                                ->dehydrated(true),
+                                                            Hidden::make('recipiente')
+                                                                ->dehydrated(true),
+
+                                                        ]),
+                                                ])
+                                                ->reorderable(false)
+                                                ->addActionLabel('Añadir Examen a su Orden')
+                                                ->reorderableWithButtons(false)
+                                                ->default([])
+                                                ->label('Resumen de Examenes Seleccionados')
                                                 ->reactive()
                                                 ->required()
                                                 ->validationMessages([

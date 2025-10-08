@@ -33,6 +33,45 @@ class ExamenResource extends Resource
 
                         ->label('Nombre del Examen')->required()->maxLength(255),
                     Forms\Components\Select::make('tipo_examen_id')
+                Forms\Components\Card::make()
+                    ->schema([
+                        Forms\Components\Select::make('tipo_examen_id')
+                            ->label('Tipo de Examen')
+                            ->options(function () {
+                                return \App\Models\TipoExamen::where('estado', 1)->pluck('nombre', 'id');
+                            })
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->validationMessages([
+                                'required' => 'Seleccione un tipo de examen.',
+                            ]),
+
+                        Forms\Components\TextInput::make('nombre')
+                            ->label('Nombre del Examen')
+                            ->placeholder('Ej: Glucosa, Creatinina...')
+                            ->required()
+                            ->reactive()
+                            ->maxLength(255)
+                            ->validationMessages([
+                                'required' => 'Ingrese el nombre del examen.',
+                            ]),
+
+                        Forms\Components\Select::make('recipiente')
+                            ->label('Recipiente')
+                            ->options([
+                                'quimica_sanguinea' => 'Quimica Sanginea',
+                                'cuagulacion' => 'Cuagulacion',
+                                'hematologia' => 'Hematologia',
+                                'coprologia' => 'Coprologia',
+                                'uroanalisis' => 'Uroanalisis',
+                                'cultivo_secreciones' => 'Cultivo Secreciones',
+                            ])
+                            ->required()
+                            ->searchable()
+                            ->validationMessages([
+                                'required' => 'Seleccione un recipiente.',
+                            ]),
 
                         ->relationship('tipoExamen', 'nombre')->required()->searchable()->preload(),
 
@@ -65,6 +104,7 @@ class ExamenResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->recordUrl(null)
             ->columns([
                 Tables\Columns\TextColumn::make('tipoExamen.nombre')
                     ->label('Tipo de Examen')
