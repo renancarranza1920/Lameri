@@ -41,8 +41,15 @@ class ExamenDragDrop extends Component implements HasForms
         // $this->data['examenes_seleccionados'] = json_encode($this->examenesSeleccionados);
 
         
-        // Carga los exámenes disponibles
-        $this->examenesDisponibles = Examen::with('tipoExamen')->get();
+        // Carga solo exámenes y tipos de exámenes ACTIVOS
+        $this->examenesDisponibles = Examen::with(['tipoExamen' => function($q) {
+            $q->where('estado', 1);
+        }])
+        ->where('estado', 1)
+        ->whereHas('tipoExamen', function($q) {
+            $q->where('estado', 1);
+        })
+        ->get();
       // 🔥 Añadir esta línea para sincronizar desde el principio:
       $this->emitSelectionUpdated();
     
@@ -220,7 +227,15 @@ class ExamenDragDrop extends Component implements HasForms
    // Método para refrescar datos
    public function refreshExamenes()
    {
-       $this->examenesDisponibles = Examen::with('tipoExamen')->get();
+       // Refresca solo exámenes y tipos de exámenes ACTIVOS
+       $this->examenesDisponibles = Examen::with(['tipoExamen' => function($q) {
+           $q->where('estado', 1);
+       }])
+       ->where('estado', 1)
+       ->whereHas('tipoExamen', function($q) {
+           $q->where('estado', 1);
+       })
+       ->get();
        $this->emitSelectionUpdated();
    }
 

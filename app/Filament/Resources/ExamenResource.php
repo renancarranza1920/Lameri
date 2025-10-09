@@ -28,30 +28,37 @@ class ExamenResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Card::make()->schema([
-                     Forms\Components\TextInput::make('nombre')
+                Forms\Components\Card::make()
+                    ->schema([
+                        Forms\Components\Select::make('tipo_examen_id')
+                            ->label('Tipo de Examen')
+                            ->relationship('tipoExamen', 'nombre')
+                            ->options(function () {
+                                return TipoExamen::where('estado', 1)->pluck('nombre', 'id');
+                            })
+                            ->required()
+                            ->searchable()
+                            ->preload(),
 
-                        ->label('Nombre del Examen')->required()->maxLength(255),
-                    Forms\Components\Select::make('tipo_examen_id')
+                        Forms\Components\TextInput::make('nombre')
+                            ->label('Nombre del Examen')
+                            ->placeholder('Ej: Glucosa, Creatinina...')
+                            ->required()
+                            ->reactive()
+                            ->maxLength(255),
 
-                        ->relationship('tipoExamen', 'nombre')->required()->searchable()->preload(),
-
-                   
-
-                    Forms\Components\Toggle::make('es_externo')
-                        ->label('Es un examen externo/referido')
-                        ->helperText('Activa esto si el examen se procesa en otro laboratorio.'),
-
-                    Forms\Components\TagsInput::make('pruebas_nombres')
-                        ->label('Pruebas del Examen')
-                        ->placeholder('Añade una prueba y presiona Enter')
-                        ->helperText('Escribe el nombre de cada prueba que compone este examen.'),
-
-
-                    Forms\Components\Select::make('muestras')
-                        ->relationship('muestras', 'nombre')->multiple()->preload()->searchable()->createOptionForm([
-                                Forms\Components\TextInput::make('nombre')->required()->unique('muestras', 'nombre'),
-                            ]),
+                        Forms\Components\Select::make('recipiente')
+                            ->label('Recipiente')
+                            ->options([
+                                'quimica_sanguinea' => 'Quimica Sanginea',
+                                'cuagulacion' => 'Cuagulacion',
+                                'hematologia' => 'Hematologia',
+                                'coprologia' => 'Coprologia',
+                                'uroanalisis' => 'Uroanalisis',
+                                'cultivo_secreciones' => 'Cultivo Secreciones',
+                            ])
+                            ->required()
+                            ->searchable(),
 
                     Forms\Components\TextInput::make('precio')
                         ->label('Precio')->prefix('$')->numeric()->required(),
@@ -65,6 +72,7 @@ class ExamenResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->recordUrl(null)
             ->columns([
                 Tables\Columns\TextColumn::make('tipoExamen.nombre')
                     ->label('Tipo de Examen')
@@ -116,8 +124,7 @@ class ExamenResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-
-                // Tus acciones personalizadas se mantienen intactas
+                // Acción personalizada para mostrar el modal
                 Action::make('ver-modal')
                     ->label('Ver')
                     ->icon('heroicon-s-eye')
@@ -136,13 +143,10 @@ class ExamenResource extends Resource
                             ->options(TipoExamen::pluck('nombre', 'id'))
                             ->disabled()
                             ->default(fn($record) => $record->tipo_examen_id),
-
-                        // 👇 Mostramos las muestras en el modal de "Ver"
-                        Forms\Components\TagsInput::make('muestras_nombres')
-                            ->label('Muestras Requeridas')
+                        Forms\Components\TextInput::make('recipiente')
+                            ->label('Recipiente')
                             ->disabled()
-                            ->default(fn($record) => $record->muestras->pluck('nombre')->all()),
-
+                            ->default(fn($record) => $record->recipiente),
                         Forms\Components\TextInput::make('precio')
                             ->label('Precio')
                             ->prefix('$')
