@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         //
     })
+     ->withEvents(discover: false)
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })
+     ->withProviders([
+        \App\Providers\EventServiceProvider::class, // <-- AÑADE ESTA LÍNEA
+    ])->create();
