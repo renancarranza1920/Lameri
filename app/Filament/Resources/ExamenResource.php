@@ -59,6 +59,13 @@ class ExamenResource extends Resource
                             ])
                             ->required()
                             ->searchable(),
+                             Forms\Components\Select::make('muestras')
+                        ->relationship('muestras', 'nombre')->multiple()->preload()->searchable()->createOptionForm([
+                                Forms\Components\TextInput::make('nombre')->required()->unique('muestras', 'nombre'),
+                            ]),
+                                Forms\Components\Toggle::make('es_externo')
+                        ->label('Es un examen externo/referido')
+                        ->helperText('Activa esto si el examen se procesa en otro laboratorio.'),
 
                     Forms\Components\TextInput::make('precio')
                         ->label('Precio')->prefix('$')->numeric()->required(),
