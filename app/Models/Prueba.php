@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany; // <-- Cambia HasOne por Has
 class Prueba extends Model
 {
     use HasFactory;
-    protected $fillable = ['nombre', 'tipo_prueba_id'];
+    protected $fillable = ['nombre', 'tipo_prueba_id', 'examen_id', 'tipo_conjunto'];
 
     public function tipoPrueba(): BelongsTo { return $this->belongsTo(TipoPrueba::class); }
 

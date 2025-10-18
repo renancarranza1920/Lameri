@@ -29,7 +29,7 @@ return new class extends Migration
 
             // Columna para la relación. Puede ser nula, como pediste.
             $table->foreignId('tipo_prueba_id')->nullable()->constrained('tipos_pruebas')->onDelete('set null');
-
+            $table->string('tipo_conjunto')->nullable(); // Agrégala aquí, el orden no afecta la funcionalidad.
             $table->timestamps();
         });
     }

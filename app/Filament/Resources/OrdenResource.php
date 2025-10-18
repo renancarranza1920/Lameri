@@ -12,6 +12,9 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\ViewField;
 use Filament\Forms\Components\Wizard;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Response;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms\Components\Tabs;
@@ -499,6 +502,79 @@ class OrdenResource extends Resource
             Notification::make()->title('Orden Finalizada con Éxito')->success()->send();
         }),
 
+      Tables\Actions\Action::make('generarReporte')
+                    ->tooltip('Generar Reporte PDF')
+                    ->icon('heroicon-o-printer')
+                    ->iconButton()
+                    ->color('gray')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'finalizado')
+                    // --- ¡LÓGICA DE PREPARACIÓN DE DATOS REESCRITA! ---
+                    ->action(function (Orden $record) {
+                        $orden = $record->load([
+                            'cliente', 
+                            'detalleOrden.examen.tipoExamen',
+                            'detalleOrden.examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario', 
+                            'resultados.prueba'
+                        ]);
+
+                        $detallesAgrupados = $orden->detalleOrden
+                            ->whereNotNull('examen_id')
+                            ->groupBy('examen.tipoExamen.nombre');
+
+                        $datos_agrupados = [];
+                        foreach ($detallesAgrupados as $tipoExamenNombre => $detalles) {
+                            
+                            $examenes_data = [];
+                            foreach ($detalles as $detalle) {
+                                $todasLasPruebas = $detalle->examen->pruebas;
+
+                                // 1. Separar pruebas unitarias de las conjuntas
+                                $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
+                                $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
+
+                                // 2. Procesar pruebas unitarias
+                                $dataUnitarias = $pruebasUnitarias->map(function ($prueba) use ($orden, $detalle) {
+                                    return self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
+                                })->all();
+
+                                // 3. Procesar matrices
+                                $dataMatrices = $pruebasConjuntas->map(function (Collection $pruebasDelConjunto) use ($orden, $detalle) {
+                                    $filas = []; $columnas = []; $dataMatrix = [];
+                                    foreach ($pruebasDelConjunto as $prueba) {
+                                        $partes = explode(', ', $prueba->nombre);
+                                        if (count($partes) >= 2) {
+                                            [$nombreFila, $nombreColumna] = $partes;
+                                            $filas[] = $nombreFila; $columnas[] = $nombreColumna;
+                                            $dataMatrix[$nombreFila][$nombreColumna] = self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
+                                        }
+                                    }
+                                    return [
+                                        'filas' => array_values(array_unique($filas)),
+                                        'columnas' => array_values(array_unique($columnas)),
+                                        'data' => $dataMatrix,
+                                    ];
+                                })->all();
+
+                                $examenes_data[] = [
+                                    'nombre' => $detalle->examen->nombre,
+                                    'codigo' => $detalle->examen->id,
+                                    'pruebas_unitarias' => $dataUnitarias,
+                                    'matrices' => $dataMatrices,
+                                ];
+                            }
+                            $datos_agrupados[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
+                        }
+
+                        $pdf = Pdf::loadView('pdf.reporte_resultados', [
+                            'orden' => $orden,
+                            'datos_agrupados' => $datos_agrupados,
+                        ]);
+
+                        return response()->streamDownload(
+                            fn () => print($pdf->output()),
+                            "Resultados-{$orden->cliente->nombre}-{$orden->id}.pdf"
+                        );
+                    }),
     Tables\Actions\Action::make('cancelarOrden')
         ->tooltip('Cancelar Orden')
         ->icon('heroicon-o-x-circle')
@@ -516,6 +592,29 @@ class OrdenResource extends Resource
     public static function getRelations(): array
     {
         return [];
+    }
+    public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
+    {
+        $resultado = $orden->resultados->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
+        
+        $referencia_formateada = 'N/A';
+        $unidades = '';
+
+        if ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
+            $valorRef = $prueba->reactivoEnUso->valoresReferencia->first(); // Simplificado
+            $valorMin = rtrim(rtrim(number_format($valorRef->valor_min, 2, '.', ''), '0'), '.');
+            $valorMax = rtrim(rtrim(number_format($valorRef->valor_max, 2, '.', ''), '0'), '.');
+            $referencia_formateada = "$valorMin - $valorMax";
+            $unidades = $valorRef->unidades ?? '';
+        }
+
+        return [
+            'nombre' => $prueba->nombre,
+            'resultado' => $resultado->resultado ?? 'PENDIENTE',
+            'referencia' => $referencia_formateada,
+            'unidades' => $unidades,
+            'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
+        ];
     }
     public static function getRecordUrlUsing(): Closure
     {
