@@ -330,7 +330,6 @@ class OrdenResource extends Resource
 
             // Total
 
-
             Forms\Components\Placeholder::make('totalPagar')
                 ->label('Total a pagar')
                 ->content(function (Get $get) {
