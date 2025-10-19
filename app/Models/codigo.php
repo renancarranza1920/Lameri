@@ -6,11 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
 
-
-class codigo extends Model
+class Codigo extends Model
 {
     use HasFactory;
-    
+
     protected $fillable = [
         'codigo',
         'tipo_descuento',
@@ -25,50 +24,72 @@ class codigo extends Model
         'fecha_vencimiento' => 'date',
     ];
 
-    /** Verifica si el código puede usarse */
+    /**
+     * Determina si el código puede usarse.
+     */
     public function esValido(): bool
     {
-        // Actualizar estado si venció
-        if (Carbon::parse($this->fecha_vencimiento)->isPast() && $this->estado === 'Activo') {
-            $this->update(['estado' => 'Expirado']);
+        // Si ya está inactivo, no es válido
+        if ($this->estado !== 'Activo') {
+            return false;
         }
 
-        // Actualizar estado si llegó al límite de usos
-        if ($this->usos_actuales >= $this->limite_usos && $this->estado === 'Activo') {
+        // Si tiene fecha de vencimiento y ya pasó, se desactiva
+        if ($this->fecha_vencimiento && Carbon::parse($this->fecha_vencimiento)->isPast()) {
             $this->update(['estado' => 'Inactivo']);
+            return false;
         }
 
-        // Solo puede usarse si está activo
-        return $this->estado === 'Activo';
+        // Si tiene límite de usos y se alcanzó, se desactiva
+        if ($this->limite_usos && $this->limite_usos > 0 && $this->usos_actuales >= $this->limite_usos) {
+            $this->update(['estado' => 'Inactivo']);
+            return false;
+        }
+
+        return true;
     }
 
+    /**
+     * Asigna valores predeterminados al crear.
+     */
     protected static function booted()
-{
-    static::creating(function ($codigo) {
-        $codigo->estado = 'Activo';
-        $codigo->usos_actuales = 0;
-    });
-}
+    {
+        static::creating(function ($codigo) {
+            $codigo->estado = 'Activo';
+            $codigo->usos_actuales = 0;
+        });
+    }
 
-
-     /** Registra un uso del código */
+    /**
+     * Registra un uso del código.
+     */
     public function registrarUso(): void
     {
-        $this->increment('usos_actuales');
+        // Solo incrementar si tiene límite
+        if ($this->limite_usos && $this->limite_usos > 0) {
+            $this->increment('usos_actuales');
 
-        if ($this->usos_actuales >= $this->limite_usos) {
-            $this->update(['estado' => 'Inactivo']);
+            // Si alcanza el límite, se desactiva
+            if ($this->usos_actuales >= $this->limite_usos) {
+                $this->update(['estado' => 'Inactivo']);
+            }
         }
     }
 
+    /**
+     * Desactiva los códigos vencidos (los que tienen fecha y ya pasaron).
+     */
     public static function desactivarVencidos(): void
     {
-        static::where('fecha_vencimiento', '<', Carbon::today())
+        static::whereNotNull('fecha_vencimiento')
+            ->where('fecha_vencimiento', '<', Carbon::today())
             ->where('estado', 'Activo')
-            ->update(['estado' => 'Expirado']);
+            ->update(['estado' => 'Inactivo']);
     }
 
-    /** Aplica descuento al total */
+    /**
+     * Aplica el descuento al total.
+     */
     public function aplicarDescuento(float $total): float
     {
         if ($this->tipo_descuento === 'porcentaje') {

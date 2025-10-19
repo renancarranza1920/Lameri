@@ -16,4 +16,23 @@ class EditCodigo extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    //al editar debe realizar lo mismo
+    protected function mutateFormDataBeforeUpdate(array $data): array
+    {
+     
+
+        // Si deja la fecha vacía, se guarda como null (sin vencimiento)
+        if (empty($data['fecha_vencimiento'])) {
+            $data['fecha_vencimiento'] = null;
+        }
+
+        return $data;
+    }
+
+    //regresar al listado despues de editar
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

@@ -46,11 +46,12 @@ class CodigoResource extends Resource
                 ->required(),
 
             TextInput::make('limite_usos')
-                ->numeric()
-                ->minValue(1)
-                ->default(1)
-                ->label('Límite de usos')
-                ->required(),
+            ->numeric()
+            ->minValue(0)
+            ->default(0)
+            ->label('Límite de usos')
+            ->helperText('Usa 0 para indicar que es ilimitado.')
+            ->required(),
 
             TextInput::make('usos_actuales')
                 ->numeric()
@@ -61,8 +62,8 @@ class CodigoResource extends Resource
 
             DatePicker::make('fecha_vencimiento')
                 ->label('Fecha de vencimiento')
-                ->required()
-                ->minDate(now()),
+                ->minDate(now())
+                ->helperText('Dejar vacío para no establecer vencimiento.'),
         ]);
     }
 
@@ -82,14 +83,30 @@ class CodigoResource extends Resource
                 return $state;
             }),
             TextColumn::make('usos_actuales')->label('Usos'),
-            TextColumn::make('limite_usos')->label('Límite'),
-            TextColumn::make('fecha_vencimiento')->date('d/m/y')->label('Fecha Vencimiento'),
+
+           // COLUMNA LÍMITE (USANDO PLACEHOLDER)
+        TextColumn::make('limite_usos')
+                ->label('Límite')
+                ->formatStateUsing(fn ($state): string => 
+                    // Si el valor del campo es 0 (que se guarda en la DB), muestra Ilimitado.
+                    $state === 0 || $state === '0'
+                        ? 'Ilimitado' 
+                        : (string) $state
+                )
+                ->placeholder('Ilimitado'), // Muestra "Ilimitado" cuando el valor es NULL
+
+        // COLUMNA FECHA VENCIMIENTO (USANDO PLACEHOLDER Y DATE)
+        TextColumn::make('fecha_vencimiento')
+            ->label('Fecha Vencimiento')
+            ->date('d/m/Y') // Formato si el valor NO es NULL
+            ->placeholder('Sin vencimiento'), // Muestra "Sin vencimiento" cuando el valor es NULL
+
+
             TextColumn::make('estado')
                 ->badge()
                 ->color(fn($state) => match ($state) {
-                    'activo' => 'success',
-                    'inactivo' => 'gray',
-                    'expirado' => 'danger',
+                    'Activo' => 'success',
+                    'Inactivo' => 'gray',
                     default => 'gray',
                 }),
         ])->defaultSort('created_at', 'desc');

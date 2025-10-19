@@ -16,9 +16,9 @@ return new class extends Migration
             $table->string('codigo')->unique(); // código personalizado
             $table->string('tipo_descuento'); // tipo de descuento
             $table->decimal('valor_descuento', 10, 2); // o monto fijo si quieres
-            $table->integer('limite_usos')->default(1); // número máximo de usos
+            $table->integer('limite_usos')->nullable(); // número máximo de usos
             $table->integer('usos_actuales')->default(0); // veces que ya se usó
-            $table->date('fecha_vencimiento');
+            $table->date('fecha_vencimiento')->nullable();
             $table->string('estado'); // activo, inactivo, expirado
             $table->timestamps();
         });
