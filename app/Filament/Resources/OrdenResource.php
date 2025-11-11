@@ -7,7 +7,9 @@ use App\Filament\Resources\OrdenResource\Pages;
 use App\Models\Orden;
 use App\Models\Cliente;
 use Carbon\Carbon;
+use DB;
 use Filament\Forms;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\ViewField;
@@ -404,32 +406,114 @@ class OrdenResource extends Resource
                 // ... (tus filtros se quedan igual)
             ])
            ->actions([
-    Tables\Actions\Action::make('tomarMuestras')
-        ->tooltip('Tomar Muestras')
-        ->icon('heroicon-o-beaker')
-        ->iconButton()
-        ->color('info')
-        ->visible(fn(Orden $record): bool => $record->estado === 'pendiente')
-        ->modalHeading('Confirmar Toma de Muestras')
-        ->modalSubmitActionLabel('Confirmar Toma')
-        ->modalContent(function (Orden $record) {
-            $muestrasRequeridas = $record->detalleOrden()->with('examen.muestras')->get()->flatMap(fn($detalle) => $detalle->examen->muestras ?? [])->pluck('nombre')->countBy();
-            return view('filament.modals.tomar-muestras', ['muestrasConsolidadas' => $muestrasRequeridas]);
-        })
-        ->action(function (Orden $record) {
-            $record->estado = 'en proceso';
-            $record->fecha_toma_muestra = Carbon::now();
-            $record->save();
-            Notification::make()->title('Muestras confirmadas')->success()->send();
-        }),
+Tables\Actions\Action::make('gestionarMuestras')
+                    ->label('Gestionar Muestras')
+                    ->tooltip('Registrar muestras recibidas')
+                    ->icon('heroicon-o-beaker')
+                    ->iconButton()
+                    ->color('info')
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso']))
+                    ->modalHeading('Registrar Muestras Recibidas')
+                    ->modalSubmitActionLabel('Guardar Estado')
+                    ->form(function (Orden $record) {
+                        $detalles = $record->detalleOrden()->with('examen.muestras')->get();
+                        
+                        $opcionesMuestras = [];
+                        $valoresPorDefecto = [];
 
-    Tables\Actions\Action::make('ingresarResultados')
-        ->tooltip('Ingresar Resultados')
-        ->icon('heroicon-o-pencil-square')
-        ->iconButton()
-        ->color('primary')
-        ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
-        ->url(fn(Orden $record): string => static::getUrl('ingresar-resultados', ['record' => $record])),
+                        foreach ($detalles as $detalle) {
+                            if (!$detalle->examen || $detalle->examen->muestras->isEmpty()) continue;
+                            
+                            // Obtenemos las muestras ya recibidas para ESTE detalle
+                            $recibidas = $detalle->muestras_recibidas ?? [];
+
+                            foreach ($detalle->examen->muestras as $muestra) {
+                                // Creamos un ID único (detalle_id + muestra_id)
+                                $key = "d{$detalle->id}_m{$muestra->id}";
+                                $label = "{$detalle->examen->nombre}: {$muestra->nombre}";
+                                $opcionesMuestras[$key] = $label;
+
+                                // Si la muestra está en el array, la marcamos
+                                if (in_array($muestra->id, $recibidas)) {
+                                    $valoresPorDefecto[] = $key;
+                                }
+                            }
+                        }
+
+                        if (empty($opcionesMuestras)) {
+                            return [Forms\Components\Placeholder::make('no_muestras')->content('Este examen no tiene muestras asociadas.')];
+                        }
+
+                        return [
+                            CheckboxList::make('muestras_recibidas_list')
+                                ->label('Marcar muestras como recibidas')
+                                ->options($opcionesMuestras)
+                                ->default($valoresPorDefecto) // Carga el estado guardado
+                                ->columns(1)
+                                ->bulkToggleable(),
+                        ];
+                    })
+                     ->action(function (Orden $record, array $data) {
+                        $selectedKeys = $data['muestras_recibidas_list'] ?? [];
+                        $detalles = $record->detalleOrden()->with('examen.muestras')->get();
+                        
+                        $totalMuestrasRequeridas = 0;
+                        $totalMuestrasRecibidas = 0;
+
+                        DB::transaction(function () use ($detalles, $selectedKeys, &$totalMuestrasRequeridas, &$totalMuestrasRecibidas) {
+                            foreach ($detalles as $detalle) {
+                                $muestrasDeEsteDetalle = [];
+                                if ($detalle->examen->muestras->isEmpty()) continue;
+
+                                foreach ($detalle->examen->muestras as $muestra) {
+                                    $totalMuestrasRequeridas++;
+                                    $key = "d{$detalle->id}_m{$muestra->id}";
+                                    if (in_array($key, $selectedKeys)) {
+                                        $muestrasDeEsteDetalle[] = $muestra->id;
+                                        $totalMuestrasRecibidas++;
+                                    }
+                                }
+                                $detalle->muestras_recibidas = $muestrasDeEsteDetalle;
+                                $detalle->save();
+                            }
+                        });
+
+                        // --- LÓGICA DE AUDITORÍA Y ESTADO ---
+                        if ($totalMuestrasRequeridas > 0 && $totalMuestrasRequeridas === $totalMuestrasRecibidas) {
+                            $record->estado = 'en proceso';
+                            $record->fecha_toma_muestra = Carbon::now(); // <-- GUARDAR FECHA
+                            $record->toma_muestra_user_id = auth()->id(); // <-- GUARDAR USUARIO
+                            Notification::make()->title('¡Todas las muestras recibidas!')->body('La orden está lista para procesar.')->success()->send();
+                        } else {
+                            $record->estado = 'pendiente'; 
+                            $record->fecha_toma_muestra = null; // <-- LIMPIAR FECHA
+                            $record->toma_muestra_user_id = null; // <-- LIMPIAR USUARIO
+                            $notificacion = ($totalMuestrasRecibidas > 0)
+                                ? Notification::make()->title('Muestras guardadas')->body('Aún faltan muestras por recibir. La orden sigue pendiente.')->info()
+                                : Notification::make()->title('Muestras guardadas')->body('No se ha recibido ninguna muestra.')->warning();
+                            $notificacion->send();
+                        }
+                        $record->save();
+                    }),
+
+               
+
+   Tables\Actions\Action::make('ingresarResultados')
+                    ->tooltip('Ingresar Resultados')
+                    ->icon('heroicon-o-pencil-square')
+                    ->iconButton()
+                    ->color('primary')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso') // <-- ¡LÓGICA CLAVE!
+                    ->url(fn(Orden $record): string => static::getUrl('ingresar-resultados', ['record' => $record])),
+                
+    Tables\Actions\Action::make('imprimirEtiquetas')
+                    ->tooltip('Imprimir Etiquetas')
+                    ->icon('heroicon-o-ticket')
+                    ->iconButton()
+                    ->color('gray')
+                    // Visible si la orden no está finalizada o cancelada
+                    ->visible(fn(Orden $record): bool => !in_array($record->estado, ['finalizado', 'cancelado'])) 
+                    ->url(fn(Orden $record): string => DetalleOrdenKanban::getUrl(['ordenId' => $record->id])),
 
     Tables\Actions\Action::make('ver')
         ->tooltip('Ver Detalles')
@@ -592,19 +676,63 @@ class OrdenResource extends Resource
     {
         return [];
     }
-    public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
+     public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
     {
         $resultado = $orden->resultados->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
         
         $referencia_formateada = 'N/A';
         $unidades = '';
+        $es_fuera_de_rango = false; // <-- NUEVA BANDERA
+        $valor_resultado_num = null;
+
+        // Intentar convertir el resultado a número para comparar
+        if ($resultado && is_numeric($resultado->resultado)) {
+            $valor_resultado_num = (float) $resultado->resultado;
+        }
 
         if ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-            $valorRef = $prueba->reactivoEnUso->valoresReferencia->first(); // Simplificado
-            $valorMin = rtrim(rtrim(number_format($valorRef->valor_min, 2, '.', ''), '0'), '.');
-            $valorMax = rtrim(rtrim(number_format($valorRef->valor_max, 2, '.', ''), '0'), '.');
-            $referencia_formateada = "$valorMin - $valorMax";
+            // Se mantiene la lógica de tomar el primero
+            $valorRef = $prueba->reactivoEnUso->valoresReferencia->first(); 
+            
+            $valorMin = (float) $valorRef->valor_min;
+            $valorMax = (float) $valorRef->valor_max;
             $unidades = $valorRef->unidades ?? '';
+
+            // Formatear el texto de referencia
+            $rangoTexto = match ($valorRef->operador) {
+                'rango' => "{$valorMin} - {$valorMax}",
+                '<=' => "≤ {$valorMax}",
+                '<' => "< {$valorMax}",
+                '>=' => "≥ {$valorMin}",
+                '>' => "> {$valorMin}",
+                '=' => "= {$valorMin}",
+                default => $valorRef->descriptivo ?? '',
+            };
+            $referencia_formateada = $rangoTexto; // (Simplificado)
+
+            // --- NUEVA LÓGICA DE COMPARACIÓN ---
+            if (!is_null($valor_resultado_num)) {
+                switch ($valorRef->operador) {
+                    case 'rango':
+                        if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) $es_fuera_de_rango = true;
+                        break;
+                    case '<=':
+                        if ($valor_resultado_num > $valorMax) $es_fuera_de_rango = true;
+                        break;
+                    case '<':
+                        if ($valor_resultado_num >= $valorMax) $es_fuera_de_rango = true;
+                        break;
+                    case '>=':
+                        if ($valor_resultado_num < $valorMin) $es_fuera_de_rango = true;
+                        break;
+                    case '>':
+                        if ($valor_resultado_num <= $valorMin) $es_fuera_de_rango = true;
+                        break;
+                    case '=':
+                         if ($valor_resultado_num != $valorMin) $es_fuera_de_rango = true;
+                        break;
+                }
+            }
         }
 
         return [
@@ -613,6 +741,7 @@ class OrdenResource extends Resource
             'referencia' => $referencia_formateada,
             'unidades' => $unidades,
             'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
+            'es_fuera_de_rango' => $es_fuera_de_rango, // <-- DEVOLVEMOS LA BANDERA
         ];
     }
     public static function getRecordUrlUsing(): Closure

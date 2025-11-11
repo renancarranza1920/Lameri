@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -32,56 +31,91 @@
         .matrix-table { width: 100%; border-collapse: collapse; margin-top: 15px; page-break-inside: auto; }
         .matrix-table th, .matrix-table td { border: 1px solid #ccc; text-align: center; padding: 5px; vertical-align: middle; }
         .matrix-table thead th { font-weight: bold; text-transform: uppercase; background-color: #f2f2f2; border-bottom: 2px solid #000; }
-        .matrix-table tbody th { font-weight: bold; background-color: #f2f2f2; } /* Cabeceras de fila */
+        .matrix-table tbody th { font-weight: bold; background-color: #f2f2f2; }
         .matrix-table td { font-size: 11px; font-weight: bold; }
-        .matrix-table thead th:first-child { background-color: transparent; border: none; } /* Esquina vacía */
+        .matrix-table thead th:first-child { background-color: transparent; border: none; }
 
         footer { position: fixed; bottom: -20px; left: 0px; right: 0px; height: 40px; text-align: center; font-size: 9px; color: #888; border-top: 1px solid #ccc; padding-top: 5px;}
         footer .page-number:before { content: "Página " counter(page); }
+
+        /* --- ¡NUEVO ESTILO! --- */
+        .fuera-de-rango {
+            color: #D90000; /* Un rojo oscuro para impresión */
+            font-weight: bold;
+        }
+
+        .header {
+    display: table;
+    width: 100%;
+    border-bottom: 3px solid #1E73BE;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+}
+.header-left {
+    display: table-cell;
+    vertical-align: top;
+    width: 55%;
+}
+.header-right {
+    display: table-cell;
+    vertical-align: top;
+    width: 45%;
+}
+
     </style>
 </head>
 <body>
- <footer>
+    <footer>
         <div>{{ $orden->cliente->nombre ?? 'Nombre Laboratorio' }} - Reporte de Resultados</div>
         <div class="page-number"></div>
     </footer>
 
     <div class="header">
-        <div class="header-left">
-            <img src="{{ public_path('storage/logo.png') }}" alt="Logo">
-           
-            <p class="lab-address">
-               4TA CALLE ORIENTE BARRIO SAN FRANCISCO #6 SAN VICENTE San Vicente CP, 1701<br>
-                Tels. (503) 75954210
-            </p>
+    <div class="header-left">
+        <img src="{{ public_path('storage/logo.png') }}" alt="Logo" style="max-width: 90px; vertical-align: middle;">
+
+        <div style="font-weight: bold; font-size: 13px; color: #003366; margin-top: 3px;">
+            LABORATORIO CLÍNICO MERINO
         </div>
-        <div class="header-right">
-            <div class="patient-info">
-                <table>
-                    <tr>
-                        <td width="35%"><strong>PACIENTE:</strong></td>
-                        <td width="65%">{{ $orden->cliente->nombre }} {{ $orden->cliente->apellido }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>EDAD:</strong></td>
-                        <td>{{ \Carbon\Carbon::parse($orden->cliente->fecha_nacimiento)->age }} AÑOS</td>
-                    </tr>
-                    <tr>
-                        <td><strong>GÉNERO:</strong></td>
-                        <td>{{ $orden->cliente->genero ?? 'No especificado' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>NRO. ORDEN:</strong></td>
-                        <td>{{ $orden->id }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>FECHA DE REPORTE:</strong></td>
-                        <td>{{ now()->format('d/m/Y') }}</td>
-                    </tr>
-                </table>
-            </div>
+
+        <p style="font-size: 9px; margin: 2px 0;">
+            <span style="color:#444;">4ª CALLE ORIENTE #6, B° SAN FRANCISCO, SAN VICENTE.</span>
+        </p>
+
+       <p style="font-size: 9px; margin: 0; color: #333;">
+    📞 <strong>2606-6596</strong> &nbsp;&nbsp; 💬 <strong>WhatsApp: 7595-4210</strong>
+</p>
+
+    </div>
+
+    <div class="header-right">
+        <div class="patient-info">
+            <table>
+                <tr>
+                    <td width="35%"><strong>PACIENTE:</strong></td>
+                    <td width="65%">{{ $orden->cliente->nombre }} {{ $orden->cliente->apellido }}</td>
+                </tr>
+                <tr>
+                    <td><strong>EDAD:</strong></td>
+                    <td>{{ \Carbon\Carbon::parse($orden->cliente->fecha_nacimiento)->age }} AÑOS</td>
+                </tr>
+                <tr>
+                    <td><strong>GÉNERO:</strong></td>
+                    <td>{{ $orden->cliente->genero ?? 'No especificado' }}</td>
+                </tr>
+                <tr>
+                    <td><strong>NRO. ORDEN:</strong></td>
+                    <td>{{ $orden->id }}</td>
+                </tr>
+                <tr>
+                    <td><strong>FECHA DE REPORTE:</strong></td>
+                    <td>{{ now()->format('d/m/Y') }}</td>
+                </tr>
+            </table>
         </div>
     </div>
+</div>
+
 
     @foreach($datos_agrupados as $tipoExamenNombre => $examenes)
         <div class="tipo-examen-header">{{ $tipoExamenNombre }}</div>
@@ -89,7 +123,6 @@
         @foreach($examenes as $examen)
             <table class="results-table">
                 <thead>
-                    {{-- Solo mostramos la cabecera si hay pruebas unitarias --}}
                     @if (!empty($examen['pruebas_unitarias']))
                         <tr>
                             <th style="width: 35%;">RESULTADO</th>
@@ -104,12 +137,14 @@
                         <td colspan="4">EXAMEN: {{ $examen['nombre'] }} | CÓDIGO: {{ $examen['codigo'] ?? 'N/A' }}</td>
                     </tr>
                     
-                    {{-- RENDERIZAR PRUEBAS UNITARIAS --}}
                     @foreach($examen['pruebas_unitarias'] as $pruebaData)
                         <tr class="result-row">
                             <td>
                                 <div class="result-prueba-name">{{ $pruebaData['nombre'] }}</div>
-                                <div class="result-value">{!! $pruebaData['resultado'] !!}</div>
+                                <!-- --- ¡CAMBIO AQUÍ! --- -->
+                                <div class="result-value @if($pruebaData['es_fuera_de_rango']) fuera-de-rango @endif">
+                                    {!! $pruebaData['resultado'] !!}
+                                </div>
                             </td>
                             <td>{!! $pruebaData['referencia'] !!}</td>
                             <td>{{ $pruebaData['unidades'] }}</td>
@@ -119,13 +154,12 @@
                 </tbody>
             </table>
 
-            {{-- RENDERIZAR MATRICES --}}
             @if (!empty($examen['matrices']))
                 @foreach ($examen['matrices'] as $matriz)
                     <table class="matrix-table">
                         <thead>
                             <tr>
-                                <th></th> {{-- Esquina vacía --}}
+                                <th></th>
                                 @foreach ($matriz['columnas'] as $columna)
                                     <th>{{ $columna }}</th>
                                 @endforeach
@@ -136,8 +170,13 @@
                                 <tr>
                                     <th>{{ $fila }}</th>
                                     @foreach ($matriz['columnas'] as $columna)
-                                        <td>
-                                            {{ $matriz['data'][$fila][$columna]['resultado'] ?? 'N/A' }}
+                                        @php
+                                            $celda = $matriz['data'][$fila][$columna] ?? null;
+                                        @endphp
+                                        
+                                        <!-- --- ¡CAMBIO AQUÍ! --- -->
+                                        <td class="@if($celda && $celda['es_fuera_de_rango']) fuera-de-rango @endif">
+                                            {{ $celda['resultado'] ?? 'N/A' }}
                                         </td>
                                     @endforeach
                                 </tr>
@@ -146,9 +185,8 @@
                     </table>
                 @endforeach
             @endif
-             <div style="height: 15px;"></div> {{-- Espacio entre exámenes --}}
+             <div style="height: 15px;"></div>
         @endforeach
     @endforeach
 </body>
 </html>
-

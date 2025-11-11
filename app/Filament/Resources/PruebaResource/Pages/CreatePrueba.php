@@ -64,13 +64,14 @@ class CreatePrueba extends CreateRecord
             });
 
             // Si no se procesó nada, informar al usuario.
-            if (empty($successMessages)) {
+             if (empty($successMessages)) {
                 Notification::make()
                     ->title('No se Creó Nada')
                     ->body('Por favor, completa los campos para una prueba unitaria o una matriz.')
                     ->warning()
                     ->send();
-                $this->halt();
+               
+                return;
             }
 
             // Si hubo éxito, mostrar un resumen de lo que se hizo.
