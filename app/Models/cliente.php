@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany; // 👈 Importa esto
+use App\Models\Orden; // 👈 Importa el modelo Orden
 
 class cliente extends Model
 {
@@ -36,5 +38,10 @@ class cliente extends Model
                 $cliente->estado = 'Activo';
             }
         });
+    }
+
+    public function ordenes(): HasMany
+    {
+        return $this->hasMany(Orden::class);
     }
 }
