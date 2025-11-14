@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\CustomLogin;
 use App\Filament\Pages\DetalleOrdenKanban;
 use App\Filament\Widgets\ReactivosPorCaducarWidget;
 use App\Models\Reactivo;

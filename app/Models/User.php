@@ -7,12 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
-
+   use LogsActivity;
         use HasRoles;
 
     /**
@@ -22,6 +24,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'nickname',
         'email',
         'password',
     ];
@@ -47,5 +50,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('Usuarios')
+            ->setDescriptionForEvent(fn(string $eventName) => "El usuario ha sido {$eventName}")
+            ->logOnlyDirty()
+            ->logOnly(['name', 'email'])
+            ->dontSubmitEmptyLogs();
     }
 }

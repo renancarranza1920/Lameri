@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Pages\DetalleOrdenKanban;
 use App\Filament\Resources\OrdenResource\Pages;
+use App\Models\Codigo;
 use App\Models\Orden;
 use App\Models\Cliente;
 use Carbon\Carbon;
@@ -52,7 +53,9 @@ class OrdenResource extends Resource
     protected static ?string $slug = 'ordenes';
     protected static ?string $modelLabel = 'Orden';
     protected static ?string $pluralModelLabel = 'Órdenes';
-
+        public float $subtotal = 0;
+    public float $descuento = 0;
+    public ?Codigo $codigoAplicado = null;
     public static function form(Form $form): Form
     {
         return $form
@@ -270,9 +273,11 @@ class OrdenResource extends Resource
                                 ->label('Resumen de Examenes Seleccionados')
                                 ->reactive()
                             ,
-                        ])
+                                    ]),
+                    
+                
 
-
+                    
 
 
                 ])
@@ -412,7 +417,7 @@ Tables\Actions\Action::make('gestionarMuestras')
                     ->icon('heroicon-o-beaker')
                     ->iconButton()
                     ->color('info')
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso']))
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente']))
                     ->modalHeading('Registrar Muestras Recibidas')
                     ->modalSubmitActionLabel('Guardar Estado')
                     ->form(function (Orden $record) {
@@ -508,7 +513,7 @@ Tables\Actions\Action::make('gestionarMuestras')
                 
     Tables\Actions\Action::make('imprimirEtiquetas')
                     ->tooltip('Imprimir Etiquetas')
-                    ->icon('heroicon-o-ticket')
+                    ->icon('heroicon-o-tag')
                     ->iconButton()
                     ->color('gray')
                     // Visible si la orden no está finalizada o cancelada
@@ -530,7 +535,7 @@ Tables\Actions\Action::make('gestionarMuestras')
 
     Tables\Actions\Action::make('verPruebas')
         ->tooltip('Ver Pruebas Realizadas')
-        ->icon('heroicon-o-document-text')
+        ->icon('heroicon-o-clipboard-document-check')
         ->iconButton()
         ->color('gray')
         ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado']))

@@ -82,10 +82,31 @@
             <span style="color:#444;">4ª CALLE ORIENTE #6, B° SAN FRANCISCO, SAN VICENTE.</span>
         </p>
 
-       <p style="font-size: 9px; margin: 0; color: #333;">
-    📞 <strong>2606-6596</strong> &nbsp;&nbsp; 💬 <strong>WhatsApp: 7595-4210</strong>
-</p>
+      <p style="font-size: 9px; margin: 0; color: #333; line-height: 1.5;">
+    
+    <!-- Grupo de Teléfono -->
+    <span style="display: inline-block; vertical-align: middle;">
+        <!-- CAMBIO: width y height de 10 a 8 -->
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjIgMTYuOTJ2M2EyIDIgMCAwIDEtMi4xOCAyIDE5Ljc5IDE5Ljc5IDAgMCAxLTguNjMtMy4wNyAxOS41IDE5LjUgMCAwIDEtNi02IDE5Ljc5IDE5Ljc5IDAgMCAxLTMuMDctOC42M0EyIDIgMCAwIDEgNC4xMSAySDdBMiAyIDAgMCAxIDkgMy4yNmExMi44NCAxMi44NCAwIDAgMCAuNyAyLjgxIDIgMiAwIDAgMS0uNDUgMi4xMUw4LjA5IDkuOTFhMTYgMTYgMCAwIDAgNiA2bDEuMjctMS4yN2EyIDIgMCAwIDEgMi4xMS0uNDUgMTIuODQgMTIuODQgMCAwIDAgMi44MS43QTIgMiAwIDAgMSAyMiAxNi45MnoiPjwvcGF0aD48L3N2Zz4=" width="8" height="8" style="vertical-align: middle; margin-right: 3px;"/>
+    </span>
+    <span style="display: inline-block; vertical-align: middle; font-weight: bold;">
+          2606-6596
+    </span>
+    
+    <!-- Separador -->
+    <span style="display: inline-block; vertical-align: middle; margin-left: 8px; margin-right: 8px; color: #888;">
+        |
+    </span>
 
+    <!-- Grupo de WhatsApp (con icono SVG corregido) -->
+    <span style="display: inline-block; vertical-align: middle;">
+        <!-- CAMBIO: width y height de 10 a 8 -->
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjEgMTEuNWE4LjM4IDguMzggMCAwIDEtLjkgMy44IDguNSA4LjUgMCAwIDEtNy42IDQuNyA4LjM4IDguMzggMCAwIDEtMy44LS45TDMgMjFsMS45LTUuN2E4LjM4IDguMzggMCAwIDEtLjktMy44IDguNSA4LjUgMCAwIDEgNC43LTcuNiA4LjM4IDguMzggMCAwIDEgMy44LS45aC41YTguNDggOC40OCAwIDAgMSA4IDh2LjV6Ij48L3BhdGg+PC9zdmc+Cg==" width="8" height="8" style="vertical-align: middle; margin-right: 3px;"/>
+    </span>
+    <span style="display: inline-block; vertical-align: middle; font-weight: bold;">
+          WhatsApp: 7595-4210
+    </span>
+</p>
     </div>
 
     <div class="header-right">

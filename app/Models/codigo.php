@@ -6,9 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
 
+// 1. IMPORTAR LAS CLASES DE SPATIE
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 class Codigo extends Model
 {
-    use HasFactory;
+    // 2. USAR LOS TRAITS
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'codigo', 'tipo_descuento', 'valor_descuento',
@@ -81,5 +86,29 @@ class Codigo extends Model
         }
         return $total;
     }
-}
 
+    // 3. AÑADIR EL MÉTODO DE CONFIGURACIÓN DE LA BITÁCORA
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            // ¡Corregido con tu sintaxis!
+            ->useLogName('Cupones') 
+            
+            ->setDescriptionForEvent(function(string $eventName) {
+                $eventoTraducido = match($eventName) {
+                    'created' => 'creado',
+                    'updated' => 'actualizado',
+                    'deleted' => 'eliminado',
+                    default => $eventName
+                };
+                
+                return "El cupón '{$this->codigo}' ha sido {$eventoTraducido}";
+            })
+            
+            // Rastrear todos los campos en $fillable automáticamente
+            ->logFillable() 
+            
+            ->logOnlyDirty() 
+            ->dontSubmitEmptyLogs();
+    }
+}

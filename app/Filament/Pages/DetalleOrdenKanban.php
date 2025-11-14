@@ -10,6 +10,7 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
 use Mokhosh\FilamentKanban\Pages\KanbanBoard;
+use Illuminate\Support\Facades\Auth; // <-- 1. IMPORTAR AUTH Y ACTIVITY
 
 class DetalleOrdenKanban extends KanbanBoard
 {
@@ -24,9 +25,9 @@ class DetalleOrdenKanban extends KanbanBoard
     protected static string $statusEnum = App\Enums\RecipienteEnum::class;
 
     public static function shouldRegisterNavigation(): bool
-{
-    return false;
-}
+    {
+        return false;
+    }
 
 
     public array $extraRecipientes = [];
@@ -67,8 +68,18 @@ class DetalleOrdenKanban extends KanbanBoard
 
     public function onStatusChanged(int|string $recordId, string $status, array $fromOrderedIds, array $toOrderedIds): void
     {
-        DetalleOrden::find($recordId)->update(['status' => $status]);
+        $detalle = DetalleOrden::find($recordId);
+        $detalle->update(['status' => $status]);
         DetalleOrden::setNewOrder($toOrderedIds);
+
+        // --- 2. REGISTRAR BITÁCORA MANUAL ---
+        // Registra la acción sobre la Orden principal
+        if ($detalle->orden) {
+            activity()
+                ->causedBy(Auth::user())
+                ->performedOn($detalle->orden) 
+                ->log("Movió la etiqueta '{$detalle->nombre_examen}' al estado '{$status}' en la Orden #{$this->ordenId}");
+        }
     }
 
     public function onSortChanged(int|string $recordId, string $status, array $orderedIds): void
@@ -84,22 +95,16 @@ class DetalleOrdenKanban extends KanbanBoard
             $orden = Orden::find($this->ordenId);
             if ($orden) {
                 static::$title = 'Etiquetas de Exámenes - Orden #' . $orden->id;
-                 // Mostrar notificación al cargar la página
            
-                 
-            // Mostrar notificación solo si viene del CreateOrden
-            if (session()->get('from_create_orden')) {
-                Notification::make()
-                    ->title('Orden creada con éxito')
-                    ->body('ID de la orden: ' . $orden->id)
-                    ->success()
-                    ->persistent() // La notificación no se cierra automáticamente
-                    ->send();
-
-                // Eliminar la variable de sesión para futuras visitas
-                session()->forget('from_create_orden');
-            }
-           
+                if (session()->get('from_create_orden')) {
+                    Notification::make()
+                        ->title('Orden creada con éxito')
+                        ->body('ID de la orden: ' . $orden->id)
+                        ->success()
+                        ->persistent()
+                        ->send();
+                    session()->forget('from_create_orden');
+                }
             }
         }
     }
@@ -115,14 +120,10 @@ class DetalleOrdenKanban extends KanbanBoard
         ];
     }
 
-    // === NUEVO MÉTODO PARA IMPRIMIR TODAS LAS ETIQUETAS ===
     public function printGroup(string $status): void
     {
         if (!$this->ordenId) {
-            Notification::make()
-                ->title('Orden no encontrada.')
-                ->danger()
-                ->send();
+            Notification::make()->title('Orden no encontrada.')->danger()->send();
             return;
         }
 
@@ -132,32 +133,28 @@ class DetalleOrdenKanban extends KanbanBoard
             ->get();
 
         if ($detalles->isEmpty()) {
-            Notification::make()
-                ->title('No hay detalles para generar ZPL.')
-                ->warning()
-                ->send();
+            Notification::make()->title('No hay detalles para generar ZPL.')->warning()->send();
             return;
         }
 
         try {
             $service = new ZebraLabelService();
             $zpl = $service->generarZplMultiple($detalles);
-
             $this->sendToPrinter($zpl);
 
-            Notification::make()
-                ->title('Etiquetas enviadas a la impresora Zebra.')
-                ->success()
-                ->send();
+            Notification::make()->title('Etiquetas enviadas a la impresora.')->success()->send();
+
+            // --- 2. REGISTRAR BITÁCORA MANUAL ---
+            activity()
+                ->causedBy(Auth::user())
+                ->performedOn(Orden::find($this->ordenId))
+                ->log("Imprimió el grupo de etiquetas '{$status}' para la Orden #{$this->ordenId}");
+
         } catch (\Exception $e) {
-            Notification::make()
-                ->title('Error al enviar las etiquetas: ' . $e->getMessage())
-                ->danger()
-                ->send();
+            Notification::make()->title('Error al enviar las etiquetas: ' . $e->getMessage())->danger()->send();
         }
     }
 
-    // Método de prueba para el botón "Generar Etiquetas ZPL"
     public function printAll(): void
     {
         if (!$this->ordenId) return;
@@ -167,72 +164,62 @@ class DetalleOrdenKanban extends KanbanBoard
             ->get();
 
         if ($detalles->isEmpty()) {
-            Notification::make()
-                ->title('No hay detalles para generar ZPL.')
-                ->warning()
-                ->send();
+            Notification::make()->title('No hay detalles para generar ZPL.')->warning()->send();
             return;
         }
 
         try {
             $service = new ZebraLabelService();
             $zpl = $service->generarZplMultiple($detalles);
-
             $this->sendToPrinter($zpl);
 
-            Notification::make()
-                ->title('Etiquetas enviadas a la impresora Zebra.')
-                ->success()
-                ->send();
+            Notification::make()->title('Etiquetas enviadas a la impresora.')->success()->send();
+            
+            // --- 2. REGISTRAR BITÁCORA MANUAL ---
+            activity()
+                ->causedBy(Auth::user())
+                ->performedOn(Orden::find($this->ordenId))
+                ->log("Imprimió TODAS las etiquetas para la Orden #{$this->ordenId}");
+
         } catch (\Exception $e) {
-            Notification::make()
-                ->title('Error al enviar las etiquetas: ' . $e->getMessage())
-                ->danger()
-                ->send();
+            Notification::make()->title('Error al enviar las etiquetas: ' . $e->getMessage())->danger()->send();
         }
     }
 
-    // Método privado que ya existía
     private function sendToPrinter(string $zpl): void
     {
         $tempFile = tempnam(sys_get_temp_dir(), 'zpl');
         file_put_contents($tempFile, $zpl);
-
         exec("print /D:\\\\localhost\\ZebraZD230 " . escapeshellarg($tempFile));
-
         @unlink($tempFile);
     }
 
-    // === NUEVO MÉTODO PARA IMPRIMIR UN REGISTRO INDIVIDUAL ===
-public function printSingle(int $recordId): void
-{
-    $detalle = DetalleOrden::with('orden.cliente')->find($recordId);
+    public function printSingle(int $recordId): void
+    {
+        $detalle = DetalleOrden::with('orden.cliente')->find($recordId);
 
-    if (!$detalle) {
-        Notification::make()
-            ->title('Detalle no encontrado.')
-            ->danger()
-            ->send();
-        return;
-    }
+        if (!$detalle) {
+            Notification::make()->title('Detalle no encontrado.')->danger()->send();
+            return;
+        }
 
-    try {
-        $service = new ZebraLabelService();
-        $zpl = $service->generarZpl($detalle);
+        try {
+            $service = new ZebraLabelService();
+            $zpl = $service->generarZpl($detalle);
+            $this->sendToPrinter($zpl);
 
-        $this->sendToPrinter($zpl);
+            Notification::make()->title('Etiqueta enviada a la impresora.')->success()->send();
 
-        Notification::make()
-            ->title('Etiqueta enviada a la impresora Zebra.')
-            ->success()
-            ->send();
-    } catch (\Exception $e) {
-        Notification::make()
-            ->title('Error al enviar la etiqueta: ' . $e->getMessage())
-            ->danger()
-            ->send();
+            // --- 2. REGISTRAR BITÁCORA MANUAL ---
+            if ($detalle->orden) {
+                activity()
+                    ->causedBy(Auth::user())
+                    ->performedOn($detalle->orden)
+                    ->log("Imprimió una etiqueta individual ('{$detalle->nombre_examen}') para la Orden #{$this->ordenId}");
+            }
+
+        } catch (\Exception $e) {
+            Notification::make()->title('Error al enviar la etiqueta: ' . $e->getMessage())->danger()->send();
+        }
     }
 }
-
-}
-

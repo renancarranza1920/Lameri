@@ -15,7 +15,7 @@ use Filament\Forms\Set;
 class CodigoResource extends Resource
 {
     protected static ?string $model = Codigo::class;
-    protected static ?string $navigationIcon = 'heroicon-o-ticket';
+    protected static ?string $navigationIcon = 'heroicon-s-receipt-percent';
     protected static ?string $navigationLabel = 'Cupones de Descuento';
     protected static ?string $pluralModelLabel = 'Cupones';
     protected static ?string $modelLabel = 'Cupón';
@@ -84,7 +84,7 @@ class CodigoResource extends Resource
                 }),
             
            Tables\Columns\TextColumn::make('limite_usos')
-                ->label('Límite / Usos')
+                ->label('Usos / Límite')
                 ->formatStateUsing(function (Codigo $record): string {
                     // La tabla ahora lee la bandera 'es_limitado'
                     if (!$record->es_limitado) {
