@@ -36,7 +36,7 @@ public static function isShieldable(): bool
 }
     public static function form(Form $form): Form
     {
-        return $form->schema([]);
+        return $form->schema(components: []);
     }
 
     public static function table(Table $table): Table

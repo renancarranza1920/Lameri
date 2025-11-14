@@ -25,8 +25,8 @@ return new class extends Migration
             $table->string('operador')->default('rango')->comment('Define el tipo de lógica: rango, <=, >=, <, >, =');
             $table->string('descriptivo')->nullable()->comment('Ej: Fumadores, No Fumadores, Riesgoso');
             $table->string('genero')->nullable()->comment('Masculino, Femenino, Ambos.');
-            $table->decimal('valor_min', 8, 2)->nullable();
-            $table->decimal('valor_max', 8, 2)->nullable();
+            $table->decimal('valor_min', 13, 2)->nullable();
+            $table->decimal('valor_max', 13, 2)->nullable();
             $table->string('unidades')->nullable();
             $table->text('nota')->nullable();
             $table->timestamps();

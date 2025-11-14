@@ -47,7 +47,7 @@ class ReactivoResource extends Resource
 
     public static function table(Table $table): Table
     {
-           $esAccionable = fn (Reactivo $record): bool => $record->estado === 'disponible';
+        $esAccionable = fn(Reactivo $record): bool => $record->estado === 'disponible';
 
         return $table
             ->columns([
@@ -75,7 +75,7 @@ class ReactivoResource extends Resource
                     // Usamos el atributo correcto para la visibilidad
                     ->visible(fn(Reactivo $record): bool => !$record->en_uso && $record->estado === 'disponible')
                     ->requiresConfirmation()
-                    
+
                     ->modalHeading('Activar Reactivo')
                     ->modalDescription('¿Estás seguro de que quieres establecer este reactivo como el principal? Cualquier otro reactivo para la misma prueba será desactivado.')
                     ->action(function (Reactivo $record): void {
@@ -153,10 +153,13 @@ class ReactivoResource extends Resource
                                                             ->label('Modo de Referencia')
                                                             ->options(['rango' => 'Rango (entre dos valores)', '<=' => 'Hasta un valor (<=)', '>=' => 'Desde un valor (>=)', '<' => 'Menor que (<)', '>' => 'Mayor que (>)', '=' => 'Igual a (=)'])
                                                             ->default('rango')->required()->live()->columnSpan(4),
-                                                        TextInput::make('valor_min')->label('Valor Mínimo')->numeric()
+                                                        TextInput::make('valor_min')
+                                                            ->label('Valor Mínimo')
                                                             ->required(fn(Get $get) => in_array($get('operador'), ['rango', '>=', '>']))
                                                             ->visible(fn(Get $get) => in_array($get('operador'), ['rango', '>=', '>', '='])),
-                                                        TextInput::make('valor_max')->label('Valor Máximo')->numeric()
+
+                                                        TextInput::make('valor_max')
+                                                            ->label('Valor Máximo')
                                                             ->required(fn(Get $get) => in_array($get('operador'), ['rango', '<=', '<']))
                                                             ->visible(fn(Get $get) => in_array($get('operador'), ['rango', '<=', '<'])),
                                                         TextInput::make('unidades')->label('Unidades')->columnSpan(2),
@@ -174,12 +177,12 @@ class ReactivoResource extends Resource
                         // Guardado automático
                     }),
 
-                    Action::make('restock')
+                Action::make('restock')
                     ->label('Reabastecer')
                     ->icon('heroicon-o-arrow-path-rounded-square')
                     ->color('primary')
                     // Solo es visible si el reactivo NO está disponible
-                    ->visible(fn (Reactivo $record) => $record->estado !== 'disponible')
+                    ->visible(fn(Reactivo $record) => $record->estado !== 'disponible')
                     ->modalHeading('Reabastecer Reactivo')
                     ->modalDescription('Esto creará un nuevo registro de reactivo basado en este, con todos sus valores de referencia duplicados.')
                     ->modalSubmitActionLabel('Confirmar Reabastecimiento')
@@ -200,7 +203,7 @@ class ReactivoResource extends Resource
                         $newReagent->lote = $data['lote'];
                         $newReagent->estado = 'disponible'; // El nuevo lote siempre está disponible
                         $newReagent->en_uso = false; // Por seguridad, el nuevo lote no entra en uso automáticamente
-
+            
                         // 3. Guardamos el nuevo reactivo en la base de datos
                         $newReagent->save();
 
