@@ -49,6 +49,13 @@ class PruebaResource extends Resource
                                         Forms\Components\Select::make('tipo_prueba_id')
                                             ->label('Tipo de Prueba')
                                             ->relationship('tipoPrueba', 'nombre')
+                                            //crear modal para agregar nuevo tipo de prueba
+                                            ->createOptionForm([
+                                                Forms\Components\TextInput::make('nombre')
+                                                    ->label('Nombre del Tipo de Prueba')
+                                                    ->required()
+                                                    ->maxLength(255),
+                                            ])
                                             ->searchable()->preload()->helperText('Opcional.'),
                                     ])
                             ]),

@@ -26,7 +26,18 @@ class PruebasRelationManager extends RelationManager
                     ->required()
                     ->maxLength(255),
                 // El examen_id se asigna automáticamente
+                Forms\Components\Select::make('tipo_prueba_id')
+                    ->label('Tipo de Prueba')
+                    ->relationship('tipoPrueba', 'nombre')
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('nombre')
+                            ->label('Nombre del Tipo de Prueba')
+                            ->required()
+                            ->maxLength(255),
+                    ])
+                    ->searchable()->preload()->helperText('Opcional.'),
             ]);
+
     }
 
     public function table(Table $table): Table
@@ -34,11 +45,7 @@ class PruebasRelationManager extends RelationManager
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')->searchable(),
-                Tables\Columns\TextColumn::make('tipo_conjunto')
-                    ->label('Tipo')
-                    ->formatStateUsing(fn ($state) => is_null($state) ? 'Unitaria' : 'Matriz')
-                    ->badge()
-                    ->color(fn ($state) => is_null($state) ? 'success' : 'info'),
+                Tables\Columns\TextColumn::make('tipoPrueba.nombre')->label('Tipo de Prueba')->searchable(),
             ])
             ->filters([
                 //

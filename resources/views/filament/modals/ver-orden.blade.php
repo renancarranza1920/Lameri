@@ -2,6 +2,9 @@
     // Agrupamos la lógica al inicio para mantener el HTML limpio
     $agrupadoPorPerfil = $record->detalleOrden->groupBy('perfil_id');
 
+    $orden = $record; // Renombramos para claridad
+    $cliente = $orden->cliente;
+
     // Mapeo de colores para los estados, igual que en la tabla de órdenes
     $statusColor = match($record->estado) {
         'pendiente' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400',
@@ -98,7 +101,23 @@
             </table>
         </div>
     </div>
-    
+      <section>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Gestión de Muestras</h3>
+        <div class="p-4 border rounded-lg dark:border-gray-700 text-sm">
+            @if($orden->tomaMuestraUser)
+                <div class="mb-2">
+                    <dt class="text-gray-500 dark:text-gray-400">Muestras recibidas por:</dt>
+                    <dd class="font-medium text-gray-900 dark:text-white">{{ $orden->tomaMuestraUser->name }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500 dark:text-gray-400">Fecha de recepción:</dt>
+                    <dd class="font-medium text-gray-900 dark:text-white">{{ $orden->fecha_toma_muestra->format('d/m/Y h:i A') }}</dd>
+                </div>
+            @else
+                <p class="text-gray-500 dark:text-gray-400">Las muestras de esta orden aún no han sido recibidas.</p>
+            @endif
+        </div>
+    </section>
     {{-- --- ¡NUEVA SECCIÓN DE ESTADO DE PRUEBAS! --- --}}
     <hr class="my-4 dark:border-gray-700">
     <div>
