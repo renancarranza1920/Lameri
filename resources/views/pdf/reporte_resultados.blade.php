@@ -11,6 +11,7 @@
         .header { display: table; width: 100%; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
         .header-left { display: table-cell; vertical-align: top; width: 45%; }
         .header-left img { max-width: 150px; margin-bottom: 10px; }
+    .sello { max-width: 140px; opacity: 0.95; margin-right: 140px; }
         .header-left .lab-name { font-size: 14px; font-weight: bold; color: #1E73BE; margin: 0; }
         .header-left .lab-address { font-size: 9px; margin: 0; }
 
@@ -149,6 +150,12 @@
              <div style="height: 15px;"></div> {{-- Espacio entre exámenes --}}
         @endforeach
     @endforeach
+    {{-- Sello del laboratorio: ubicado después de los resultados (parte superior del bloque final) --}}
+    @if (file_exists(public_path('storage/sello.png')))
+        <div style="text-align: right; margin-top: 10px;">
+            <img src="{{ public_path('storage/sello.png') }}" alt="Sello" class="sello">
+        </div>
+    @endif
 </body>
 </html>
 
