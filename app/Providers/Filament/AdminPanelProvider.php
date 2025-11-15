@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\Login;
+use App\Filament\Pages\Auth\CustomLogin;
 use App\Filament\Pages\DetalleOrdenKanban;
 use App\Filament\Widgets\ReactivosPorCaducarWidget;
 use App\Models\Reactivo;
@@ -37,7 +39,7 @@ class AdminPanelProvider extends PanelProvider
         $panel->default();
         $panel->id('admin');
         $panel->path('admin');
-        $panel->login();
+        $panel->login( Login::class);
         $panel->favicon('storage/iconlab.png');
       $panel->colors([
     'primary'   => '#1E73BE', // Azul base

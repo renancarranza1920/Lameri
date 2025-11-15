@@ -16,6 +16,7 @@
         "mokhosh/filament-kanban": "^2.11",
         "relaticle/flowforge": "dev-main",
         "spatie/eloquent-sortable": "^4.5",
+        "spatie/laravel-activitylog": "^4.10",
         "spatie/laravel-permission": "^6.21"
     },
     "require-dev": {

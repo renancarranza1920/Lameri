@@ -26,7 +26,14 @@ class DetalleOrden extends Model implements Sortable
     {
         return $this->belongsTo(Orden::class);
     }
-
+  /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'muestras_recibidas' => 'array',
+    ];
     public function examen()
     {
         return $this->belongsTo(Examen::class);
