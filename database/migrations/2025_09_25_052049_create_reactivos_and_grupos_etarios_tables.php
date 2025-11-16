@@ -25,6 +25,7 @@ return new class extends Migration
             $table->integer('edad_min');
             $table->integer('edad_max');
             $table->enum('unidad_tiempo', ['días', 'semanas', 'meses', 'años']);
+            $table->enum('genero', ['Masculino', 'Femenino', 'Ambos'])->default('Ambos');
           
             $table->timestamps();
         });

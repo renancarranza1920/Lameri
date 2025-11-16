@@ -681,24 +681,74 @@ Tables\Actions\Action::make('gestionarMuestras')
     {
         return [];
     }
-     public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
+    public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
     {
         $resultado = $orden->resultados->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
         
         $referencia_formateada = 'N/A';
         $unidades = '';
-        $es_fuera_de_rango = false; // <-- NUEVA BANDERA
+        $es_fuera_de_rango = false;
         $valor_resultado_num = null;
 
-        // Intentar convertir el resultado a número para comparar
         if ($resultado && is_numeric($resultado->resultado)) {
             $valor_resultado_num = (float) $resultado->resultado;
         }
 
+        // --- INICIO DE LA LÓGICA DE REFERENCIA CORREGIDA ---
         if ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-            // Se mantiene la lógica de tomar el primero
-            $valorRef = $prueba->reactivoEnUso->valoresReferencia->first(); 
             
+            // 1. OBTENER DATOS DEL PACIENTE
+            $cliente = $orden->cliente;
+            $generoCliente = $cliente->genero; // "Masculino" o "Femenino"
+            $grupoEtarioCliente = $cliente->getGrupoEtario(); // Objeto GrupoEtario o null
+
+            $valorRef = null;
+            $todosLosValores = $prueba->reactivoEnUso->valoresReferencia;
+
+            if ($grupoEtarioCliente) {
+                // 2. INTENTO DE BÚSQUEDA 1: Grupo Etario + Género Específico
+                // Ej: "Adultos" (ID: 8) + "Masculino"
+                $valorRef = $todosLosValores
+                    ->where('grupo_etario_id', $grupoEtarioCliente->id)
+                    ->where('genero', $generoCliente)
+                    ->first();
+
+                // 3. INTENTO DE BÚSQUEDA 2 (FALLBACK): Grupo Etario + "Ambos"
+                // Ej: "Adultos" (ID: 8) + "Ambos"
+                if (!$valorRef) {
+                    $valorRef = $todosLosValores
+                        ->where('grupo_etario_id', $grupoEtarioCliente->id)
+                        ->where('genero', 'Ambos')
+                        ->first();
+                }
+            }
+
+            // 4. INTENTO DE BÚSQUEDA 3 (FALLBACK): Sin Grupo Etario + Género Específico
+            // (Para valores que no dependen de la edad, solo del género)
+            if (!$valorRef) {
+                $valorRef = $todosLosValores
+                    ->whereNull('grupo_etario_id')
+                    ->where('genero', $generoCliente)
+                    ->first();
+            }
+
+            // 5. INTENTO DE BÚSQUEDA 4 (FALLBACK): Sin Grupo Etario + "Ambos"
+            // (El valor más genérico, ej: 0-100 U/L para todos)
+            if (!$valorRef) {
+                $valorRef = $todosLosValores
+                    ->whereNull('grupo_etario_id')
+                    ->where('genero', 'Ambos')
+                    ->first();
+            }
+            
+            // 6. ÚLTIMO RECURSO: Si todo falla, toma el primero (evita crasheo)
+            if (!$valorRef) {
+                $valorRef = $todosLosValores->first();
+            }
+
+            // --- FIN DE LA LÓGICA DE BÚSQUEDA ---
+
+            // Ahora $valorRef es el correcto (o el mejor disponible)
             $valorMin = (float) $valorRef->valor_min;
             $valorMax = (float) $valorRef->valor_max;
             $unidades = $valorRef->unidades ?? '';
@@ -713,9 +763,9 @@ Tables\Actions\Action::make('gestionarMuestras')
                 '=' => "= {$valorMin}",
                 default => $valorRef->descriptivo ?? '',
             };
-            $referencia_formateada = $rangoTexto; // (Simplificado)
+            $referencia_formateada = $rangoTexto;
 
-            // --- NUEVA LÓGICA DE COMPARACIÓN ---
+            // --- LÓGICA DE COMPARACIÓN (FUERA DE RANGO) ---
             if (!is_null($valor_resultado_num)) {
                 switch ($valorRef->operador) {
                     case 'rango':
@@ -746,9 +796,11 @@ Tables\Actions\Action::make('gestionarMuestras')
             'referencia' => $referencia_formateada,
             'unidades' => $unidades,
             'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
-            'es_fuera_de_rango' => $es_fuera_de_rango, // <-- DEVOLVEMOS LA BANDERA
+            'es_fuera_de_rango' => $es_fuera_de_rango,
         ];
     }
+
+
     public static function getRecordUrlUsing(): Closure
     {
         return fn($record) => null; // 👈 esto desactiva el enlace de clic en la tarjeta
