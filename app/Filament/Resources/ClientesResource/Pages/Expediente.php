@@ -77,7 +77,6 @@ class Expediente extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            // 💡 Filtra las órdenes usando $this->record (el cliente ya cargado)
             ->query(Orden::query()->where('cliente_id', $this->record->id))
             ->columns([
                 TextColumn::make('id')
@@ -102,30 +101,24 @@ class Expediente extends Page implements HasTable
                     }),
             ])
             ->defaultSort('fecha', 'desc')
-            // Mensaje si no hay órdenes
             ->emptyStateHeading('No se ha realizado ninguna orden')
             ->emptyStateDescription('Este paciente aún no tiene historial de órdenes registradas.')
             ->emptyStateIcon('heroicon-o-clipboard-document')
             ->actions([
-                // Puedes añadir una acción aquí para ver la orden en detalle
                 Action::make('ver_detalle_modal')
                     ->label('Ver Detalles')
                     ->icon('heroicon-o-eye')
                     ->iconButton()
                     ->color('gray')
                     ->modalHeading(fn(Orden $record) => 'Detalles de Orden #' . $record->id)
-                    ->modalWidth('4xl') // Puedes ajustar el ancho si el modal es complejo
+                    ->modalWidth('4xl')
                     ->modalContent(function (Orden $record) {
-                        // Carga las relaciones necesarias para tu vista Blade
                         $record->load(['detalleOrden.examen.pruebas', 'resultados']);
-                        // Retorna la vista Blade que ya tienes en OrdenResource
                         return view('filament.modals.ver-orden', ['record' => $record]);
                     })
-                    // Oculta los botones de enviar/cancelar por defecto del modal de acción
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Cerrar'),
 
-                // 2. ACCIÓN GENERAR REPORTE PDF (MODAL CON VISOR IFRAME)
                 Action::make('generarReporte')
                     ->tooltip('Ver Resultados')
                     ->label('Ver Resultados')
@@ -133,7 +126,6 @@ class Expediente extends Page implements HasTable
                     ->iconButton()
                     ->color('gray')
                     ->visible(fn(Orden $record): bool => $record->estado === 'finalizado')
-                    // --- Configuración del Modal de Previsualización ---
                     ->modalWidth('7xl')
                     ->modalHeading(fn(Orden $record) => 'Reporte de Resultados: #' . $record->id)
                     ->modalSubmitAction(false)
@@ -148,19 +140,16 @@ class Expediente extends Page implements HasTable
                             'resultados.prueba'
                         ]);
 
-                        // Agrupamiento…
+                        // Agrupamiento...
                         $detallesAgrupados = $orden->detalleOrden
                             ->whereNotNull('examen_id')
                             ->groupBy('examen.tipoExamen.nombre');
 
                         $datos_agrupados = [];
-
                         foreach ($detallesAgrupados as $tipoExamenNombre => $detalles) {
                             $examenes_data = [];
-
                             foreach ($detalles as $detalle) {
                                 $todasLasPruebas = $detalle->examen->pruebas;
-
                                 $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
                                 $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
 
@@ -169,22 +158,15 @@ class Expediente extends Page implements HasTable
                                 })->all();
 
                                 $dataMatrices = $pruebasConjuntas->map(function ($pruebasDelConjunto) use ($orden, $detalle) {
-                                    $filas = [];
-                                    $columnas = [];
-                                    $dataMatrix = [];
-
+                                    $filas = []; $columnas = []; $dataMatrix = [];
                                     foreach ($pruebasDelConjunto as $prueba) {
                                         $partes = explode(', ', $prueba->nombre);
-
                                         if (count($partes) >= 2) {
                                             [$f, $c] = $partes;
-                                            $filas[] = $f;
-                                            $columnas[] = $c;
-
+                                            $filas[] = $f; $columnas[] = $c;
                                             $dataMatrix[$f][$c] = self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
                                         }
                                     }
-
                                     return [
                                         'filas' => array_values(array_unique($filas)),
                                         'columnas' => array_values(array_unique($columnas)),
@@ -199,24 +181,33 @@ class Expediente extends Page implements HasTable
                                     'matrices' => $dataMatrices,
                                 ];
                             }
-
                             $datos_agrupados[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
                         }
 
-                        // GENERAR PDF
-                        $pdf = Pdf::loadView('pdf.reporte_resultados', [
+                        // --- INICIO BLOQUE FIRMA (LÓGICA ACTUALIZADA) ---
+                        $usuarioQueFirma = auth()->user();
+                        $rutaFirma = $usuarioQueFirma?->firma_path ?? null;
+                        $rutaSello = $usuarioQueFirma?->sello_path ?? null;
+
+                        $pdf_data = [
                             'orden' => $orden,
                             'datos_agrupados' => $datos_agrupados,
-                        ]);
+                            'ruta_firma_digital' => $rutaFirma,
+                            'ruta_sello_digital' => $rutaSello,
+                            'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado Desconocido',
+                            'ruta_sello_registro' => public_path('storage/sello.png'),
+                        ];
+                        // --- FIN BLOQUE FIRMA ---
+
+                        // GENERAR PDF (Ahora usa $pdf_data)
+                        $pdf = Pdf::loadView('pdf.reporte_resultados', $pdf_data);
 
                         $pdfContent = base64_encode($pdf->output());
 
-                        // Devuelve la vista lista
                         return view('filament.modals.pdf-viewer', [
                             'pdfContent' => $pdfContent,
                         ]);
                     })
-
             ]);
     }
 
@@ -224,6 +215,7 @@ class Expediente extends Page implements HasTable
     {
         $resultado = $orden->resultados->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
         
+        $nombre_prueba = $prueba->nombre; // Nombre por defecto
         $referencia_formateada = 'N/A';
         $unidades = '';
         $es_fuera_de_rango = false;
@@ -288,6 +280,29 @@ class Expediente extends Page implements HasTable
             // --- FIN DE LA LÓGICA DE BÚSQUEDA ---
 
             // Ahora $valorRef es el correcto (o el mejor disponible)
+            if ($resultado && !empty($resultado->prueba_nombre_snapshot)) {
+            
+            $nombre_prueba = $resultado->prueba_nombre_snapshot;
+            $referencia_formateada = $resultado->valor_referencia_snapshot ?? 'N/A';
+            $unidades = $resultado->unidades_snapshot ?? '';
+
+            // Intentar extraer valores numéricos del snapshot para la comparación
+            // Esto asume un formato simple como "1.0 - 5.0"
+            if (preg_match('/([\d\.]+)\s*-\s*([\d\.]+)/', $referencia_formateada, $matches)) {
+                $valorMin = (float) $matches[1];
+                $valorMax = (float) $matches[2];
+                if (!is_null($valor_resultado_num)) {
+                    if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) {
+                        $es_fuera_de_rango = true;
+                    }
+                }
+            }
+            // (Puedes añadir más 'preg_match' para operadores como '<', '≥', etc.)
+
+        } 
+        // CASO 2: Es una orden antigua sin "foto", usamos los datos en vivo
+        elseif ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
+       
             $valorMin = (float) $valorRef->valor_min;
             $valorMax = (float) $valorRef->valor_max;
             $unidades = $valorRef->unidades ?? '';
@@ -304,7 +319,7 @@ class Expediente extends Page implements HasTable
             };
             $referencia_formateada = $rangoTexto;
 
-            // --- LÓGICA DE COMPARACIÓN (FUERA DE RANGO) ---
+            // --- NUEVA LÓGICA DE COMPARACIÓN ---
             if (!is_null($valor_resultado_num)) {
                 switch ($valorRef->operador) {
                     case 'rango':
@@ -328,14 +343,15 @@ class Expediente extends Page implements HasTable
                 }
             }
         }
+    }
 
         return [
-            'nombre' => $prueba->nombre,
+            'nombre' => $nombre_prueba, // <-- Usa el nombre de la "foto" o el nombre en vivo
             'resultado' => $resultado->resultado ?? 'PENDIENTE',
-            'referencia' => $referencia_formateada,
-            'unidades' => $unidades,
+            'referencia' => $referencia_formateada, // <-- Usa la referencia de la "foto" o la de en vivo
+            'unidades' => $unidades, // <-- Usa las unidades de la "foto" o las de en vivo
             'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
-            'es_fuera_de_rango' => $es_fuera_de_rango,
+            'es_fuera_de_rango' => $es_fuera_de_rango, // <-- Devuelve la bandera
         ];
     }
 
