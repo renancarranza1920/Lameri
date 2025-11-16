@@ -117,7 +117,12 @@ class DetalleOrdenKanban extends KanbanBoard
                 ->icon('heroicon-o-printer')
                 ->color('warning')
                 ->action(fn() => $this->printAll()),
+                Action::make('Volver a Ordenes')
+                ->label('Volver a Ordenes')
+                ->url(route('filament.admin.resources.ordenes.index'))
+                ->openUrlInNewTab(false),
         ];
+
     }
 
     public function printGroup(string $status): void

@@ -11,11 +11,13 @@ use Carbon\Carbon;
 use DB;
 use Filament\Forms;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\ViewField;
 use Filament\Forms\Components\Wizard;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Response;
 use Filament\Forms\Form;
@@ -399,16 +401,44 @@ class OrdenResource extends Resource
                             ->color(fn($state) => match ($state) {
                                 'pendiente' => 'warning',
                                 'en proceso' => 'info',
-                                'pausada' => 'danger',
+                                'pausada' => 'warning',
                                 'finalizado' => 'success',
-                                'cancelado' => 'gray',
+                                'cancelado' => 'danger',
                                 default => 'gray',
                             }),
                     ]),
                 ])
             ])
             ->filters([
-                // ... (tus filtros se quedan igual)
+                //filtro por fecha
+                Tables\Filters\Filter::make('fecha_rango')
+                    ->form([
+                        Forms\Components\DatePicker::make('fecha_desde')
+                            ->label('Fecha Desde'),
+                        Forms\Components\DatePicker::make('fecha_hasta')
+                            ->label('Fecha Hasta'),
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        return $query
+                            ->when($data['fecha_desde'], fn (Builder $query, $date) => $query->whereDate('fecha', '>=', $date))
+                            ->when($data['fecha_hasta'], fn (Builder $query, $date) => $query->whereDate('fecha', '<=', $date));
+                    }),
+                  ////
+                    Filter::make('fecha_unica')
+                    ->label('Filtrar por Fecha')
+                    ->form([
+                        DatePicker::make('fecha_unica')
+                            ->label('Seleccionar Fecha')
+                            
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['fecha_unica'], // Si el usuario llenó la fecha
+                                // Aplica un filtro exacto para ESE día
+                                fn (Builder $query, $date): Builder => $query->whereDate('fecha', $date),
+                            );
+                    })  
             ])
            ->actions([
 Tables\Actions\Action::make('gestionarMuestras')
@@ -517,7 +547,7 @@ Tables\Actions\Action::make('gestionarMuestras')
                     ->iconButton()
                     ->color('gray')
                     // Visible si la orden no está finalizada o cancelada
-                    ->visible(fn(Orden $record): bool => !in_array($record->estado, ['finalizado', 'cancelado'])) 
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente'])) 
                     ->url(fn(Orden $record): string => DetalleOrdenKanban::getUrl(['ordenId' => $record->id])),
 
     Tables\Actions\Action::make('ver')
@@ -527,7 +557,13 @@ Tables\Actions\Action::make('gestionarMuestras')
         ->color('gray')
         ->modalContent(function (Orden $record) {
             // Corregido para evitar error de memoria
-            $record->load(['detalleOrden.examen.pruebas', 'resultados']);
+            $record->load([
+                'cliente',
+                'detalleOrden.examen.muestras', 
+                'detalleOrden.perfil',
+                'resultados.prueba',
+                'tomaMuestraUser' 
+            ]);
             return view('filament.modals.ver-orden', ['record' => $record]);
         })
         ->modalSubmitAction(false)
@@ -653,10 +689,28 @@ Tables\Actions\Action::make('gestionarMuestras')
                             $datos_agrupados[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
                         }
 
-                        $pdf = Pdf::loadView('pdf.reporte_resultados', [
+                        // OBTENER EL USUARIO QUE FIRMA
+                        // Asumimos que el usuario que firma es el usuario autenticado (auth()->user())
+                        $usuarioQueFirma = auth()->user();
+                        
+                        // Las propiedades 'firma_path' y 'sello_path' DEBEN existir en el modelo User.
+                        // Asegúrate de que hayas añadido estas columnas a la tabla 'users' en una migración.
+                        $rutaFirma = $usuarioQueFirma?->firma_path ?? null;
+                        $rutaSello = $usuarioQueFirma?->sello_path ?? null;
+
+                        // Preparamos los datos a pasar a la vista
+                        $pdf_data = [
                             'orden' => $orden,
                             'datos_agrupados' => $datos_agrupados,
-                        ]);
+                            // PASAMOS LAS RUTAS ALMACENADAS EN LA DB
+                            'ruta_firma_digital' => $rutaFirma,
+                            'ruta_sello_digital' => $rutaSello,
+                            'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado Desconocido',
+                            // AÑADIDO: Ruta del sello estático (el rectangular de registro)
+                            'ruta_sello_registro' => public_path('storage/sello.png'),
+                        ];
+
+                        $pdf = Pdf::loadView('pdf.reporte_resultados', $pdf_data);
 
                         return response()->streamDownload(
                             fn () => print($pdf->output()),
@@ -681,10 +735,15 @@ Tables\Actions\Action::make('gestionarMuestras')
     {
         return [];
     }
+/**
+     * Obtiene los datos de una prueba para el PDF, usando la "foto" (snapshot)
+     * si existe, o los datos en vivo como plan B.
+     */
     public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
     {
         $resultado = $orden->resultados->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
         
+        $nombre_prueba = $prueba->nombre; // Nombre por defecto
         $referencia_formateada = 'N/A';
         $unidades = '';
         $es_fuera_de_rango = false;
@@ -749,6 +808,29 @@ Tables\Actions\Action::make('gestionarMuestras')
             // --- FIN DE LA LÓGICA DE BÚSQUEDA ---
 
             // Ahora $valorRef es el correcto (o el mejor disponible)
+            if ($resultado && !empty($resultado->prueba_nombre_snapshot)) {
+            
+            $nombre_prueba = $resultado->prueba_nombre_snapshot;
+            $referencia_formateada = $resultado->valor_referencia_snapshot ?? 'N/A';
+            $unidades = $resultado->unidades_snapshot ?? '';
+
+            // Intentar extraer valores numéricos del snapshot para la comparación
+            // Esto asume un formato simple como "1.0 - 5.0"
+            if (preg_match('/([\d\.]+)\s*-\s*([\d\.]+)/', $referencia_formateada, $matches)) {
+                $valorMin = (float) $matches[1];
+                $valorMax = (float) $matches[2];
+                if (!is_null($valor_resultado_num)) {
+                    if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) {
+                        $es_fuera_de_rango = true;
+                    }
+                }
+            }
+            // (Puedes añadir más 'preg_match' para operadores como '<', '≥', etc.)
+
+        } 
+        // CASO 2: Es una orden antigua sin "foto", usamos los datos en vivo
+        elseif ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
+       
             $valorMin = (float) $valorRef->valor_min;
             $valorMax = (float) $valorRef->valor_max;
             $unidades = $valorRef->unidades ?? '';
@@ -765,7 +847,7 @@ Tables\Actions\Action::make('gestionarMuestras')
             };
             $referencia_formateada = $rangoTexto;
 
-            // --- LÓGICA DE COMPARACIÓN (FUERA DE RANGO) ---
+            // --- NUEVA LÓGICA DE COMPARACIÓN ---
             if (!is_null($valor_resultado_num)) {
                 switch ($valorRef->operador) {
                     case 'rango':
@@ -789,14 +871,15 @@ Tables\Actions\Action::make('gestionarMuestras')
                 }
             }
         }
+    }
 
         return [
-            'nombre' => $prueba->nombre,
+            'nombre' => $nombre_prueba, // <-- Usa el nombre de la "foto" o el nombre en vivo
             'resultado' => $resultado->resultado ?? 'PENDIENTE',
-            'referencia' => $referencia_formateada,
-            'unidades' => $unidades,
+            'referencia' => $referencia_formateada, // <-- Usa la referencia de la "foto" o la de en vivo
+            'unidades' => $unidades, // <-- Usa las unidades de la "foto" o las de en vivo
             'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
-            'es_fuera_de_rango' => $es_fuera_de_rango,
+            'es_fuera_de_rango' => $es_fuera_de_rango, // <-- Devuelve la bandera
         ];
     }
 

@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Filament\Resources\PruebaResource\Pages;
-
 use App\Filament\Resources\PruebaResource;
 use App\Models\Prueba;
 use Filament\Actions\Action;

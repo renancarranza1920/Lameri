@@ -21,8 +21,11 @@ class CreateUser extends CreateRecord
         // Crear el usuario
         $user = User::create([
             'name' => $data['name'],
+            'nickname' => $data['nickname'],
             'email' => $data['email'],
             'password' => bcrypt($data['password']),
+            'firma_path' => $data['firma_path'] ?? null,
+            'sello_path' => $data['sello_path'] ?? null,
         ]);
 
         // Asignar el rol si está presente

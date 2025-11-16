@@ -18,8 +18,7 @@ class IngresarResultados extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    // --- CORRECCIÓN 1: La vista de la página es el contenedor simple ---
-    protected static string $resource = OrdenResource::class;
+     protected static string $resource = OrdenResource::class;
     protected static string $view = 'filament.resources.orden-resource.pages.ingresar-resultados';
 
     public ?Orden $record;
@@ -94,7 +93,7 @@ class IngresarResultados extends Page implements HasForms
         return ['resultados_examenes' => $preparedData];
     }
 
-    protected function getPruebaData(Prueba $prueba, int $detalleId): array
+   protected function getPruebaData(Prueba $prueba, int $detalleId): array
     {
         $resultadoExistente = $this->record->resultados()->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
         $referencia = 'N/A'; $unidades = '';
@@ -106,8 +105,12 @@ class IngresarResultados extends Page implements HasForms
             $unidades = $valorRef->unidades ?? '';
         }
         return [
-            'prueba_id' => $prueba->id, 'prueba_nombre' => $prueba->nombre, 'resultado_id' => $resultadoExistente?->id,
-            'resultado' => $resultadoExistente?->resultado, 'valor_referencia' => $referencia, 'unidades' => $unidades,
+            'prueba_id' => $prueba->id, 
+            'prueba_nombre' => $prueba->nombre, // <-- Dato que ya teníamos
+            'resultado_id' => $resultadoExistente?->id,
+            'resultado' => $resultadoExistente?->resultado, 
+            'valor_referencia' => $referencia, // <-- Dato que ya teníamos
+            'unidades' => $unidades, // <-- Dato que ya teníamos
         ];
     }
     
@@ -143,12 +146,22 @@ class IngresarResultados extends Page implements HasForms
         $this->form->fill($this->prepareInitialData());
     }
 
-    protected function guardarResultado(int $detalleId, array $r): void
+      protected function guardarResultado(int $detalleId, array $r): void
     {
         if (isset($r['resultado']) && $r['resultado'] !== '' && !is_null($r['resultado'])) {
             $this->record->resultados()->updateOrCreate(
-                ['detalle_orden_id' => $detalleId, 'prueba_id' => $r['prueba_id']],
-                ['resultado' => $r['resultado']]
+                [
+                    // Búsqueda
+                    'detalle_orden_id' => $detalleId, 
+                    'prueba_id' => $r['prueba_id']
+                ],
+                [
+                    // Datos a guardar/actualizar
+                    'resultado' => $r['resultado'],
+                    'prueba_nombre_snapshot' => $r['prueba_nombre'],
+                    'valor_referencia_snapshot' => $r['valor_referencia'],
+                    'unidades_snapshot' => $r['unidades'],
+                ]
             );
         }
     }

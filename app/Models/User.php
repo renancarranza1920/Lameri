@@ -23,10 +23,12 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
-        'nickname',
+       'name',
         'email',
         'password',
+        'nickname', 
+        'firma_path',
+        'sello_path',
     ];
 
     /**
@@ -52,13 +54,27 @@ class User extends Authenticatable
         ];
     }
 
-    public function getActivitylogOptions(): LogOptions
+   public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->useLogName('Usuarios')
-            ->setDescriptionForEvent(fn(string $eventName) => "El usuario ha sido {$eventName}")
+            ->setDescriptionForEvent(function(string $eventName) {
+                $eventoTraducido = match($eventName) {
+                    'created' => 'creado',
+                    'updated' => 'actualizado',
+                    'deleted' => 'eliminado',
+                    default => $eventName
+                };
+                return "El usuario '{$this->name}' (ID: {$this->id}) ha sido {$eventoTraducido}";
+            })
+            ->logFillable() // Rastreará name, email, nickname, firma_path, sello_path
             ->logOnlyDirty()
-            ->logOnly(['name', 'email'])
             ->dontSubmitEmptyLogs();
     }
+
+    public function username()
+{
+    return 'nickname';
+}
+
 }
