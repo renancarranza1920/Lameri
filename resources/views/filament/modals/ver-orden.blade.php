@@ -36,7 +36,13 @@
                     {{ ucfirst(str_replace('_', ' ', $record->estado)) }}
                 </span>
             </div>
-
+            <!-- --- ¡SECCIÓN DE OBSERVACIONES AÑADIDA! --- -->
+            @if (!empty($orden->observaciones))
+                <div class="col-span-2 pt-4 border-t dark:border-gray-600">
+                    <dt class="text-gray-500 dark:text-gray-400">Observaciones de la Orden:</dt>
+                    <dd class="font-medium text-gray-900 dark:text-white whitespace-pre-wrap">{{ $orden->observaciones }}</dd>
+                </div>
+            @endif
             {{-- El bloque para el motivo de la pausa se mantiene igual --}}
             @if ($record->estado === 'pausada' && $record->motivo_pausa)
                 <div class="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-500 rounded-r-lg">
