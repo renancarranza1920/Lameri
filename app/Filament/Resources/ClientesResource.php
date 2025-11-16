@@ -50,7 +50,16 @@ class ClientesResource extends Resource
                                             ->required()
                                             ->placeholder('dd/mm/aaaa')
                                             ->maxDate(now()->subYears(5)),
+
+                                            Forms\Components\Select::make('genero')
+                                        ->label('Género')
+                                        ->options([
+                                            'Masculino' => 'Masculino',
+                                            'Femenino' => 'Femenino',
+                                        ])
+                                        ->required(),
                                     ]),
+                                    
                             ]),
 
                         // Sección Contacto
@@ -229,7 +238,7 @@ class ClientesResource extends Resource
             'index' => Pages\ListClientes::route('/'),
             'create' => Pages\CreateClientes::route('/create'),
             'edit' => Pages\EditClientes::route('/{record}/edit'),
-           'expediente' => Pages\Expediente::route('/{record}/expediente'),
+            'expediente' => Pages\Expediente::route('/{record}/expediente'),
         ];
     }
 }
