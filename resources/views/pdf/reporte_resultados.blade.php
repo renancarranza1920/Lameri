@@ -403,7 +403,7 @@
                     {{-- 2. IMAGEN DE ARRIBA (Firma del Usuario) --}}
                     @if ($pathFirmaUsuario && file_exists($pathFirmaUsuario))
                         <img src="{{ $pathFirmaUsuario }}" alt="Firma" style="position: absolute; 
-                                        top: 50%; 
+                                        top: 8%; 
                                         left: 50%; 
                                         transform: translate(-50%, -50%); /* Centrado */
                                         max-width: 90%; 
