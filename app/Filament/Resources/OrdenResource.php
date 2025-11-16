@@ -689,10 +689,28 @@ Tables\Actions\Action::make('gestionarMuestras')
                             $datos_agrupados[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
                         }
 
-                        $pdf = Pdf::loadView('pdf.reporte_resultados', [
+                        // OBTENER EL USUARIO QUE FIRMA
+                        // Asumimos que el usuario que firma es el usuario autenticado (auth()->user())
+                        $usuarioQueFirma = auth()->user();
+                        
+                        // Las propiedades 'firma_path' y 'sello_path' DEBEN existir en el modelo User.
+                        // Asegúrate de que hayas añadido estas columnas a la tabla 'users' en una migración.
+                        $rutaFirma = $usuarioQueFirma?->firma_path ?? null;
+                        $rutaSello = $usuarioQueFirma?->sello_path ?? null;
+
+                        // Preparamos los datos a pasar a la vista
+                        $pdf_data = [
                             'orden' => $orden,
                             'datos_agrupados' => $datos_agrupados,
-                        ]);
+                            // PASAMOS LAS RUTAS ALMACENADAS EN LA DB
+                            'ruta_firma_digital' => $rutaFirma,
+                            'ruta_sello_digital' => $rutaSello,
+                            'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado Desconocido',
+                            // AÑADIDO: Ruta del sello estático (el rectangular de registro)
+                            'ruta_sello_registro' => public_path('storage/sello.png'),
+                        ];
+
+                        $pdf = Pdf::loadView('pdf.reporte_resultados', $pdf_data);
 
                         return response()->streamDownload(
                             fn () => print($pdf->output()),

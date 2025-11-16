@@ -5,11 +5,11 @@ namespace App\Filament\Auth;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use DanHarrin\LivewireRateLimiting\WithRateLimiting;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Tabs;
 use Filament\Forms\Form;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 use Filament\Models\Contracts\FilamentUser;
@@ -17,9 +17,8 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\SimplePage;
 use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
+use Filament\Forms\Get; // Añadido para la validación condicional
 
 class Login extends SimplePage
 {
@@ -50,6 +49,9 @@ class Login extends SimplePage
 
         $data = $this->form->getState();
 
+        // ⚠️ Nota: Esta validación es necesaria si quitas el required()
+        // En el getCredentialsFromFormData se encarga de usar el campo llenado.
+        
         if (! Filament::auth()->attempt($this->getCredentialsFromFormData($data), $data['remember'] ?? false)) {
             $this->throwFailureValidationException();
         }
@@ -69,7 +71,8 @@ class Login extends SimplePage
     protected function throwFailureValidationException(): never
     {
         throw ValidationException::withMessages([
-            'data.nickname' => 'Credenciales incorrectas.',
+            // Mensaje genérico para el error de credenciales
+            'data.password' => 'Credenciales incorrectas.', 
         ]);
     }
 
@@ -84,21 +87,51 @@ class Login extends SimplePage
             'form' => $this->form(
                 $this->makeForm()
                     ->schema([
-                        $this->getNicknameComponent(),
-                        $this->getPasswordFormComponent(),
+                        Tabs::make('Método de Autenticación')
+                            ->tabs([
+                                Tabs\Tab::make('Correo Electrónico')
+                                    ->icon('heroicon-o-envelope')
+                                    ->schema([
+                                        $this->getEmailComponent(),
+                                        $this->getPasswordFormComponent(),
+                                    ]),
+                                
+                                Tabs\Tab::make('Nombre de Usuario')
+                                    ->icon('heroicon-o-user')
+                                    ->schema([
+                                        $this->getUsernameComponent(),
+                                        $this->getPasswordFormComponent(),
+                                    ]),
+                            ])
+                            ->columnSpanFull(),
+                        
                         $this->getRememberFormComponent(),
                     ])
                     ->statePath('data'),
             ),
         ];
     }
+    
+    // =========================================================
+    // MODIFICADO: VALIDACIÓN CONDICIONAL
+    // =========================================================
 
-    protected function getNicknameComponent(): Component
+    protected function getEmailComponent(): Component
     {
-        return TextInput::make('nickname')
-            ->label('Nickname')
-            ->required()
-            ->autofocus()
+        return TextInput::make('email')
+            ->label('Correo Electrónico')
+            ->email()
+            // Hacemos que sea requerido SÓLO si el campo de username está vacío
+            ->required(fn (Get $get) => !filled($get('username'))) 
+            ->extraInputAttributes(['tabindex' => 1]);
+    }
+    
+    protected function getUsernameComponent(): Component
+    {
+        return TextInput::make('username')
+            ->label('Nombre de usuario')
+            // Hacemos que sea requerido SÓLO si el campo de email está vacío
+            ->required(fn (Get $get) => !filled($get('email'))) 
             ->extraInputAttributes(['tabindex' => 1]);
     }
 
@@ -155,12 +188,32 @@ class Login extends SimplePage
     {
         return true;
     }
-
+    
+    // Lógica para determinar si el campo es un email o un nickname
     protected function getCredentialsFromFormData(array $data): array
     {
-        return [
-            'nickname' => $data['nickname'],
-            'password' => $data['password'],
-        ];
+        $email = $data['email'] ?? null;
+        $username = $data['username'] ?? null;
+        $password = $data['password'];
+
+        // Intentamos autenticar por email si el campo 'email' está lleno
+        if (filled($email)) {
+            return [
+                'email' => $email,
+                'password' => $password,
+            ];
+        }
+
+        // Si no se usó email, intentamos autenticar por nickname/username.
+        if (filled($username)) {
+            return [
+                // Usa la columna REAL de tu base de datos aquí 
+                'nickname' => $username, 
+                'password' => $password,
+            ];
+        }
+        
+        // Esto solo se ejecuta si la validación falla antes de llegar al auth()->attempt
+        $this->throwFailureValidationException();
     }
 }
