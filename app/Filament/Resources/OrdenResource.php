@@ -749,14 +749,66 @@ Tables\Actions\Action::make('gestionarMuestras')
         $es_fuera_de_rango = false;
         $valor_resultado_num = null;
 
-        // Intentar convertir el resultado a número para comparar
         if ($resultado && is_numeric($resultado->resultado)) {
             $valor_resultado_num = (float) $resultado->resultado;
         }
 
-        // --- ¡LÓGICA MEJORADA! ---
-        // CASO 1: El resultado tiene la "foto" (Snapshot) guardada (Órdenes nuevas)
-        if ($resultado && !empty($resultado->prueba_nombre_snapshot)) {
+        // --- INICIO DE LA LÓGICA DE REFERENCIA CORREGIDA ---
+        if ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
+            
+            // 1. OBTENER DATOS DEL PACIENTE
+            $cliente = $orden->cliente;
+            $generoCliente = $cliente->genero; // "Masculino" o "Femenino"
+            $grupoEtarioCliente = $cliente->getGrupoEtario(); // Objeto GrupoEtario o null
+
+            $valorRef = null;
+            $todosLosValores = $prueba->reactivoEnUso->valoresReferencia;
+
+            if ($grupoEtarioCliente) {
+                // 2. INTENTO DE BÚSQUEDA 1: Grupo Etario + Género Específico
+                // Ej: "Adultos" (ID: 8) + "Masculino"
+                $valorRef = $todosLosValores
+                    ->where('grupo_etario_id', $grupoEtarioCliente->id)
+                    ->where('genero', $generoCliente)
+                    ->first();
+
+                // 3. INTENTO DE BÚSQUEDA 2 (FALLBACK): Grupo Etario + "Ambos"
+                // Ej: "Adultos" (ID: 8) + "Ambos"
+                if (!$valorRef) {
+                    $valorRef = $todosLosValores
+                        ->where('grupo_etario_id', $grupoEtarioCliente->id)
+                        ->where('genero', 'Ambos')
+                        ->first();
+                }
+            }
+
+            // 4. INTENTO DE BÚSQUEDA 3 (FALLBACK): Sin Grupo Etario + Género Específico
+            // (Para valores que no dependen de la edad, solo del género)
+            if (!$valorRef) {
+                $valorRef = $todosLosValores
+                    ->whereNull('grupo_etario_id')
+                    ->where('genero', $generoCliente)
+                    ->first();
+            }
+
+            // 5. INTENTO DE BÚSQUEDA 4 (FALLBACK): Sin Grupo Etario + "Ambos"
+            // (El valor más genérico, ej: 0-100 U/L para todos)
+            if (!$valorRef) {
+                $valorRef = $todosLosValores
+                    ->whereNull('grupo_etario_id')
+                    ->where('genero', 'Ambos')
+                    ->first();
+            }
+            
+            // 6. ÚLTIMO RECURSO: Si todo falla, toma el primero (evita crasheo)
+            if (!$valorRef) {
+                $valorRef = $todosLosValores->first();
+            }
+
+            // --- FIN DE LA LÓGICA DE BÚSQUEDA ---
+
+            // Ahora $valorRef es el correcto (o el mejor disponible)
+            if ($resultado && !empty($resultado->prueba_nombre_snapshot)) {
             
             $nombre_prueba = $resultado->prueba_nombre_snapshot;
             $referencia_formateada = $resultado->valor_referencia_snapshot ?? 'N/A';
@@ -778,9 +830,7 @@ Tables\Actions\Action::make('gestionarMuestras')
         } 
         // CASO 2: Es una orden antigua sin "foto", usamos los datos en vivo
         elseif ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-            
-            $valorRef = $prueba->reactivoEnUso->valoresReferencia->first(); 
-            
+       
             $valorMin = (float) $valorRef->valor_min;
             $valorMax = (float) $valorRef->valor_max;
             $unidades = $valorRef->unidades ?? '';
@@ -797,7 +847,7 @@ Tables\Actions\Action::make('gestionarMuestras')
             };
             $referencia_formateada = $rangoTexto;
 
-            // Lógica de comparación
+            // --- NUEVA LÓGICA DE COMPARACIÓN ---
             if (!is_null($valor_resultado_num)) {
                 switch ($valorRef->operador) {
                     case 'rango':
@@ -821,6 +871,7 @@ Tables\Actions\Action::make('gestionarMuestras')
                 }
             }
         }
+    }
 
         return [
             'nombre' => $nombre_prueba, // <-- Usa el nombre de la "foto" o el nombre en vivo
@@ -831,6 +882,8 @@ Tables\Actions\Action::make('gestionarMuestras')
             'es_fuera_de_rango' => $es_fuera_de_rango, // <-- Devuelve la bandera
         ];
     }
+
+
     public static function getRecordUrlUsing(): Closure
     {
         return fn($record) => null; // 👈 esto desactiva el enlace de clic en la tarjeta

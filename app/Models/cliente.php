@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany; // 👈 Importa esto
-use App\Models\Orden; // 👈 Importa el modelo Orden
+use Illuminate\Database\Eloquent\Relations\HasMany; 
+use App\Models\Orden; 
+use App\Models\GrupoEtario; 
+use Carbon\Carbon; 
 
-class cliente extends Model
+class Cliente extends Model
 {
     // 2. USAR LOS TRAITS
     use HasFactory, LogsActivity;
@@ -21,6 +23,7 @@ class cliente extends Model
         'nombre',
         'apellido',
         'fecha_nacimiento',
+        'genero',
         'telefono',
         'correo',
         'direccion',
@@ -78,5 +81,40 @@ class cliente extends Model
             
             // No guardar logs vacíos (ej. si solo se toca 'updated_at')
             ->dontSubmitEmptyLogs();
+    }
+
+    public function getGrupoEtario(): ?GrupoEtario
+    {
+        if (!$this->fecha_nacimiento) {
+            return null; // No podemos determinar si no hay fecha de nacimiento
+        }
+
+        $fechaNacimiento = Carbon::parse($this->fecha_nacimiento);
+        $ahora = Carbon::now();
+
+        // Calcular la edad en todas las unidades
+        $edadEn = [
+            'días' => $fechaNacimiento->diffInDays($ahora),
+            'semanas' => $fechaNacimiento->diffInWeeks($ahora),
+            'meses' => $fechaNacimiento->diffInMonths($ahora),
+            'años' => $fechaNacimiento->diffInYears($ahora),
+        ];
+
+        // Buscar en la BD el grupo que coincida
+        // Itera sobre las unidades de tiempo (años, meses, días...)
+        foreach ($edadEn as $unidad => $edad) {
+            
+            $grupo = GrupoEtario::where('unidad_tiempo', $unidad)
+                ->where('edad_min', '<=', $edad)
+                ->where('edad_max', '>=', $edad)
+                ->first();
+
+            if ($grupo) {
+                return $grupo; // Encontramos el grupo
+            }
+        }
+
+        // Si no se encontró ningún grupo (ej. 121 años)
+        return null; 
     }
 }
