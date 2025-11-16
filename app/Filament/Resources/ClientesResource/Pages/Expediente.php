@@ -11,14 +11,14 @@ use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Grid;
 
-use Filament\Tables\Concerns\InteractsWithTable; // 👈 AÑADIR
-use Filament\Tables\Contracts\HasTable;         // 👈 AÑADIR
-use Filament\Tables\Table;                      // 👈 AÑADIR
-use Filament\Tables\Columns\TextColumn;         // 👈 AÑADIR
-use Filament\Tables\Actions\Action;             // 👈 AÑADIR
+use Filament\Tables\Concerns\InteractsWithTable; 
+use Filament\Tables\Contracts\HasTable;         
+use Filament\Tables\Table;                      
+use Filament\Tables\Columns\TextColumn;         
+use Filament\Tables\Actions\Action;             
 use App\Models\Orden;
-use Filament\Forms\Components\ViewField; // 👈 Importante para el visor PDF
-use Barryvdh\DomPDF\Facade\Pdf;       // 👈 Importar DomPDF
+use Filament\Forms\Components\ViewField; 
+use Barryvdh\DomPDF\Facade\Pdf;       
 use Illuminate\Support\Collection;
 use Filament\Forms\Get;
 
@@ -56,7 +56,7 @@ class Expediente extends Page implements HasTable
                             TextEntry::make('NumeroExp')->label('No. Expediente'),
                             TextEntry::make('nombre')->label('Nombre Completo')
                                 ->getStateUsing(fn($record) => $record->nombre . ' ' . $record->apellido),
-                            TextEntry::make('estado')->badge(),
+                            TextEntry::make('genero')->label('Género'),
                         ]),
 
                         Grid::make(3)->schema([
@@ -67,7 +67,9 @@ class Expediente extends Page implements HasTable
                                 ->getStateUsing(fn($record) => \Carbon\Carbon::parse($record->fecha_nacimiento)->age . ' años'),
                         ]),
 
-                        TextEntry::make('direccion')->columnSpanFull(),
+                        Grid::make(3)->schema([
+                            TextEntry::make('direccion')->columnSpanFull(),
+                        ]),
                     ])
             ]);
     }
