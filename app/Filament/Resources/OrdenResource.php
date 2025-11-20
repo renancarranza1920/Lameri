@@ -353,6 +353,13 @@ Forms\Components\Hidden::make('codigo_aplicado'),
             ->columns([
                 Split::make([
                     Stack::make([
+                        TextColumn::make('id')
+                            ->label('Orden #')
+                            ->formatStateUsing(fn ($state) => "Orden #{$state}") // Formato visual "Orden #123"
+                            ->weight('bold')
+                            ->color('primary')
+                            ->searchable() // <--- ¡ESTO PERMITE BUSCAR POR ID!
+                            ->sortable(),
                         TextColumn::make('cliente.nombre')
                             ->label('Cliente')
                             ->getStateUsing(fn($record) => $record->cliente->nombre . ' ' . $record->cliente->apellido)
@@ -399,13 +406,13 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                             ->label('Fecha Desde'),
                         Forms\Components\DatePicker::make('fecha_hasta')
                             ->label('Fecha Hasta'),
-                    ])
+                    ])->columns(2)
                     ->query(function (Builder $query, array $data) {
                         return $query
                             ->when($data['fecha_desde'], fn(Builder $query, $date) => $query->whereDate('fecha', '>=', $date))
                             ->when($data['fecha_hasta'], fn(Builder $query, $date) => $query->whereDate('fecha', '<=', $date));
                     }),
-                ////
+                
                 Filter::make('fecha_unica')
                     ->label('Filtrar por Fecha')
                     ->form([
@@ -422,6 +429,9 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                             );
                     })
             ])
+           ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContentCollapsible)
+        
+        ->filtersFormColumns(2)
             ->actions([
                 Tables\Actions\Action::make('gestionarMuestras')
                     ->label('Gestionar Muestras')
