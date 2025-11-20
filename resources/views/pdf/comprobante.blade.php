@@ -21,10 +21,15 @@
         .profile-main-row { font-weight: bold; }
         .profile-detail-row td { padding-top: 0; padding-bottom: 5px; font-size: 11px; color: #555; border: none; }
         .profile-detail-row .description { padding-left: 25px; }
-        .total-section { margin-top: 20px; float: right; width: 40%; }
+        
+        /* Ajustes para la sección de totales */
+        .total-section { margin-top: 20px; float: right; width: 45%; } /* Aumenté un poco el ancho */
         .total-section table { width: 100%; }
-        .total-section td { padding: 10px; }
+        .total-section td { padding: 5px 10px; } /* Padding un poco más compacto */
+        
         .total-final { font-size: 18px; font-weight: bold; background-color: #f0f0f0; }
+        .total-final td { padding: 10px; border-top: 1px solid #ccc; } /* Borde superior para resaltar */
+
         .footer-note { margin-top: 40px; padding: 10px; border: 1px dashed #ccc; background-color: #fafafa; text-align: center; font-size: 11px; color: #777; }
         @page { margin: 35px 25px; }
         footer { position: fixed; bottom: -20px; left: 0px; right: 0px; height: 30px; text-align: center; font-size: 10px; color: #aaa; }
@@ -48,6 +53,7 @@
                 <img src="{{ public_path('storage/logo.png') }}" alt="Logo">
             </div>
         </div>
+
         @if ($cliente)
             <div class="client-info">
                 <h2>Cliente</h2>
@@ -55,6 +61,7 @@
                 <p><strong>Nombre:</strong> {{ $cliente->nombre }} {{ $cliente->apellido }}</p>
             </div>
         @endif
+
         <h2>Detalles de la Orden</h2>
         <table>
             <thead>
@@ -76,6 +83,7 @@
                         </tr>
                     @endforeach
                 @endforeach
+
                 @foreach ($examenes as $examen)
                     <tr>
                         <td>{{ $examen['nombre'] }}</td>
@@ -84,18 +92,34 @@
                 @endforeach
             </tbody>
         </table>
+
         <div class="total-section">
             <table>
+                <tr>
+                    <td><strong>Subtotal:</strong></td>
+                    <td class="text-right font-mono">${{ number_format($subtotal, 2) }}</td>
+                </tr>
+
+                @if(isset($descuento) && $descuento > 0)
+                    <tr style="color: #dc2626;"> <td>
+                            Descuento 
+                            @if(!empty($codigo))
+                                <span style="font-size: 10px; color: #666;">({{ $codigo }})</span>
+                            @endif
+                            :
+                        </td>
+                        <td class="text-right font-mono">- ${{ number_format($descuento, 2) }}</td>
+                    </tr>
+                @endif
+
                 <tr class="total-final">
-                    <td><strong>Total a Pagar:</strong></td>
+                    <td>Total a Pagar:</td>
                     <td class="text-right font-mono">${{ number_format($total, 2) }}</td>
                 </tr>
             </table>
         </div>
 
-        <div style="clear: both;"></div> <!-- Limpiar flotantes -->
-        
-        <div class="footer-note">
+        <div style="clear: both;"></div> <div class="footer-note">
             <p><strong>Nota:</strong> Este es un comprobante preliminar y no representa una factura fiscal. La orden aún no ha sido confirmada.</p>
         </div>
     </div>

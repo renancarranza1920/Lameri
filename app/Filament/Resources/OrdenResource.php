@@ -14,6 +14,7 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ViewField;
 use Filament\Forms\Components\Wizard;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -41,7 +42,9 @@ use Filament\Forms\Set;
 use Illuminate\Support\Facades\Log;
 use Filament\Notifications\Notification;
 use Closure;
-
+use Filament\Forms\Components\Actions\Action as FormAction; // <-- Importante alias
+use Filament\Pages\Page;
+use Number;
 
 
 
@@ -55,9 +58,7 @@ class OrdenResource extends Resource
     protected static ?string $slug = 'ordenes';
     protected static ?string $modelLabel = 'Orden';
     protected static ?string $pluralModelLabel = 'Órdenes';
-        public float $subtotal = 0;
-    public float $descuento = 0;
-    public ?Codigo $codigoAplicado = null;
+
     public static function form(Form $form): Form
     {
         return $form
@@ -76,59 +77,59 @@ class OrdenResource extends Resource
     {
         return [
             Forms\Components\Select::make('cliente_id')
-                                ->label('Seleccionar o agregar cliente')
-                                ->options(function () {
+                ->label('Seleccionar o agregar cliente')
+                ->options(function () {
                     return Cliente::where('estado', 'Activo')
                         ->get()
                         ->mapWithKeys(fn($cliente) => [
                             $cliente->id => $cliente->NumeroExp . ' - ' . $cliente->nombre . ' ' . $cliente->apellido
                         ]);
                 })
-                                ->relationship(
-                                    name: 'cliente',
-                                    titleAttribute: 'nombre'
-                                )
-                                ->preload()
-                                ->searchable(['NumeroExp', 'nombre', 'apellido'])
-                                ->getOptionLabelFromRecordUsing(fn($record) => "{$record->NumeroExp} - {$record->nombre} {$record->apellido}")
-                                ->createOptionForm([
-                                    Forms\Components\TextInput::make('nombre')
-                                        ->required()
-                                        ->maxLength(255),
+                ->relationship(
+                    name: 'cliente',
+                    titleAttribute: 'nombre'
+                )
+                ->preload()
+                ->searchable(['NumeroExp', 'nombre', 'apellido'])
+                ->getOptionLabelFromRecordUsing(fn($record) => "{$record->NumeroExp} - {$record->nombre} {$record->apellido}")
+                ->createOptionForm([
+                    Forms\Components\TextInput::make('nombre')
+                        ->required()
+                        ->maxLength(255),
 
-                                    Forms\Components\TextInput::make('apellido')
-                                        ->required()
-                                        ->maxLength(255),
+                    Forms\Components\TextInput::make('apellido')
+                        ->required()
+                        ->maxLength(255),
 
-                                    Forms\Components\DatePicker::make('fecha_nacimiento')
-                                        ->label('Fecha de Nacimiento')
-                                        ->required(),
+                    Forms\Components\DatePicker::make('fecha_nacimiento')
+                        ->label('Fecha de Nacimiento')
+                        ->required(),
 
-                                    Forms\Components\TextInput::make('telefono')
-                                        ->maxLength(9),
+                    Forms\Components\TextInput::make('telefono')
+                        ->maxLength(9),
 
-                                    Forms\Components\TextInput::make('correo')
-                                        ->email()
-                                        ->maxLength(255),
+                    Forms\Components\TextInput::make('correo')
+                        ->email()
+                        ->maxLength(255),
 
-                                    Forms\Components\TextInput::make('direccion')
-                                        ->maxLength(255),
-                                ])
-                                ->createOptionAction(function (Forms\Components\Actions\Action $action) {
-                                    return $action
-                                        ->modalHeading('Nuevo Cliente')
-                                        ->modalSubmitActionLabel('Guardar')
-                                        ->icon('heroicon-m-plus');
-                                })
-                                ->required(),
-                            // crear text area para observaciones
-                            Forms\Components\Textarea::make('observaciones')
-                                ->label('Observaciones')
-                                ->placeholder('Escribe cualquier comentario adicional...')
-                                ->rows(4)
-                                ->columnSpanFull()
-                                ->extraInputAttributes(['class' => 'resize-none']),
-                        
+                    Forms\Components\TextInput::make('direccion')
+                        ->maxLength(255),
+                ])
+                ->createOptionAction(function (Forms\Components\Actions\Action $action) {
+                    return $action
+                        ->modalHeading('Nuevo Cliente')
+                        ->modalSubmitActionLabel('Guardar')
+                        ->icon('heroicon-m-plus');
+                })
+                ->required(),
+            // crear text area para observaciones
+            Forms\Components\Textarea::make('observaciones')
+                ->label('Observaciones')
+                ->placeholder('Escribe cualquier comentario adicional...')
+                ->rows(4)
+                ->columnSpanFull()
+                ->extraInputAttributes(['class' => 'resize-none']),
+
         ];
     }
 
@@ -143,46 +144,46 @@ class OrdenResource extends Resource
                         ->schema([
                             Forms\Components\Repeater::make('perfiles_seleccionados')
 
-                                                ->schema([
-                                                    Forms\Components\Grid::make(2)
-                                                        ->columnSpanFull()
-                                                        ->schema([
-                                                            Select::make('perfil_id')
-                                                                ->label('Buscar Perfil')
-                                                                 ->options(\App\Models\Perfil::where('estado', 1)->pluck('nombre', 'id')->toArray())
-                                                                ->searchable()
-                                                                ->preload()
-                                                                ->reactive()
-                                                                ->required()
-                                                                ->validationMessages([
-                                                                    'required' => 'Debe seleccionar un perfil.',
-                                                                ])
-                                                                ->placeholder('Selecciona un perfil')
-                                                                ->afterStateHydrated(function ($state, Set $set) {
-                                                                    if (is_numeric($state)) {
-                                                                        $perfil = \App\Models\Perfil::find($state);
-                                                                        if ($perfil instanceof \App\Models\Perfil) {
-                                                                            $set('precio', $perfil->precio);
-                                                                            $set('precio_hidden', $perfil?->precio ?? 0);
-                                                                        }
-                                                                    }
-                                                                })
-                                                                ->suffixAction(
-                                                                    Action::make('crearPerfil')
-                                                                        ->icon('heroicon-m-plus')
-                                                                        ->tooltip('Agregar nuevo perfil')
-                                                                        ->url(route('filament.admin.resources.perfils.create')) // ajusta el nombre de la resource si es necesario
-                                                                        ->openUrlInNewTab() // o elimínalo si prefieres abrir en la misma pestaña
-                                                                )
-                                                                ->afterStateUpdated(function ($state, Set $set) {
-                                                                    if ($state === null) {
-                                                                        $set('precio', null);
-                                                                    } else {
-                                                                        $perfil = \App\Models\Perfil::find($state);
-                                                                        $set('precio', $perfil?->precio ?? 0);
-                                                                        $set('precio_hidden', $perfil?->precio ?? 0);
-                                                                    }
-                                                                }),
+                                ->schema([
+                                    Forms\Components\Grid::make(2)
+                                        ->columnSpanFull()
+                                        ->schema([
+                                            Select::make('perfil_id')
+                                                ->label('Buscar Perfil')
+                                                ->options(\App\Models\Perfil::where('estado', 1)->pluck('nombre', 'id')->toArray())
+                                                ->searchable()
+                                                ->preload()
+                                                ->reactive()
+                                                ->required()
+                                                ->validationMessages([
+                                                    'required' => 'Debe seleccionar un perfil.',
+                                                ])
+                                                ->placeholder('Selecciona un perfil')
+                                                ->afterStateHydrated(function ($state, Set $set) {
+                                                    if (is_numeric($state)) {
+                                                        $perfil = \App\Models\Perfil::find($state);
+                                                        if ($perfil instanceof \App\Models\Perfil) {
+                                                            $set('precio', $perfil->precio);
+                                                            $set('precio_hidden', $perfil?->precio ?? 0);
+                                                        }
+                                                    }
+                                                })
+                                                ->suffixAction(
+                                                    Action::make('crearPerfil')
+                                                        ->icon('heroicon-m-plus')
+                                                        ->tooltip('Agregar nuevo perfil')
+                                                        ->url(route('filament.admin.resources.perfils.create')) // ajusta el nombre de la resource si es necesario
+                                                        ->openUrlInNewTab() // o elimínalo si prefieres abrir en la misma pestaña
+                                                )
+                                                ->afterStateUpdated(function ($state, Set $set) {
+                                                    if ($state === null) {
+                                                        $set('precio', null);
+                                                    } else {
+                                                        $perfil = \App\Models\Perfil::find($state);
+                                                        $set('precio', $perfil?->precio ?? 0);
+                                                        $set('precio_hidden', $perfil?->precio ?? 0);
+                                                    }
+                                                }),
 
                                             Forms\Components\TextInput::make('precio')
                                                 ->label('Precio')
@@ -212,30 +213,30 @@ class OrdenResource extends Resource
                         ->schema([
                             Forms\Components\Repeater::make('examenes_seleccionados')
 
-                                                ->schema([
-                                                    Forms\Components\Grid::make(2)
-                                                        ->columnSpanFull()
-                                                        ->schema([
-                                                            Select::make('examen_id')
-                                                                ->label('Buscar Examen')
-                                                                ->options(\App\Models\Examen::pluck('nombre', 'id')->toArray())
-                                                                ->searchable()
-                                                                ->preload()
-                                                                ->reactive()
-                                                                ->required()
-                                                                ->validationMessages([
-                                                                    'required' => 'Debe seleccionar un examen.',
-                                                                ])
-                                                                ->placeholder('Selecciona un examen')
-                                                                ->afterStateHydrated(function ($state, Set $set) {
-                                                                    Log::info('Estado del examen después de hidratar:', ['state' => $state]);
-                                                                    if (is_numeric($state)) {
-                                                                        $examen = \App\Models\Examen::find($state);
-                                                                        if ($examen instanceof \App\Models\Examen) {
-                                                                            $set('precio', $examen->precio);
-                                                                            $set('precio_hidden', $examen->precio ?? 0);
-                                                                            $set('nombre_examen', $examen->nombre ?? '');
-                                                                            $set('recipiente', $examen->recipiente ?? '');
+                                ->schema([
+                                    Forms\Components\Grid::make(2)
+                                        ->columnSpanFull()
+                                        ->schema([
+                                            Select::make('examen_id')
+                                                ->label('Buscar Examen')
+                                                ->options(\App\Models\Examen::pluck('nombre', 'id')->toArray())
+                                                ->searchable()
+                                                ->preload()
+                                                ->reactive()
+                                                ->required()
+                                                ->validationMessages([
+                                                    'required' => 'Debe seleccionar un examen.',
+                                                ])
+                                                ->placeholder('Selecciona un examen')
+                                                ->afterStateHydrated(function ($state, Set $set) {
+                                                    Log::info('Estado del examen después de hidratar:', ['state' => $state]);
+                                                    if (is_numeric($state)) {
+                                                        $examen = \App\Models\Examen::find($state);
+                                                        if ($examen instanceof \App\Models\Examen) {
+                                                            $set('precio', $examen->precio);
+                                                            $set('precio_hidden', $examen->precio ?? 0);
+                                                            $set('nombre_examen', $examen->nombre ?? '');
+                                                            $set('recipiente', $examen->recipiente ?? '');
 
                                                         }
                                                     }
@@ -275,90 +276,71 @@ class OrdenResource extends Resource
                                 ->label('Resumen de Examenes Seleccionados')
                                 ->reactive()
                             ,
-                                    ]),
-                    
-                
-
-                    
+                        ]),
 
 
-                ])
+
+
+
+
+
+                ]),
+
+
+Forms\Components\Hidden::make('subtotal')->default(0)->reactive(),
+Forms\Components\Hidden::make('descuento')->default(0)->reactive(),
+Forms\Components\Hidden::make('codigo_aplicado'),
+
+
+
+
         ];
     }
 
-    public static function getResumenStep(): array
+
+    public static function getCuponSection(): Section
     {
-        return [
-            Forms\Components\Placeholder::make('cliente_resumen')
-                ->label('Cliente seleccionado')
-                ->content(function (Get $get) {
-                    $clienteId = $get('cliente_id');
-                    $cliente = $clienteId ? Cliente::find($clienteId) : null;
-                    return $cliente
-                        ? "{$cliente->NumeroExp} - {$cliente->nombre} {$cliente->apellido}"
-                        : 'No se ha seleccionado un cliente.';
-                }),
+        return Section::make('Código de Descuento')
+            ->schema([
+                TextInput::make('codigo_input')
+                    ->label('Cupón')
+                    ->placeholder('INGRESA UN CUPÓN')
+                    ->reactive()
+                    // Llama al método en CreateOrden
+                    ->afterStateUpdated(fn(Page $livewire) => $livewire->limpiarDescuento())
+                    ->suffixAction(
+                        FormAction::make('aplicarCodigo')
+                            ->icon('heroicon-o-check-circle')
+                            ->color('success')
+                            ->label('Aplicar')
+                          ->action(function ($livewire) {
+                                    $livewire->aplicarCodigo();
+                                })
+                                // Usamos $livewire para acceder a la propiedad pública
+                                ->visible(fn ($livewire) => is_null($livewire->codigoAplicado)), 
 
-            // Perfiles
-            Forms\Components\Placeholder::make('perfiles_resumen')
-                ->label('Perfiles seleccionados')
-                ->content(function (Get $get) {
-                    $perfiles = $get('perfiles_seleccionados') ?? [];
-                    if (empty($perfiles))
-                        return 'No se ha agregado ningún perfil.';
-
-                    $resumen = [];
-                    foreach ($perfiles as $item) {
-                        $perfilId = $item['perfil_id'] ?? null;
-                        $perfil = \App\Models\Perfil::find($perfilId);
-                        if ($perfil) {
-                            $resumen[] = "{$perfil->nombre} ($" . number_format($perfil->precio, 2) . ")";
+                    ),
+                // Placeholder para mostrar si el cupón está aplicado o el descuento
+                Forms\Components\Placeholder::make('descuento_display')
+                    ->content(function (Page $livewire) {
+                        if ($livewire->codigoAplicado) {
+                            $total = $livewire->subtotal - $livewire->descuento;
+                            return new \Illuminate\Support\HtmlString(
+                                "<div class='text-sm text-green-600 font-bold'>Cupón {$livewire->codigoAplicado->codigo} aplicado. Descuento: " . Number::currency($livewire->descuento, 'USD') . "</div>"
+                            );
                         }
-                    }
-                    return implode(', ', $resumen);
-                }),
-
-            // Exámenes
-            Forms\Components\Placeholder::make('examenes_resumen')
-                ->label('Exámenes seleccionados')
-                ->content(function (Get $get) {
-                    $examenes = $get('examenes_seleccionados') ?? [];
-                    if (empty($examenes))
-                        return 'No se ha agregado ningún examen.';
-
-                    $resumen = [];
-                    foreach ($examenes as $item) {
-                        $examenId = $item['examen_id'] ?? null;
-                        $examen = \App\Models\Examen::find($examenId);
-                        if ($examen) {
-                            $resumen[] = "{$examen->nombre} ($" . number_format($examen->precio, 2) . ")";
-                        }
-                    }
-                    return implode(', ', $resumen);
-                }),
-
-            // Total
-
-            Forms\Components\Placeholder::make('totalPagar')
-                ->label('Total a pagar')
-                ->content(function (Get $get) {
-                    $total = 0;
-
-                    foreach ($get('perfiles_seleccionados') ?? [] as $item) {
-                        $total += floatval($item['precio'] ?? 0);
-                    }
-
-                    foreach ($get('examenes_seleccionados') ?? [] as $item) {
-                        $total += floatval($item['precio'] ?? 0);
-                    }
-
-                    return '$' . number_format($total, 2);
-                }),
-
-        ];
+                        return 'Aún no se aplica ningún cupón.';
+                    })
+                    ->visible(fn(Page $livewire) => $livewire->subtotal > 0), // Solo mostrar si hay algo que comprar
+            ])
+            ->collapsible()
+            // El subtotal se calcula en el paso anterior y lo usamos aquí para decidir la visibilidad.
+            ->visible(
+                fn(Get $get) =>
+                count($get('perfiles_seleccionados') ?? []) > 0 ||
+                count($get('examenes_seleccionados') ?? []) > 0
+            );
     }
-
-
 
     public static function table(Table $table): Table
     {
@@ -371,6 +353,13 @@ class OrdenResource extends Resource
             ->columns([
                 Split::make([
                     Stack::make([
+                        TextColumn::make('id')
+                            ->label('Orden #')
+                            ->formatStateUsing(fn ($state) => "Orden #{$state}") // Formato visual "Orden #123"
+                            ->weight('bold')
+                            ->color('primary')
+                            ->searchable() // <--- ¡ESTO PERMITE BUSCAR POR ID!
+                            ->sortable(),
                         TextColumn::make('cliente.nombre')
                             ->label('Cliente')
                             ->getStateUsing(fn($record) => $record->cliente->nombre . ' ' . $record->cliente->apellido)
@@ -417,31 +406,34 @@ class OrdenResource extends Resource
                             ->label('Fecha Desde'),
                         Forms\Components\DatePicker::make('fecha_hasta')
                             ->label('Fecha Hasta'),
-                    ])
+                    ])->columns(2)
                     ->query(function (Builder $query, array $data) {
                         return $query
-                            ->when($data['fecha_desde'], fn (Builder $query, $date) => $query->whereDate('fecha', '>=', $date))
-                            ->when($data['fecha_hasta'], fn (Builder $query, $date) => $query->whereDate('fecha', '<=', $date));
+                            ->when($data['fecha_desde'], fn(Builder $query, $date) => $query->whereDate('fecha', '>=', $date))
+                            ->when($data['fecha_hasta'], fn(Builder $query, $date) => $query->whereDate('fecha', '<=', $date));
                     }),
-                  ////
-                    Filter::make('fecha_unica')
+                
+                Filter::make('fecha_unica')
                     ->label('Filtrar por Fecha')
                     ->form([
                         DatePicker::make('fecha_unica')
                             ->label('Seleccionar Fecha')
-                            
+
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 $data['fecha_unica'], // Si el usuario llenó la fecha
                                 // Aplica un filtro exacto para ESE día
-                                fn (Builder $query, $date): Builder => $query->whereDate('fecha', $date),
+                                fn(Builder $query, $date): Builder => $query->whereDate('fecha', $date),
                             );
-                    })  
+                    })
             ])
-           ->actions([
-Tables\Actions\Action::make('gestionarMuestras')
+           ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContentCollapsible)
+        
+        ->filtersFormColumns(2)
+            ->actions([
+                Tables\Actions\Action::make('gestionarMuestras')
                     ->label('Gestionar Muestras')
                     ->tooltip('Registrar muestras recibidas')
                     ->icon('heroicon-o-beaker')
@@ -452,13 +444,14 @@ Tables\Actions\Action::make('gestionarMuestras')
                     ->modalSubmitActionLabel('Guardar Estado')
                     ->form(function (Orden $record) {
                         $detalles = $record->detalleOrden()->with('examen.muestras')->get();
-                        
+
                         $opcionesMuestras = [];
                         $valoresPorDefecto = [];
 
                         foreach ($detalles as $detalle) {
-                            if (!$detalle->examen || $detalle->examen->muestras->isEmpty()) continue;
-                            
+                            if (!$detalle->examen || $detalle->examen->muestras->isEmpty())
+                                continue;
+
                             // Obtenemos las muestras ya recibidas para ESTE detalle
                             $recibidas = $detalle->muestras_recibidas ?? [];
 
@@ -488,17 +481,18 @@ Tables\Actions\Action::make('gestionarMuestras')
                                 ->bulkToggleable(),
                         ];
                     })
-                     ->action(function (Orden $record, array $data) {
+                    ->action(function (Orden $record, array $data) {
                         $selectedKeys = $data['muestras_recibidas_list'] ?? [];
                         $detalles = $record->detalleOrden()->with('examen.muestras')->get();
-                        
+
                         $totalMuestrasRequeridas = 0;
                         $totalMuestrasRecibidas = 0;
 
                         DB::transaction(function () use ($detalles, $selectedKeys, &$totalMuestrasRequeridas, &$totalMuestrasRecibidas) {
                             foreach ($detalles as $detalle) {
                                 $muestrasDeEsteDetalle = [];
-                                if ($detalle->examen->muestras->isEmpty()) continue;
+                                if ($detalle->examen->muestras->isEmpty())
+                                    continue;
 
                                 foreach ($detalle->examen->muestras as $muestra) {
                                     $totalMuestrasRequeridas++;
@@ -520,7 +514,7 @@ Tables\Actions\Action::make('gestionarMuestras')
                             $record->toma_muestra_user_id = auth()->id(); // <-- GUARDAR USUARIO
                             Notification::make()->title('¡Todas las muestras recibidas!')->body('La orden está lista para procesar.')->success()->send();
                         } else {
-                            $record->estado = 'pendiente'; 
+                            $record->estado = 'pendiente';
                             $record->fecha_toma_muestra = null; // <-- LIMPIAR FECHA
                             $record->toma_muestra_user_id = null; // <-- LIMPIAR USUARIO
                             $notificacion = ($totalMuestrasRecibidas > 0)
@@ -531,102 +525,102 @@ Tables\Actions\Action::make('gestionarMuestras')
                         $record->save();
                     }),
 
-               
 
-   Tables\Actions\Action::make('ingresarResultados')
+
+                Tables\Actions\Action::make('ingresarResultados')
                     ->tooltip('Ingresar Resultados')
                     ->icon('heroicon-o-pencil-square')
                     ->iconButton()
                     ->color('primary')
                     ->visible(fn(Orden $record): bool => $record->estado === 'en proceso') // <-- ¡LÓGICA CLAVE!
                     ->url(fn(Orden $record): string => static::getUrl('ingresar-resultados', ['record' => $record])),
-                
-    Tables\Actions\Action::make('imprimirEtiquetas')
+
+                Tables\Actions\Action::make('imprimirEtiquetas')
                     ->tooltip('Imprimir Etiquetas')
                     ->icon('heroicon-o-tag')
                     ->iconButton()
                     ->color('gray')
                     // Visible si la orden no está finalizada o cancelada
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente'])) 
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente']))
                     ->url(fn(Orden $record): string => DetalleOrdenKanban::getUrl(['ordenId' => $record->id])),
 
-    Tables\Actions\Action::make('ver')
-        ->tooltip('Ver Detalles')
-        ->icon('heroicon-o-eye')
-        ->iconButton()
-        ->color('gray')
-        ->modalContent(function (Orden $record) {
-            // Corregido para evitar error de memoria
-            $record->load([
-                'cliente',
-                'detalleOrden.examen.muestras', 
-                'detalleOrden.perfil',
-                'resultados.prueba',
-                'tomaMuestraUser' 
-            ]);
-            return view('filament.modals.ver-orden', ['record' => $record]);
-        })
-        ->modalSubmitAction(false)
-        ->modalCancelAction(false),
+                Tables\Actions\Action::make('ver')
+                    ->tooltip('Ver Detalles')
+                    ->icon('heroicon-o-eye')
+                    ->iconButton()
+                    ->color('gray')
+                    ->modalContent(function (Orden $record) {
+                        // Corregido para evitar error de memoria
+                        $record->load([
+                            'cliente',
+                            'detalleOrden.examen.muestras',
+                            'detalleOrden.perfil',
+                            'resultados.prueba',
+                            'tomaMuestraUser'
+                        ]);
+                        return view('filament.modals.ver-orden', ['record' => $record]);
+                    })
+                    ->modalSubmitAction(false)
+                    ->modalCancelAction(false),
 
-    Tables\Actions\Action::make('verPruebas')
-        ->tooltip('Ver Pruebas Realizadas')
-        ->icon('heroicon-o-clipboard-document-check')
-        ->iconButton()
-        ->color('gray')
-        ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado']))
-        ->modalHeading('Pruebas a Realizar')
-        ->modalSubmitAction(false)
-        ->modalCancelActionLabel('Cerrar')
-        ->form(function (Orden $record) {
-            $detalles = $record->detalleOrden()->with('examen.pruebas')->get();
-            $examenes = $detalles->map(fn ($detalle) => $detalle->examen)->filter()->unique('id');
-            return [Forms\Components\View::make('filament.modals.ver-orden-pruebas')->viewData(['examenes' => $examenes])];
-        }),
+                Tables\Actions\Action::make('verPruebas')
+                    ->tooltip('Ver Pruebas Realizadas')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->iconButton()
+                    ->color('gray')
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado']))
+                    ->modalHeading('Pruebas a Realizar')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Cerrar')
+                    ->form(function (Orden $record) {
+                        $detalles = $record->detalleOrden()->with('examen.pruebas')->get();
+                        $examenes = $detalles->map(fn($detalle) => $detalle->examen)->filter()->unique('id');
+                        return [Forms\Components\View::make('filament.modals.ver-orden-pruebas')->viewData(['examenes' => $examenes])];
+                    }),
 
-    Tables\Actions\Action::make('pausarOrden')
-        ->tooltip('Pausar Orden')
-        ->icon('heroicon-o-pause-circle')
-        ->iconButton()
-        ->color('warning')
-        ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
-        ->requiresConfirmation()
-        ->form([ Textarea::make('motivo_pausa')->label('Motivo de la Pausa')->required() ])
-        ->action(function (Orden $record, array $data) {
-            $record->estado = 'pausada';
-            $record->motivo_pausa = $data['motivo_pausa'];
-            $record->save();
-            Notification::make()->title('Orden Pausada')->warning()->send();
-        }),
+                Tables\Actions\Action::make('pausarOrden')
+                    ->tooltip('Pausar Orden')
+                    ->icon('heroicon-o-pause-circle')
+                    ->iconButton()
+                    ->color('warning')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
+                    ->requiresConfirmation()
+                    ->form([Textarea::make('motivo_pausa')->label('Motivo de la Pausa')->required()])
+                    ->action(function (Orden $record, array $data) {
+                        $record->estado = 'pausada';
+                        $record->motivo_pausa = $data['motivo_pausa'];
+                        $record->save();
+                        Notification::make()->title('Orden Pausada')->warning()->send();
+                    }),
 
-    Tables\Actions\Action::make('reanudarOrden')
-        ->tooltip('Reanudar Orden')
-        ->icon('heroicon-o-play-circle')
-        ->iconButton()
-        ->color('success')
-        ->visible(fn(Orden $record): bool => $record->estado === 'pausada')
-        ->requiresConfirmation()
-        ->action(function (Orden $record) {
-            $record->estado = 'en proceso';
-            $record->motivo_pausa = null;
-            $record->save();
-            Notification::make()->title('Orden Reanudada')->success()->send();
-        }),
-    
-    Tables\Actions\Action::make('finalizarOrden')
-        ->tooltip('Finalizar Orden')
-        ->icon('heroicon-o-check-circle')
-        ->iconButton()
-        ->color('success')
-        ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
-        ->requiresConfirmation()
-        ->action(function (Orden $record) {
-            $record->estado = 'finalizado';
-            $record->save();
-            Notification::make()->title('Orden Finalizada con Éxito')->success()->send();
-        }),
+                Tables\Actions\Action::make('reanudarOrden')
+                    ->tooltip('Reanudar Orden')
+                    ->icon('heroicon-o-play-circle')
+                    ->iconButton()
+                    ->color('success')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'pausada')
+                    ->requiresConfirmation()
+                    ->action(function (Orden $record) {
+                        $record->estado = 'en proceso';
+                        $record->motivo_pausa = null;
+                        $record->save();
+                        Notification::make()->title('Orden Reanudada')->success()->send();
+                    }),
 
-      Tables\Actions\Action::make('generarReporte')
+                Tables\Actions\Action::make('finalizarOrden')
+                    ->tooltip('Finalizar Orden')
+                    ->icon('heroicon-o-check-circle')
+                    ->iconButton()
+                    ->color('success')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
+                    ->requiresConfirmation()
+                    ->action(function (Orden $record) {
+                        $record->estado = 'finalizado';
+                        $record->save();
+                        Notification::make()->title('Orden Finalizada con Éxito')->success()->send();
+                    }),
+
+                Tables\Actions\Action::make('generarReporte')
                     ->tooltip('Generar Reporte PDF')
                     ->icon('heroicon-o-printer')
                     ->iconButton()
@@ -635,9 +629,9 @@ Tables\Actions\Action::make('gestionarMuestras')
                     // --- ¡LÓGICA DE PREPARACIÓN DE DATOS REESCRITA! ---
                     ->action(function (Orden $record) {
                         $orden = $record->load([
-                            'cliente', 
+                            'cliente',
                             'detalleOrden.examen.tipoExamen',
-                            'detalleOrden.examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario', 
+                            'detalleOrden.examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario',
                             'resultados.prueba'
                         ]);
 
@@ -647,7 +641,7 @@ Tables\Actions\Action::make('gestionarMuestras')
 
                         $datos_agrupados = [];
                         foreach ($detallesAgrupados as $tipoExamenNombre => $detalles) {
-                            
+
                             $examenes_data = [];
                             foreach ($detalles as $detalle) {
                                 $todasLasPruebas = $detalle->examen->pruebas;
@@ -663,12 +657,15 @@ Tables\Actions\Action::make('gestionarMuestras')
 
                                 // 3. Procesar matrices
                                 $dataMatrices = $pruebasConjuntas->map(function (Collection $pruebasDelConjunto) use ($orden, $detalle) {
-                                    $filas = []; $columnas = []; $dataMatrix = [];
+                                    $filas = [];
+                                    $columnas = [];
+                                    $dataMatrix = [];
                                     foreach ($pruebasDelConjunto as $prueba) {
                                         $partes = explode(', ', $prueba->nombre);
                                         if (count($partes) >= 2) {
                                             [$nombreFila, $nombreColumna] = $partes;
-                                            $filas[] = $nombreFila; $columnas[] = $nombreColumna;
+                                            $filas[] = $nombreFila;
+                                            $columnas[] = $nombreColumna;
                                             $dataMatrix[$nombreFila][$nombreColumna] = self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
                                         }
                                     }
@@ -692,7 +689,7 @@ Tables\Actions\Action::make('gestionarMuestras')
                         // OBTENER EL USUARIO QUE FIRMA
                         // Asumimos que el usuario que firma es el usuario autenticado (auth()->user())
                         $usuarioQueFirma = auth()->user();
-                        
+
                         // Las propiedades 'firma_path' y 'sello_path' DEBEN existir en el modelo User.
                         // Asegúrate de que hayas añadido estas columnas a la tabla 'users' en una migración.
                         $rutaFirma = $usuarioQueFirma?->firma_path ?? null;
@@ -713,36 +710,33 @@ Tables\Actions\Action::make('gestionarMuestras')
                         $pdf = Pdf::loadView('pdf.reporte_resultados', $pdf_data);
 
                         return response()->streamDownload(
-                            fn () => print($pdf->output()),
+                            fn() => print ($pdf->output()),
                             "Resultados-{$orden->cliente->nombre}-{$orden->id}.pdf"
                         );
                     }),
-    Tables\Actions\Action::make('cancelarOrden')
-        ->tooltip('Cancelar Orden')
-        ->icon('heroicon-o-x-circle')
-        ->iconButton()
-        ->color('danger')
-        ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso', 'pausada']))
-        ->requiresConfirmation()
-        ->action(function (Orden $record) {
-            $record->estado = 'cancelado';
-            $record->save();
-            Notification::make()->title('Orden Cancelada')->danger()->send();
-        }),
-    ]);
+                Tables\Actions\Action::make('cancelarOrden')
+                    ->tooltip('Cancelar Orden')
+                    ->icon('heroicon-o-x-circle')
+                    ->iconButton()
+                    ->color('danger')
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso', 'pausada']))
+                    ->requiresConfirmation()
+                    ->action(function (Orden $record) {
+                        $record->estado = 'cancelado';
+                        $record->save();
+                        Notification::make()->title('Orden Cancelada')->danger()->send();
+                    }),
+            ]);
     }
     public static function getRelations(): array
     {
         return [];
     }
-/**
-     * Obtiene los datos de una prueba para el PDF, usando la "foto" (snapshot)
-     * si existe, o los datos en vivo como plan B.
-     */
+
     public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
     {
         $resultado = $orden->resultados->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
-        
+
         $nombre_prueba = $prueba->nombre; // Nombre por defecto
         $referencia_formateada = 'N/A';
         $unidades = '';
@@ -755,7 +749,7 @@ Tables\Actions\Action::make('gestionarMuestras')
 
         // --- INICIO DE LA LÓGICA DE REFERENCIA CORREGIDA ---
         if ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-            
+
             // 1. OBTENER DATOS DEL PACIENTE
             $cliente = $orden->cliente;
             $generoCliente = $cliente->genero; // "Masculino" o "Femenino"
@@ -799,7 +793,7 @@ Tables\Actions\Action::make('gestionarMuestras')
                     ->where('genero', 'Ambos')
                     ->first();
             }
-            
+
             // 6. ÚLTIMO RECURSO: Si todo falla, toma el primero (evita crasheo)
             if (!$valorRef) {
                 $valorRef = $todosLosValores->first();
@@ -809,69 +803,75 @@ Tables\Actions\Action::make('gestionarMuestras')
 
             // Ahora $valorRef es el correcto (o el mejor disponible)
             if ($resultado && !empty($resultado->prueba_nombre_snapshot)) {
-            
-            $nombre_prueba = $resultado->prueba_nombre_snapshot;
-            $referencia_formateada = $resultado->valor_referencia_snapshot ?? 'N/A';
-            $unidades = $resultado->unidades_snapshot ?? '';
 
-            // Intentar extraer valores numéricos del snapshot para la comparación
-            // Esto asume un formato simple como "1.0 - 5.0"
-            if (preg_match('/([\d\.]+)\s*-\s*([\d\.]+)/', $referencia_formateada, $matches)) {
-                $valorMin = (float) $matches[1];
-                $valorMax = (float) $matches[2];
+                $nombre_prueba = $resultado->prueba_nombre_snapshot;
+                $referencia_formateada = $resultado->valor_referencia_snapshot ?? 'N/A';
+                $unidades = $resultado->unidades_snapshot ?? '';
+
+                // Intentar extraer valores numéricos del snapshot para la comparación
+                // Esto asume un formato simple como "1.0 - 5.0"
+                if (preg_match('/([\d\.]+)\s*-\s*([\d\.]+)/', $referencia_formateada, $matches)) {
+                    $valorMin = (float) $matches[1];
+                    $valorMax = (float) $matches[2];
+                    if (!is_null($valor_resultado_num)) {
+                        if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) {
+                            $es_fuera_de_rango = true;
+                        }
+                    }
+                }
+                // (Puedes añadir más 'preg_match' para operadores como '<', '≥', etc.)
+
+            }
+            // CASO 2: Es una orden antigua sin "foto", usamos los datos en vivo
+            elseif ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
+
+                $valorMin = (float) $valorRef->valor_min;
+                $valorMax = (float) $valorRef->valor_max;
+                $unidades = $valorRef->unidades ?? '';
+
+                // Formatear el texto de referencia
+                $rangoTexto = match ($valorRef->operador) {
+                    'rango' => "{$valorMin} - {$valorMax}",
+                    '<=' => "≤ {$valorMax}",
+                    '<' => "< {$valorMax}",
+                    '>=' => "≥ {$valorMin}",
+                    '>' => "> {$valorMin}",
+                    '=' => "= {$valorMin}",
+                    default => $valorRef->descriptivo ?? '',
+                };
+                $referencia_formateada = $rangoTexto;
+
+                // --- NUEVA LÓGICA DE COMPARACIÓN ---
                 if (!is_null($valor_resultado_num)) {
-                    if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) {
-                        $es_fuera_de_rango = true;
+                    switch ($valorRef->operador) {
+                        case 'rango':
+                            if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax)
+                                $es_fuera_de_rango = true;
+                            break;
+                        case '<=':
+                            if ($valor_resultado_num > $valorMax)
+                                $es_fuera_de_rango = true;
+                            break;
+                        case '<':
+                            if ($valor_resultado_num >= $valorMax)
+                                $es_fuera_de_rango = true;
+                            break;
+                        case '>=':
+                            if ($valor_resultado_num < $valorMin)
+                                $es_fuera_de_rango = true;
+                            break;
+                        case '>':
+                            if ($valor_resultado_num <= $valorMin)
+                                $es_fuera_de_rango = true;
+                            break;
+                        case '=':
+                            if ($valor_resultado_num != $valorMin)
+                                $es_fuera_de_rango = true;
+                            break;
                     }
                 }
             }
-            // (Puedes añadir más 'preg_match' para operadores como '<', '≥', etc.)
-
-        } 
-        // CASO 2: Es una orden antigua sin "foto", usamos los datos en vivo
-        elseif ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-       
-            $valorMin = (float) $valorRef->valor_min;
-            $valorMax = (float) $valorRef->valor_max;
-            $unidades = $valorRef->unidades ?? '';
-
-            // Formatear el texto de referencia
-            $rangoTexto = match ($valorRef->operador) {
-                'rango' => "{$valorMin} - {$valorMax}",
-                '<=' => "≤ {$valorMax}",
-                '<' => "< {$valorMax}",
-                '>=' => "≥ {$valorMin}",
-                '>' => "> {$valorMin}",
-                '=' => "= {$valorMin}",
-                default => $valorRef->descriptivo ?? '',
-            };
-            $referencia_formateada = $rangoTexto;
-
-            // --- NUEVA LÓGICA DE COMPARACIÓN ---
-            if (!is_null($valor_resultado_num)) {
-                switch ($valorRef->operador) {
-                    case 'rango':
-                        if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) $es_fuera_de_rango = true;
-                        break;
-                    case '<=':
-                        if ($valor_resultado_num > $valorMax) $es_fuera_de_rango = true;
-                        break;
-                    case '<':
-                        if ($valor_resultado_num >= $valorMax) $es_fuera_de_rango = true;
-                        break;
-                    case '>=':
-                        if ($valor_resultado_num < $valorMin) $es_fuera_de_rango = true;
-                        break;
-                    case '>':
-                        if ($valor_resultado_num <= $valorMin) $es_fuera_de_rango = true;
-                        break;
-                    case '=':
-                         if ($valor_resultado_num != $valorMin) $es_fuera_de_rango = true;
-                        break;
-                }
-            }
         }
-    }
 
         return [
             'nombre' => $nombre_prueba, // <-- Usa el nombre de la "foto" o el nombre en vivo

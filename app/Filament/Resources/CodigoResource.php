@@ -102,7 +102,11 @@ class CodigoResource extends Resource
                     'Activo' => 'success',
                     default => 'gray',
                 }),
-        ])->defaultSort('created_at', 'desc');
+        ])->defaultSort('created_at', 'desc')->recordUrl(null)
+        ->actions([
+            Tables\Actions\EditAction::make(),
+            Tables\Actions\DeleteAction::make(),
+        ]);
     }
 
     public static function getPages(): array

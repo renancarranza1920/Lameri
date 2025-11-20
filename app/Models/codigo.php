@@ -49,11 +49,38 @@ class Codigo extends Model
         return true;
     }
 
-    protected static function booted()
+protected static function booted()
     {
         static::creating(function ($codigo) {
             $codigo->estado = 'Activo';
             $codigo->usos_actuales = 0;
+        });
+
+        // --- AQUI AGREGAMOS LA LÓGICA DE REACTIVACIÓN ---
+        static::updating(function ($codigo) {
+            // Solo ejecutamos esto si se tocaron campos sensibles
+            if ($codigo->isDirty(['limite_usos', 'fecha_vencimiento', 'es_limitado', 'tiene_vencimiento'])) {
+                
+                $cumpleLimite = true;
+                $cumpleFecha = true;
+
+                // 1. Revisar si ahora cumple el límite (o si se volvió ilimitado)
+                if ($codigo->es_limitado && !is_null($codigo->limite_usos)) {
+                    // Si Usos < Límite, entonces cumple
+                    $cumpleLimite = $codigo->usos_actuales < $codigo->limite_usos;
+                }
+
+                // 2. Revisar si ahora cumple la fecha (o si se quitó el vencimiento)
+                if ($codigo->tiene_vencimiento && $codigo->fecha_vencimiento) {
+                    // Usamos endOfDay() para que el cupón valga hasta el último segundo del día
+                    $cumpleFecha = Carbon::parse($codigo->fecha_vencimiento)->endOfDay()->isFuture();
+                }
+
+                // 3. Si cumple ambas condiciones, ¡RESUCITALO!
+                if ($cumpleLimite && $cumpleFecha) {
+                    $codigo->estado = 'Activo';
+                }
+            }
         });
     }
 
