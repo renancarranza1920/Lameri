@@ -179,6 +179,21 @@
             content: "Página " counter(page);
         }
 
+          .observaciones-box {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 10px;
+            font-size: 9px;
+            margin-top: 15px; /* Espacio después de la tabla de paciente */
+            margin-bottom: 20px; /* Espacio antes del primer examen */
+            page-break-inside: avoid;
+        }
+        .observaciones-box strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
         /* --- ¡NUEVO ESTILO! --- */
         .fuera-de-rango {
             color: #D90000;
@@ -281,6 +296,15 @@
                         <td>{{ now()->format('d/m/Y') }}</td>
                     </tr>
                 </table>
+                <!-- --- ¡NUEVA SECCIÓN DE OBSERVACIONES! --- -->
+    @if (!empty($orden->observaciones))
+        <div class="observaciones-box">
+            <strong>Observaciones de la Orden:</strong>
+            {{-- Usamos nl2br(e(...)) para respetar los saltos de línea y evitar ataques XSS --}}
+            <p style="margin: 0; padding: 0;">{!! nl2br(e($orden->observaciones)) !!}</p>
+        </div>
+    @endif
+    <!-- --- FIN DE OBSERVACIONES --- -->
             </div>
         </div>
     </div>
