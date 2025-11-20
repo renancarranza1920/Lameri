@@ -48,10 +48,11 @@
     44 => 'Relaticle\\Flowforge\\FlowforgeServiceProvider',
     45 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
     46 => 'Spatie\\EloquentSortable\\EloquentSortableServiceProvider',
-    47 => 'Spatie\\Permission\\PermissionServiceProvider',
-    48 => 'App\\Providers\\EventServiceProvider',
-    49 => 'App\\Providers\\AppServiceProvider',
-    50 => 'App\\Providers\\Filament\\AdminPanelProvider',
+    47 => 'Spatie\\Activitylog\\ActivitylogServiceProvider',
+    48 => 'Spatie\\Permission\\PermissionServiceProvider',
+    49 => 'App\\Providers\\EventServiceProvider',
+    50 => 'App\\Providers\\AppServiceProvider',
+    51 => 'App\\Providers\\Filament\\AdminPanelProvider',
   ),
   'eager' => 
   array (
@@ -87,10 +88,11 @@
     29 => 'Relaticle\\Flowforge\\FlowforgeServiceProvider',
     30 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
     31 => 'Spatie\\EloquentSortable\\EloquentSortableServiceProvider',
-    32 => 'Spatie\\Permission\\PermissionServiceProvider',
-    33 => 'App\\Providers\\EventServiceProvider',
-    34 => 'App\\Providers\\AppServiceProvider',
-    35 => 'App\\Providers\\Filament\\AdminPanelProvider',
+    32 => 'Spatie\\Activitylog\\ActivitylogServiceProvider',
+    33 => 'Spatie\\Permission\\PermissionServiceProvider',
+    34 => 'App\\Providers\\EventServiceProvider',
+    35 => 'App\\Providers\\AppServiceProvider',
+    36 => 'App\\Providers\\Filament\\AdminPanelProvider',
   ),
   'deferred' => 
   array (

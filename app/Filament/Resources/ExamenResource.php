@@ -3,8 +3,10 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ExamenResource\Pages;
+use App\Filament\Resources\ExamenResource\RelationManagers\PruebasRelationManager;
 use App\Models\Examen;
 use App\Models\TipoExamen;
+use DB;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -59,6 +61,13 @@ class ExamenResource extends Resource
                             ])
                             ->required()
                             ->searchable(),
+                             Forms\Components\Select::make('muestras')
+                        ->relationship('muestras', 'nombre')->multiple()->preload()->searchable()->createOptionForm([
+                                Forms\Components\TextInput::make('nombre')->required()->unique('muestras', 'nombre'),
+                            ]),
+                                Forms\Components\Toggle::make('es_externo')
+                        ->label('Es un examen externo/referido')
+                        ->helperText('Activa esto si el examen se procesa en otro laboratorio.'),
 
                     Forms\Components\TextInput::make('precio')
                         ->label('Precio')->prefix('$')->numeric()->required(),
@@ -153,6 +162,44 @@ class ExamenResource extends Resource
                             ->disabled()
                             ->default(fn($record) => $record->precio),
                     ]),
+                      Action::make('addPruebas')
+                    ->label('Añadir Pruebas')
+                    ->icon('heroicon-o-plus-circle')
+                    ->color('gray')
+                    ->modalHeading(fn (Examen $record) => 'Añadir pruebas a: ' . $record->nombre)
+                    ->form([
+                        Forms\Components\TagsInput::make('nombres_pruebas')
+                            ->label('Nombres de las Pruebas')
+                            ->helperText('Escribe un nombre y presiona Enter para añadirlo a la lista.')
+                            ->placeholder('Nueva prueba...')
+                            ->required(),
+                    ])
+                    ->action(function (Examen $record, array $data) {
+                        $nombres = $data['nombres_pruebas'];
+                        try {
+                            DB::transaction(function () use ($record, $nombres) {
+                                foreach ($nombres as $nombre) {
+                                    $record->pruebas()->create([
+                                        'nombre' => $nombre,
+                                        // examen_id se asigna automáticamente por la relación
+                                    ]);
+                                }
+                            });
+                            Notification::make()
+                                ->title(count($nombres) . ' pruebas creadas')
+                                ->body('Se han añadido las pruebas al examen exitosamente.')
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Error al guardar')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
+                
                 Action::make('cambiar_estado')
                     ->label(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                     ->icon(fn($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
@@ -177,9 +224,11 @@ class ExamenResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array
+     public static function getRelations(): array
     {
-        return [];
+        return [
+            PruebasRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

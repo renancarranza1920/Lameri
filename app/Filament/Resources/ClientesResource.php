@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ClientesResource\Pages;
+use App\Filament\Resources\ClientesResource\Pages\ViewExpediente;
 use App\Models\Cliente;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -49,7 +50,16 @@ class ClientesResource extends Resource
                                             ->required()
                                             ->placeholder('dd/mm/aaaa')
                                             ->maxDate(now()->subYears(5)),
+
+                                            Forms\Components\Select::make('genero')
+                                        ->label('Género')
+                                        ->options([
+                                            'Masculino' => 'Masculino',
+                                            'Femenino' => 'Femenino',
+                                        ])
+                                        ->required(),
                                     ]),
+                                    
                             ]),
 
                         // Sección Contacto
@@ -200,10 +210,18 @@ class ClientesResource extends Resource
                             ->send();
                     })
                     ->iconButton(),
+
+                    Action::make('expediente')
+                    ->label('Expediente')
+                    ->icon('heroicon-o-folder-open') // Un ícono adecuado
+                    ->color('info') // Color del botón
+                    ->url(fn (Cliente $record): string => ClientesResource::getUrl('expediente', ['record' => $record->id]))
+
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    
                 ]),
             ]);
             
@@ -220,6 +238,7 @@ class ClientesResource extends Resource
             'index' => Pages\ListClientes::route('/'),
             'create' => Pages\CreateClientes::route('/create'),
             'edit' => Pages\EditClientes::route('/{record}/edit'),
+            'expediente' => Pages\Expediente::route('/{record}/expediente'),
         ];
     }
 }

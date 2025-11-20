@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
         $admin = User::factory()->create([
             'name' => 'Administrador',
             'email' => 'admin@gmail.com',
+            'nickname' => 'admin',
             'password' => Hash::make('admin'),
         ]);
 
@@ -63,7 +64,8 @@ class DatabaseSeeder extends Seeder
             'nombre' => 'Erick Eduardo',
             'apellido' => 'Alonzo Dominguez',
             'fecha_nacimiento' => '1995-05-15',
-            'telefono' => '1234567890',
+            'genero' => 'Masculino',
+            'telefono' => '12345678',
             'correo' => 'ad18017@ues.edu.sv',
             'direccion' => 'Calle Falsa 123',
             'estado' => 'Activo',
@@ -74,8 +76,9 @@ class DatabaseSeeder extends Seeder
                 'NumeroExp' => 'RC25001',
                 'nombre' => 'Renan Gilberto',
                 'apellido' => 'Carranza Estupinian',
+                'genero' => 'Masculino',
                 'fecha_nacimiento' => '2000-06-15',
-                'telefono' => '0987654321',
+                'telefono' => '09876543',
                 'correo' => 'ce18008@ues.edu.sv',
                 'direccion' => 'Avenida Principal 456',
                 'estado' => 'Activo',
@@ -87,9 +90,23 @@ class DatabaseSeeder extends Seeder
                 'nombre' => 'Manuel Enrique',
                 'apellido' => 'Dominguez Lopez',
                 'fecha_nacimiento' => '2010-06-15',
-                'telefono' => '1234567877',
+                'genero' => 'Masculino',
+                'telefono' => '12345678',
                 'correo' => 'ad14017@ues.edu.sv',
                 'direccion' => 'Calle Secundaria 789',
+                'estado' => 'Activo',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'NumeroExp' => 'CC25001',
+                'nombre' => 'Karla Melissa',
+                'apellido' => 'Cortez Cardenas',
+                'fecha_nacimiento' => '1950-06-15',
+                'genero' => 'Femenino',
+                'telefono' => '767685345',
+                'correo' => 'cc14017@ues.edu.sv',
+                'direccion' => 'Calle Tercearia 789',
                 'estado' => 'Activo',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -428,15 +445,15 @@ class DatabaseSeeder extends Seeder
         }
         //grupos etarios
       DB::table('grupos_etarios')->insert([
-            ['nombre'=>'Embarazo temprano','edad_min'=>0,'edad_max'=>12,'unidad_tiempo'=>'semanas','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Embarazo medio','edad_min'=>13,'edad_max'=>27,'unidad_tiempo'=>'semanas','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Embarazo tardío','edad_min'=>28,'edad_max'=>42,'unidad_tiempo'=>'semanas','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Neonatos','edad_min'=>0,'edad_max'=>28,'unidad_tiempo'=>'días','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Lactantes','edad_min'=>1,'edad_max'=>12,'unidad_tiempo'=>'meses','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Niños','edad_min'=>1,'edad_max'=>12,'unidad_tiempo'=>'años','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Adolescentes','edad_min'=>13,'edad_max'=>17,'unidad_tiempo'=>'años','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Adultos','edad_min'=>18,'edad_max'=>64,'unidad_tiempo'=>'años','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Adultos mayores','edad_min'=>65,'edad_max'=>120,'unidad_tiempo'=>'años','created_at'=>now(),'updated_at'=>now()],
+            ['nombre'=>'Embarazo temprano','edad_min'=>0,'edad_max'=>12,'unidad_tiempo'=>'semanas','genero'=>'Femenino','created_at'=>now(),'updated_at'=>now()],
+            ['nombre'=>'Embarazo medio','edad_min'=>13,'edad_max'=>27,'unidad_tiempo'=>'semanas','genero'=>'Femenino','created_at'=>now(),'updated_at'=>now()],
+            ['nombre'=>'Embarazo tardío','edad_min'=>28,'edad_max'=>42,'unidad_tiempo'=>'semanas','genero'=>'Femenino','created_at'=>now(),'updated_at'=>now()],
+            ['nombre'=>'Neonatos','edad_min'=>0,'edad_max'=>28,'unidad_tiempo'=>'días','genero'=>'Ambos','created_at'=>now(),'updated_at'=>now()],
+            ['nombre'=>'Lactantes','edad_min'=>1,'edad_max'=>12,'unidad_tiempo'=>'meses','genero'=>'Ambos','created_at'=>now(),'updated_at'=>now()],
+            ['nombre'=>'Niños','edad_min'=>1,'edad_max'=>12,'unidad_tiempo'=>'años','genero'=>'Ambos','created_at'=>now(),'updated_at'=>now()],
+            ['nombre'=>'Adolescentes','edad_min'=>13,'edad_max'=>17,'unidad_tiempo'=>'años','genero'=>'Ambos','created_at'=>now(),'updated_at'=>now()],
+            ['nombre'=>'Adultos','edad_min'=>18,'edad_max'=>64,'unidad_tiempo'=>'años','genero'=>'Ambos','created_at'=>now(),'updated_at'=>now()],
+            ['nombre'=>'Adultos mayores','edad_min'=>65,'edad_max'=>120,'unidad_tiempo'=>'años','genero'=>'Ambos','created_at'=>now(),'updated_at'=>now()],
         ]);
 
        

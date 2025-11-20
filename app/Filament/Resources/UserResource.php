@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Card;
 use Filament\Resources\Resource;
@@ -27,8 +28,13 @@ class UserResource extends Resource
                 Card::make()
                     ->schema([
                         Forms\Components\TextInput::make('name')
-                            ->label('Nombre')
+                            ->label('Nombre Completo')
                             ->required()
+                            ->maxLength(255),
+                            Forms\Components\TextInput::make('nickname')
+                            ->label('Nombre de usuario (para login)')
+                            ->required()
+                            ->unique(ignoreRecord: true)
                             ->maxLength(255),
 
                         Forms\Components\TextInput::make('email')
@@ -53,8 +59,33 @@ class UserResource extends Resource
                             ->preload()
                             ->multiple(false)
                             ->searchable(),
+                            
                     ])
-                    ->columns(1)
+                    ->columns(2),
+                    Forms\Components\Section::make('Firma y Sello Digital')
+                    ->description('Sube las imágenes PNG (con fondo transparente de preferencia) que se usarán en los reportes.')
+                    ->columns(2)
+                    ->schema([
+                        FileUpload::make('firma_path')
+                            ->label('Firma del Usuario (PNG)')
+                            ->image()
+                            ->imageEditor() // Opcional: permite recortar
+                            ->acceptedFileTypes(['image/png'])
+                            ->disk('public') // Usa el disco 'public' (storage/app/public)
+                            ->directory('firmas') // Guarda en 'storage/app/public/firmas'
+                            ->visibility('public') // Asegura que el archivo sea visible
+                            ->columnSpan(1),
+                        
+                        FileUpload::make('sello_path')
+                            ->label('Sello del Usuario (PNG)')
+                            ->image()
+                            ->imageEditor()
+                            ->acceptedFileTypes(['image/png'])
+                            ->disk('public')
+                            ->directory('sellos') // Guarda en 'storage/app/public/sellos'
+                            ->visibility('public')
+                            ->columnSpan(1),
+                    ])
             ]);
     }
 
@@ -67,6 +98,10 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('id')->sortable(),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
+                    ->searchable()
+                    ->sortable(),
+                    Tables\Columns\TextColumn::make('nickname')
+                    ->label('Nombre de Usuario')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('email')

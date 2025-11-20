@@ -7,12 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
-
+   use LogsActivity;
         use HasRoles;
 
     /**
@@ -21,9 +23,12 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+       'name',
         'email',
         'password',
+        'nickname', 
+        'firma_path',
+        'sello_path',
     ];
 
     /**
@@ -48,4 +53,28 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+   public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('Usuarios')
+            ->setDescriptionForEvent(function(string $eventName) {
+                $eventoTraducido = match($eventName) {
+                    'created' => 'creado',
+                    'updated' => 'actualizado',
+                    'deleted' => 'eliminado',
+                    default => $eventName
+                };
+                return "El usuario '{$this->name}' (ID: {$this->id}) ha sido {$eventoTraducido}";
+            })
+            ->logFillable() // Rastreará name, email, nickname, firma_path, sello_path
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
+    public function username()
+{
+    return 'nickname';
+}
+
 }

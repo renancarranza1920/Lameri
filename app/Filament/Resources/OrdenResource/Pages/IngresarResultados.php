@@ -4,6 +4,7 @@ namespace App\Filament\Resources\OrdenResource\Pages;
 
 use App\Filament\Resources\OrdenResource;
 use App\Models\Orden;
+use App\Models\Prueba;
 use Filament\Actions\Action;
 use Filament\Forms\Components\View;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -11,12 +12,13 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
+use Illuminate\Support\Collection;
 
 class IngresarResultados extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static string $resource = OrdenResource::class;
+     protected static string $resource = OrdenResource::class;
     protected static string $view = 'filament.resources.orden-resource.pages.ingresar-resultados';
 
     public ?Orden $record;
@@ -29,6 +31,29 @@ class IngresarResultados extends Page implements HasForms
         $this->form->fill($this->prepareInitialData());
     }
 
+    // --- CORRECCIÓN 2: El formulario ahora renderiza la vista COMPONENTE ---
+    public function form(Form $form): Form
+    {
+        return $form->schema([
+            // Aquí apuntamos a la vista que tiene toda la lógica de tablas y bucles
+            View::make('filament.resources.orden-resource.pages.ingresar-resultados-view') 
+                ->statePath('resultados_examenes'),
+        ])->statePath('data');
+    }
+
+    public function isOrderComplete(): bool
+    {
+        $totalPruebas = $this->record->detalleOrden
+            ->whereNotNull('examen_id')
+            ->flatMap(fn ($detalle) => $detalle->examen->pruebas)
+            ->count();
+        $resultadosIngresados = $this->record->resultados()
+            ->where('resultado', '!=', '')
+            ->whereNotNull('resultado')
+            ->count();
+        return ($totalPruebas > 0) && ($totalPruebas === $resultadosIngresados);
+    }
+
     protected function prepareInitialData(): array
     {
         $detalles = $this->record->detalleOrden()->with(['examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario'])->get();
@@ -38,141 +63,117 @@ class IngresarResultados extends Page implements HasForms
             if (!$detalle->examen) continue;
 
             $examen = $detalle->examen;
-            $pruebasData = [];
+            $todasLasPruebas = $examen->pruebas;
 
-            foreach ($examen->pruebas as $prueba) {
-                $resultadoExistente = $this->record->resultados()
-                    ->where('prueba_id', $prueba->id)
-                    ->where('detalle_orden_id', $detalle->id)
-                    ->first();
-                
-                $referenciaStrings = [];
-                $unidadesStrings = [];
-                $notasStrings = [];
+            $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
+            $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
 
-                if (!$examen->es_externo && $prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-                    foreach ($prueba->reactivoEnUso->valoresReferencia as $valorRef) {
-                        $parts = [];
-                        if ($valorRef->genero) $parts[] = "($valorRef->genero)";
-                        if ($valorRef->grupoEtario) $parts[] = $valorRef->grupoEtario->nombre;
-                        
-                        $valorMin = rtrim(rtrim(number_format($valorRef->valor_min, 2, '.', ''), '0'), '.');
-                        $valorMax = rtrim(rtrim(number_format($valorRef->valor_max, 2, '.', ''), '0'), '.');
-
-                        $rangoTexto = match ($valorRef->operador) {
-                            'rango' => "$valorMin a $valorMax",
-                            '<='    => "Hasta $valorMax",
-                            '<'     => "Menor que $valorMax",
-                            '>='    => "Desde $valorMin",
-                            '>'     => "Mayor que $valorMin",
-                            '='     => "Igual a $valorMin",
-                            default => $valorRef->descriptivo ?? '',
-                        };
-                        $parts[] = $rangoTexto;
-                        
-                        $referenciaStrings[] = implode(' ', $parts);
-                        $unidadesStrings[] = $valorRef->unidades ?? '';
-                        $notasStrings[] = $valorRef->nota ?? '';
+            $dataUnitarias = $pruebasUnitarias->map(fn(Prueba $prueba) => $this->getPruebaData($prueba, $detalle->id))->values()->all();
+            
+            $dataMatrices = $pruebasConjuntas->map(function (Collection $pruebasDelConjunto) use ($detalle) {
+                $filas = []; $columnas = []; $dataMatrix = [];
+                foreach ($pruebasDelConjunto as $prueba) {
+                    $partes = explode(', ', $prueba->nombre);
+                    if (count($partes) >= 2) {
+                        [$nombreFila, $nombreColumna] = $partes;
+                        $filas[] = $nombreFila; $columnas[] = $nombreColumna;
+                        $dataMatrix[$nombreFila][$nombreColumna] = $this->getPruebaData($prueba, $detalle->id);
                     }
                 }
+                return ['filas' => array_values(array_unique($filas)), 'columnas' => array_values(array_unique($columnas)), 'data' => $dataMatrix];
+            })->all();
 
-                $pruebasData[] = [
-                      'resultado_id' => $resultadoExistente?->id, 
-                    'prueba_id' => $prueba->id,
-                    'prueba_nombre' => $prueba->nombre,
-                    'es_externo' => $examen->es_externo,
-                    'resultado' => $resultadoExistente?->resultado,
-                    'valor_referencia_display' => implode('<br>', $referenciaStrings),
-                    'unidades_display' => implode('<br>', $unidadesStrings),
-                    'nota_display' => implode('<br>', $notasStrings),
-                    'valor_referencia_externo' => $resultadoExistente?->valor_referencia_externo,
-                ];
-            }
-            
             $preparedData[$detalle->id] = [
                 'examen_nombre' => $examen->nombre,
-                'pruebas' => $pruebasData,
+                'pruebas_unitarias' => $dataUnitarias,
+                'matrices' => $dataMatrices,
             ];
         }
 
-        return ['resultados_tabla' => $preparedData];
+        return ['resultados_examenes' => $preparedData];
     }
 
-    public function form(Form $form): Form
+   protected function getPruebaData(Prueba $prueba, int $detalleId): array
     {
-        return $form->schema([
-            View::make('filament.forms.components.resultados-table')
-                ->statePath('resultados_tabla'),
-        ])->statePath('data');
+        $resultadoExistente = $this->record->resultados()->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
+        $referencia = 'N/A'; $unidades = '';
+        if ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
+            $valorRef = $prueba->reactivoEnUso->valoresReferencia->first();
+            $valorMin = rtrim(rtrim(number_format($valorRef->valor_min, 2, '.', ''), '0'), '.');
+            $valorMax = rtrim(rtrim(number_format($valorRef->valor_max, 2, '.', ''), '0'), '.');
+            $referencia = "$valorMin - $valorMax";
+            $unidades = $valorRef->unidades ?? '';
+        }
+        return [
+            'prueba_id' => $prueba->id, 
+            'prueba_nombre' => $prueba->nombre, // <-- Dato que ya teníamos
+            'resultado_id' => $resultadoExistente?->id,
+            'resultado' => $resultadoExistente?->resultado, 
+            'valor_referencia' => $referencia, // <-- Dato que ya teníamos
+            'unidades' => $unidades, // <-- Dato que ya teníamos
+        ];
     }
     
     protected function getFormActions(): array
+    { return [Action::make('save')->label('Guardar Resultados')->submit('save')]; }
+    
+    protected function getHeaderActions(): array
     {
-        return [ Action::make('save')->label('Guardar Resultados')->submit('save'), ];
+        return [
+            Action::make('completar')->label('Completar Orden')->color('success')->icon('heroicon-o-check-circle')
+                ->visible(fn (): bool => $this->isOrderComplete())->requiresConfirmation()->modalHeading('Finalizar Orden')
+                ->modalDescription('Una vez completada, ya no podrás ingresar más resultados. ¿Estás seguro?')
+                ->action(function () {
+                    $this->record->estado = 'finalizado'; $this->record->save();
+                    Notification::make()->title('Orden Completada')->success()->send();
+                    return redirect(static::getResource()::getUrl('index'));
+                }),
+            Action::make('regresar')->label('Regresar a Órdenes')->color('gray')->icon('heroicon-o-arrow-left')
+                ->url(static::getResource()::getUrl('index')),
+        ];
     }
-protected function getHeaderActions(): array
-{
-    return [
-        Action::make('regresar')
-            ->label('Regresar a Órdenes')
-            ->color('gray')
-            ->icon('heroicon-o-arrow-left')
-            ->url(static::getResource()::getUrl('index')),
-    ];
-}
+
     public function save(): void
     {
-        $formData = $this->form->getState()['resultados_tabla'];
-
+        $formData = $this->form->getState()['resultados_examenes'];
         foreach ($formData as $detalleId => $examenData) {
-            if (!isset($examenData['pruebas'])) continue;
-
-            foreach ($examenData['pruebas'] as $resultado) {
-                $this->record->resultados()->updateOrCreate(
-                    // Condiciones para buscar el registro:
-                    [
-                        'detalle_orden_id' => $detalleId,
-                        'prueba_id' => $resultado['prueba_id'],
-                    ],
-                    // Datos para guardar o actualizar:
-                    [
-                        'resultado' => $resultado['resultado'],
-                        'valor_referencia_externo' => $resultado['valor_referencia_externo'] ?? null,
-                    ]
-                );
+            foreach (($examenData['pruebas_unitarias'] ?? []) as $r) { $this->guardarResultado($detalleId, $r); }
+            foreach (($examenData['matrices'] ?? []) as $m) {
+                foreach ($m['data'] as $f) { foreach ($f as $c) { $this->guardarResultado($detalleId, $c); } }
             }
         }
-
-        Notification::make()->title('Resultados guardados correctamente.')->success()->send();
-        
-        // Refrescamos el estado del formulario con los datos recién guardados.
+        Notification::make()->title('Resultados guardados')->success()->send();
         $this->form->fill($this->prepareInitialData());
     }
 
-    public function deleteResultado($resultadoId): void
-{
-    // Si no se pasó un ID válido, no hacemos nada.
-    if (!$resultadoId) {
-        return;
+      protected function guardarResultado(int $detalleId, array $r): void
+    {
+        if (isset($r['resultado']) && $r['resultado'] !== '' && !is_null($r['resultado'])) {
+            $this->record->resultados()->updateOrCreate(
+                [
+                    // Búsqueda
+                    'detalle_orden_id' => $detalleId, 
+                    'prueba_id' => $r['prueba_id']
+                ],
+                [
+                    // Datos a guardar/actualizar
+                    'resultado' => $r['resultado'],
+                    'prueba_nombre_snapshot' => $r['prueba_nombre'],
+                    'valor_referencia_snapshot' => $r['valor_referencia'],
+                    'unidades_snapshot' => $r['unidades'],
+                ]
+            );
+        }
     }
-
-    // Buscamos el resultado por su ID
-    $resultado = \App\Models\Resultado::find($resultadoId);
-
-    if ($resultado) {
-        // Por seguridad, verificamos que el resultado pertenezca a la orden actual
-        if ($resultado->detalleOrden->orden_id === $this->record->id) {
+    
+    public function deleteResultado($resultadoId): void
+    {
+        $resultado = \App\Models\Resultado::find($resultadoId);
+        if ($resultado && $resultado->detalleOrden->orden_id === $this->record->id) {
             $resultado->delete();
-
-            // Enviamos una notificación de éxito
-            Notification::make()
-                ->title('Resultado eliminado correctamente')
-                ->success()
-                ->send();
-            
-            // Refrescamos el formulario para que la fila se actualice
+            Notification::make()->title('Resultado eliminado')->success()->send();
             $this->form->fill($this->prepareInitialData());
         }
     }
 }
-}
+
