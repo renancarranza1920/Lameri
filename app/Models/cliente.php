@@ -50,6 +50,8 @@ class Cliente extends Model
         });
     }
 
+
+    
     public function ordenes(): HasMany
     {
         return $this->hasMany(Orden::class);
@@ -83,38 +85,49 @@ class Cliente extends Model
             ->dontSubmitEmptyLogs();
     }
 
-    public function getGrupoEtario(): ?GrupoEtario
+   public function getGrupoEtario(): ?GrupoEtario
     {
         if (!$this->fecha_nacimiento) {
-            return null; // No podemos determinar si no hay fecha de nacimiento
+            return null;
         }
 
         $fechaNacimiento = Carbon::parse($this->fecha_nacimiento);
         $ahora = Carbon::now();
+        
+        // Calcular edades en distintas unidades
+        $edadDias = $fechaNacimiento->diffInDays($ahora);
+        $edadMeses = $fechaNacimiento->diffInMonths($ahora);
+        $edadAnios = $fechaNacimiento->diffInYears($ahora);
 
-        // Calcular la edad en todas las unidades
-        $edadEn = [
-            'días' => $fechaNacimiento->diffInDays($ahora),
-            'semanas' => $fechaNacimiento->diffInWeeks($ahora),
-            'meses' => $fechaNacimiento->diffInMonths($ahora),
-            'años' => $fechaNacimiento->diffInYears($ahora),
-        ];
+        // 1. INTENTO POR DÍAS (Prioridad Alta: Neonatos)
+        // Generalmente rangos de 0 a 30 días
+        $grupo = GrupoEtario::where('unidad_tiempo', 'días')
+            ->where('edad_min', '<=', $edadDias)
+            ->where('edad_max', '>=', $edadDias)
+            ->whereIn('genero', [$this->genero, 'Ambos']) // Filtramos por género
+            ->first();
 
-        // Buscar en la BD el grupo que coincida
-        // Itera sobre las unidades de tiempo (años, meses, días...)
-        foreach ($edadEn as $unidad => $edad) {
-            
-            $grupo = GrupoEtario::where('unidad_tiempo', $unidad)
-                ->where('edad_min', '<=', $edad)
-                ->where('edad_max', '>=', $edad)
-                ->first();
+        if ($grupo) return $grupo;
 
-            if ($grupo) {
-                return $grupo; // Encontramos el grupo
-            }
-        }
+        // 2. INTENTO POR MESES (Prioridad Media: Lactantes/Bebés)
+        // Generalmente rangos de 1 a 12 o 24 meses
+        // Solo buscamos aquí si no se encontró por días
+        $grupo = GrupoEtario::where('unidad_tiempo', 'meses')
+            ->where('edad_min', '<=', $edadMeses)
+            ->where('edad_max', '>=', $edadMeses)
+            ->whereIn('genero', [$this->genero, 'Ambos'])
+            ->first();
 
-        // Si no se encontró ningún grupo (ej. 121 años)
-        return null; 
+        if ($grupo) return $grupo;
+
+        // 3. INTENTO POR AÑOS (Prioridad Estándar: Niños, Adultos, etc.)
+        // El resto de la población cae aquí
+        $grupo = GrupoEtario::where('unidad_tiempo', 'años')
+            ->where('edad_min', '<=', $edadAnios)
+            ->where('edad_max', '>=', $edadAnios)
+            ->whereIn('genero', [$this->genero, 'Ambos'])
+            ->first();
+
+        return $grupo; // Devuelve el grupo o null si no encaja en nada (ej. > 120 años)
     }
 }

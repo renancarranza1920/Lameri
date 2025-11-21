@@ -27,6 +27,7 @@ class Orden extends Model
         'observaciones',
         'estado',
         'muestras_recibidas', 
+        'semanas_gestacion',
         'toma_muestra_user_id',
         'fecha_toma_muestra',
     ];
