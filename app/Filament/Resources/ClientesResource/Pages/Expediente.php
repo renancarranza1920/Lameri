@@ -132,75 +132,115 @@ class Expediente extends Page implements HasTable
                     ->modalCancelActionLabel('Cerrar')
                     ->modalContent(function (Orden $record) {
 
-                        // Cargar relaciones
-                        $orden = $record->load([
-                            'cliente',
-                            'detalleOrden.examen.tipoExamen',
-                            'detalleOrden.examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario',
-                            'resultados.prueba'
-                        ]);
+     // 1. Cargar relaciones necesarias
+        $orden = $record->load([
+            'cliente',
+            'detalleOrden.examen.tipoExamen',
+            'detalleOrden.examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario',
+            'resultados.prueba'
+        ]);
 
-                        // Agrupamiento...
-                        $detallesAgrupados = $orden->detalleOrden
-                            ->whereNotNull('examen_id')
-                            ->groupBy('examen.tipoExamen.nombre');
+        // 2. Agrupar por tipo de examen (Hematología, Química, etc.)
+        $detallesAgrupados = $orden->detalleOrden
+            ->whereNotNull('examen_id')
+            ->groupBy('examen.tipoExamen.nombre');
 
-                        $datos_agrupados = [];
-                        foreach ($detallesAgrupados as $tipoExamenNombre => $detalles) {
-                            $examenes_data = [];
-                            foreach ($detalles as $detalle) {
-                                $todasLasPruebas = $detalle->examen->pruebas;
-                                $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
-                                $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
+        $datos_agrupados = [];
 
-                                $dataUnitarias = $pruebasUnitarias->map(function ($prueba) use ($orden, $detalle) {
-                                    return self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
-                                })->all();
+        foreach ($detallesAgrupados as $tipoExamenNombre => $detalles) {
+            $examenes_data = [];
 
-                                $dataMatrices = $pruebasConjuntas->map(function ($pruebasDelConjunto) use ($orden, $detalle) {
-                                    $filas = []; $columnas = []; $dataMatrix = [];
-                                    foreach ($pruebasDelConjunto as $prueba) {
-                                        $partes = explode(', ', $prueba->nombre);
-                                        if (count($partes) >= 2) {
-                                            [$f, $c] = $partes;
-                                            $filas[] = $f; $columnas[] = $c;
-                                            $dataMatrix[$f][$c] = self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
-                                        }
-                                    }
-                                    return [
-                                        'filas' => array_values(array_unique($filas)),
-                                        'columnas' => array_values(array_unique($columnas)),
-                                        'data' => $dataMatrix,
-                                    ];
-                                })->all();
+            foreach ($detalles as $detalle) {
+                
+                // --- LÓGICA DIFERENCIADA: EXTERNO vs INTERNO ---
+                
+                if ($detalle->examen->es_externo) {
+                    // CASO A: EXAMEN EXTERNO (REFERIDO)
+                    // Buscamos directamente en la tabla 'resultados' los datos guardados manualmente (snapshots)
+                    $resultadosExternos = $orden->resultados
+                        ->where('detalle_orden_id', $detalle->id)
+                        ->where('es_externo', true);
 
-                                $examenes_data[] = [
-                                    'nombre' => $detalle->examen->nombre,
-                                    'codigo' => $detalle->examen->id,
-                                    'pruebas_unitarias' => $dataUnitarias,
-                                    'matrices' => $dataMatrices,
-                                ];
-                            }
-                            $datos_agrupados[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
-                        }
-
-                        // --- INICIO BLOQUE FIRMA (LÓGICA ACTUALIZADA) ---
-                        $usuarioQueFirma = auth()->user();
-                        $rutaFirma = $usuarioQueFirma?->firma_path ?? null;
-                        $rutaSello = $usuarioQueFirma?->sello_path ?? null;
-
-                        $pdf_data = [
-                            'orden' => $orden,
-                            'datos_agrupados' => $datos_agrupados,
-                            'ruta_firma_digital' => $rutaFirma,
-                            'ruta_sello_digital' => $rutaSello,
-                            'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado Desconocido',
-                            'ruta_sello_registro' => public_path('storage/sello.png'),
+                    $dataUnitarias = $resultadosExternos->map(function ($res) {
+                        return [
+                            'nombre' => $res->prueba_nombre_snapshot ?? 'Prueba Externa',
+                            'resultado' => $res->resultado,
+                            'referencia' => $res->valor_referencia_snapshot ?? 'N/A',
+                            'unidades' => $res->unidades_snapshot ?? '',
+                            'fecha_resultado' => $res->updated_at->format('d/m/Y'),
+                            'es_fuera_de_rango' => false, // No calculamos rangos en externos
                         ];
-                        // --- FIN BLOQUE FIRMA ---
+                    })->all();
 
-                        // GENERAR PDF (Ahora usa $pdf_data)
-                        $pdf = Pdf::loadView('pdf.reporte_resultados', $pdf_data);
+                    // Agregamos al reporte como un examen simple (sin matrices)
+                    $examenes_data[] = [
+                        'nombre' => $detalle->examen->nombre ,
+                        'codigo' => $detalle->examen->id,
+                        'pruebas_unitarias' => $dataUnitarias,
+                        'matrices' => [], // Los externos no suelen usar matrices complejas
+                    ];
+
+                } else {
+                    // CASO B: EXAMEN INTERNO (CATÁLOGO)
+                    // Usamos la definición de 'pruebas' y calculamos rangos con la función auxiliar
+                    $todasLasPruebas = $detalle->examen->pruebas->where('es_externo', false);
+
+                    $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
+                    $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
+
+                    // Procesar unitarias internas
+                    $dataUnitarias = $pruebasUnitarias->map(function ($prueba) use ($orden, $detalle) {
+                        return self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
+                    })->all();
+
+                    // Procesar matrices internas
+                    $dataMatrices = $pruebasConjuntas->map(function (Collection $pruebasDelConjunto) use ($orden, $detalle) {
+                        $filas = [];
+                        $columnas = [];
+                        $dataMatrix = [];
+                        foreach ($pruebasDelConjunto as $prueba) {
+                            $partes = explode(', ', $prueba->nombre);
+                            if (count($partes) >= 2) {
+                                [$nombreFila, $nombreColumna] = $partes;
+                                $filas[] = $nombreFila;
+                                $columnas[] = $nombreColumna;
+                                $dataMatrix[$nombreFila][$nombreColumna] = self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
+                            }
+                        }
+                        return [
+                            'filas' => array_values(array_unique($filas)),
+                            'columnas' => array_values(array_unique($columnas)),
+                            'data' => $dataMatrix,
+                        ];
+                    })->all();
+
+                    $examenes_data[] = [
+                        'nombre' => $detalle->examen->nombre,
+                        'codigo' => $detalle->examen->id,
+                        'pruebas_unitarias' => $dataUnitarias,
+                        'matrices' => $dataMatrices,
+                    ];
+                }
+            }
+            $datos_agrupados[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
+        }
+
+        // 3. Datos de Firma y Sello
+        $usuarioQueFirma = auth()->user();
+        $rutaFirma = $usuarioQueFirma?->firma_path ?? null;
+        $rutaSello = $usuarioQueFirma?->sello_path ?? null;
+
+        // 4. Preparar PDF
+        $pdf_data = [
+            'orden' => $orden,
+            'datos_agrupados' => $datos_agrupados,
+            'ruta_firma_digital' => $rutaFirma,
+            'ruta_sello_digital' => $rutaSello,
+            'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado Desconocido',
+            'ruta_sello_registro' => public_path('storage/sello.png'),
+        ];
+
+        $pdf = Pdf::loadView('pdf.reporte_resultados', $pdf_data);
 
                         $pdfContent = base64_encode($pdf->output());
 
@@ -211,10 +251,10 @@ class Expediente extends Page implements HasTable
             ]);
     }
 
-    public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
+  public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
     {
         $resultado = $orden->resultados->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
-        
+
         $nombre_prueba = $prueba->nombre; // Nombre por defecto
         $referencia_formateada = 'N/A';
         $unidades = '';
@@ -227,7 +267,7 @@ class Expediente extends Page implements HasTable
 
         // --- INICIO DE LA LÓGICA DE REFERENCIA CORREGIDA ---
         if ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-            
+
             // 1. OBTENER DATOS DEL PACIENTE
             $cliente = $orden->cliente;
             $generoCliente = $cliente->genero; // "Masculino" o "Femenino"
@@ -239,6 +279,9 @@ class Expediente extends Page implements HasTable
             if ($grupoEtarioCliente) {
                 // 2. INTENTO DE BÚSQUEDA 1: Grupo Etario + Género Específico
                 // Ej: "Adultos" (ID: 8) + "Masculino"
+
+                // AGREGAR ESTO TEMPORALMENTE PARA PROBAR
+               
                 $valorRef = $todosLosValores
                     ->where('grupo_etario_id', $grupoEtarioCliente->id)
                     ->where('genero', $generoCliente)
@@ -271,7 +314,7 @@ class Expediente extends Page implements HasTable
                     ->where('genero', 'Ambos')
                     ->first();
             }
-            
+
             // 6. ÚLTIMO RECURSO: Si todo falla, toma el primero (evita crasheo)
             if (!$valorRef) {
                 $valorRef = $todosLosValores->first();
@@ -281,69 +324,75 @@ class Expediente extends Page implements HasTable
 
             // Ahora $valorRef es el correcto (o el mejor disponible)
             if ($resultado && !empty($resultado->prueba_nombre_snapshot)) {
-            
-            $nombre_prueba = $resultado->prueba_nombre_snapshot;
-            $referencia_formateada = $resultado->valor_referencia_snapshot ?? 'N/A';
-            $unidades = $resultado->unidades_snapshot ?? '';
 
-            // Intentar extraer valores numéricos del snapshot para la comparación
-            // Esto asume un formato simple como "1.0 - 5.0"
-            if (preg_match('/([\d\.]+)\s*-\s*([\d\.]+)/', $referencia_formateada, $matches)) {
-                $valorMin = (float) $matches[1];
-                $valorMax = (float) $matches[2];
+                $nombre_prueba = $resultado->prueba_nombre_snapshot;
+                $referencia_formateada = $resultado->valor_referencia_snapshot ?? 'N/A';
+                $unidades = $resultado->unidades_snapshot ?? '';
+
+                // Intentar extraer valores numéricos del snapshot para la comparación
+                // Esto asume un formato simple como "1.0 - 5.0"
+                if (preg_match('/([\d\.]+)\s*-\s*([\d\.]+)/', $referencia_formateada, $matches)) {
+                    $valorMin = (float) $matches[1];
+                    $valorMax = (float) $matches[2];
+                    if (!is_null($valor_resultado_num)) {
+                        if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) {
+                            $es_fuera_de_rango = true;
+                        }
+                    }
+                }
+                // (Puedes añadir más 'preg_match' para operadores como '<', '≥', etc.)
+
+            }
+            // CASO 2: Es una orden antigua sin "foto", usamos los datos en vivo
+            elseif ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
+
+                $valorMin = (float) $valorRef->valor_min;
+                $valorMax = (float) $valorRef->valor_max;
+                $unidades = $valorRef->unidades ?? '';
+
+                // Formatear el texto de referencia
+                $rangoTexto = match ($valorRef->operador) {
+                    'rango' => "{$valorMin} - {$valorMax}",
+                    '<=' => "≤ {$valorMax}",
+                    '<' => "< {$valorMax}",
+                    '>=' => "≥ {$valorMin}",
+                    '>' => "> {$valorMin}",
+                    '=' => "= {$valorMin}",
+                    default => $valorRef->descriptivo ?? '',
+                };
+                $referencia_formateada = $rangoTexto;
+
+                // --- NUEVA LÓGICA DE COMPARACIÓN ---
                 if (!is_null($valor_resultado_num)) {
-                    if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) {
-                        $es_fuera_de_rango = true;
+                    switch ($valorRef->operador) {
+                        case 'rango':
+                            if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax)
+                                $es_fuera_de_rango = true;
+                            break;
+                        case '<=':
+                            if ($valor_resultado_num > $valorMax)
+                                $es_fuera_de_rango = true;
+                            break;
+                        case '<':
+                            if ($valor_resultado_num >= $valorMax)
+                                $es_fuera_de_rango = true;
+                            break;
+                        case '>=':
+                            if ($valor_resultado_num < $valorMin)
+                                $es_fuera_de_rango = true;
+                            break;
+                        case '>':
+                            if ($valor_resultado_num <= $valorMin)
+                                $es_fuera_de_rango = true;
+                            break;
+                        case '=':
+                            if ($valor_resultado_num != $valorMin)
+                                $es_fuera_de_rango = true;
+                            break;
                     }
                 }
             }
-            // (Puedes añadir más 'preg_match' para operadores como '<', '≥', etc.)
-
-        } 
-        // CASO 2: Es una orden antigua sin "foto", usamos los datos en vivo
-        elseif ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-       
-            $valorMin = (float) $valorRef->valor_min;
-            $valorMax = (float) $valorRef->valor_max;
-            $unidades = $valorRef->unidades ?? '';
-
-            // Formatear el texto de referencia
-            $rangoTexto = match ($valorRef->operador) {
-                'rango' => "{$valorMin} - {$valorMax}",
-                '<=' => "≤ {$valorMax}",
-                '<' => "< {$valorMax}",
-                '>=' => "≥ {$valorMin}",
-                '>' => "> {$valorMin}",
-                '=' => "= {$valorMin}",
-                default => $valorRef->descriptivo ?? '',
-            };
-            $referencia_formateada = $rangoTexto;
-
-            // --- NUEVA LÓGICA DE COMPARACIÓN ---
-            if (!is_null($valor_resultado_num)) {
-                switch ($valorRef->operador) {
-                    case 'rango':
-                        if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) $es_fuera_de_rango = true;
-                        break;
-                    case '<=':
-                        if ($valor_resultado_num > $valorMax) $es_fuera_de_rango = true;
-                        break;
-                    case '<':
-                        if ($valor_resultado_num >= $valorMax) $es_fuera_de_rango = true;
-                        break;
-                    case '>=':
-                        if ($valor_resultado_num < $valorMin) $es_fuera_de_rango = true;
-                        break;
-                    case '>':
-                        if ($valor_resultado_num <= $valorMin) $es_fuera_de_rango = true;
-                        break;
-                    case '=':
-                         if ($valor_resultado_num != $valorMin) $es_fuera_de_rango = true;
-                        break;
-                }
-            }
         }
-    }
 
         return [
             'nombre' => $nombre_prueba, // <-- Usa el nombre de la "foto" o el nombre en vivo

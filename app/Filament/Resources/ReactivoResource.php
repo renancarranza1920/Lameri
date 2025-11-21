@@ -146,8 +146,51 @@ class ReactivoResource extends Resource
                                                     ->relationship()
                                                     ->label('')
                                                     ->schema([
-                                                        Select::make('genero')->options(['Masculino' => 'Masculino', 'Femenino' => 'Femenino', 'Ambos' => 'Ambos'])->columnSpan(2),
-                                                        Select::make('grupo_etario_id')->relationship('grupoEtario', 'nombre')->label('Grupo Etario')->preload()->columnSpan(2),
+                                                        // ... dentro del schema del Repeater 'valoresReferencia' ...
+            
+                                                        Forms\Components\Select::make('grupo_etario_id')
+                                                            ->relationship('grupoEtario', 'nombre')
+                                                            ->label('Grupo Etario')
+                                                            ->preload()
+                                                            ->live() // <--- 1. Hacemos que escuche cambios
+                                                            ->afterStateUpdated(function (Forms\Set $set) {
+                                                                // 2. Reseteamos el género si cambian el grupo para obligar a re-seleccionar
+                                                                $set('genero', null);
+                                                            })
+                                                            ->columnSpan(2),
+
+                                                        Forms\Components\Select::make('genero')
+                                                            ->label('Género Aplicable')
+                                                            // 3. Las opciones dependen del grupo seleccionado
+                                                            ->options(function (Forms\Get $get) {
+                                                                $grupoId = $get('grupo_etario_id');
+
+                                                                // Si no ha seleccionado grupo, mostramos todo
+                                                                if (!$grupoId) {
+                                                                    return [
+                                                                        'Masculino' => 'Masculino',
+                                                                        'Femenino' => 'Femenino',
+                                                                        'Ambos' => 'Ambos'
+                                                                    ];
+                                                                }
+
+                                                                // Buscamos el grupo en la BD
+                                                                $grupo = \App\Models\GrupoEtario::find($grupoId);
+
+                                                                // Si el grupo es 'Ambos' (como Adultos), permitimos especificar
+                                                                if ($grupo && $grupo->genero === 'Ambos') {
+                                                                    return [
+                                                                        'Masculino' => 'Masculino',
+                                                                        'Femenino' => 'Femenino',
+                                                                        'Ambos' => 'Ambos'
+                                                                    ];
+                                                                }
+
+                                                                // Si el grupo es específico (ej: Embarazo -> Femenino), FORZAMOS esa opción
+                                                                return $grupo ? [$grupo->genero => $grupo->genero] : [];
+                                                            })
+                                                            ->required()
+                                                            ->columnSpan(2),
                                                         TextInput::make('descriptivo')->label('Descriptivo (Ej: Fumadores)')->columnSpan(4),
                                                         Select::make('operador')
                                                             ->label('Modo de Referencia')

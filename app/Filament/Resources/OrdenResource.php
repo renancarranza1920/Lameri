@@ -73,7 +73,7 @@ class OrdenResource extends Resource
             ]);
     }
 
-    public static function getClienteStep(): array
+ public static function getClienteStep(): array
     {
         return [
             Forms\Components\Select::make('cliente_id')
@@ -92,28 +92,27 @@ class OrdenResource extends Resource
                 ->preload()
                 ->searchable(['NumeroExp', 'nombre', 'apellido'])
                 ->getOptionLabelFromRecordUsing(fn($record) => "{$record->NumeroExp} - {$record->nombre} {$record->apellido}")
+                
+                // --- INICIO LÓGICA EMBARAZO ---
+                ->live() // 1. Escuchar cambios en tiempo real
+                ->afterStateUpdated(function ($state, Set $set) {
+                    // 2. Buscar el género del cliente seleccionado
+                    if ($state) {
+                        $cliente = Cliente::find($state);
+                        $set('genero_temp', $cliente?->genero);
+                    } else {
+                        $set('genero_temp', null);
+                    }
+                })
+                // ------------------------------
+
                 ->createOptionForm([
-                    Forms\Components\TextInput::make('nombre')
-                        ->required()
-                        ->maxLength(255),
-
-                    Forms\Components\TextInput::make('apellido')
-                        ->required()
-                        ->maxLength(255),
-
-                    Forms\Components\DatePicker::make('fecha_nacimiento')
-                        ->label('Fecha de Nacimiento')
-                        ->required(),
-
-                    Forms\Components\TextInput::make('telefono')
-                        ->maxLength(9),
-
-                    Forms\Components\TextInput::make('correo')
-                        ->email()
-                        ->maxLength(255),
-
-                    Forms\Components\TextInput::make('direccion')
-                        ->maxLength(255),
+                    Forms\Components\TextInput::make('nombre')->required()->maxLength(255),
+                    Forms\Components\TextInput::make('apellido')->required()->maxLength(255),
+                    Forms\Components\DatePicker::make('fecha_nacimiento')->label('Fecha de Nacimiento')->required(),
+                    Forms\Components\TextInput::make('telefono')->maxLength(9),
+                    Forms\Components\TextInput::make('correo')->email()->maxLength(255),
+                    Forms\Components\TextInput::make('direccion')->maxLength(255),
                 ])
                 ->createOptionAction(function (Forms\Components\Actions\Action $action) {
                     return $action
@@ -122,14 +121,32 @@ class OrdenResource extends Resource
                         ->icon('heroicon-m-plus');
                 })
                 ->required(),
-            // crear text area para observaciones
+
+            // --- CAMPOS PARA EMBARAZO ---
+            
+            // Variable temporal para controlar la visibilidad (no se guarda en BD)
+            Forms\Components\Hidden::make('genero_temp')
+                ->dehydrated(false), 
+
+            Forms\Components\TextInput::make('semanas_gestacion')
+                ->label('Semanas de Gestación')
+                ->numeric()
+                ->minValue(1)
+                ->maxValue(42)
+                ->placeholder('Ej: 12')
+                ->helperText('Ingresa las semanas solo si aplica (embarazo).')
+                // Solo visible si el cliente es mujer
+                ->visible(fn (Get $get) => $get('genero_temp') === 'Femenino')
+                ->columnSpanFull(),
+            
+            // -----------------------------
+
             Forms\Components\Textarea::make('observaciones')
                 ->label('Observaciones')
                 ->placeholder('Escribe cualquier comentario adicional...')
                 ->rows(4)
                 ->columnSpanFull()
                 ->extraInputAttributes(['class' => 'resize-none']),
-
         ];
     }
 
@@ -789,6 +806,9 @@ Forms\Components\Hidden::make('codigo_aplicado'),
             if ($grupoEtarioCliente) {
                 // 2. INTENTO DE BÚSQUEDA 1: Grupo Etario + Género Específico
                 // Ej: "Adultos" (ID: 8) + "Masculino"
+
+                // AGREGAR ESTO TEMPORALMENTE PARA PROBAR
+               
                 $valorRef = $todosLosValores
                     ->where('grupo_etario_id', $grupoEtarioCliente->id)
                     ->where('genero', $generoCliente)
