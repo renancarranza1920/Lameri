@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\OrdenResource\Pages;
 
 use App\Filament\Resources\OrdenResource;
+use App\Models\GrupoEtario;
 use App\Models\Orden;
 use App\Models\Prueba;
 use Filament\Actions\Action;
@@ -144,22 +145,78 @@ public function isOrderComplete(): bool
         return ['resultados_examenes' => $preparedData];
     }
 
-    protected function getPruebaData(Prueba $prueba, int $detalleId): array
+  protected function getPruebaData(Prueba $prueba, int $detalleId): array
     {
         $resultadoExistente = $this->record->resultados()
             ->where('prueba_id', $prueba->id)
             ->where('detalle_orden_id', $detalleId)
             ->first();
 
-        $referencia = 'N/A'; $unidades = '';
+        $referencia = 'N/A'; 
+        $unidades = '';
         
-        // Lógica simple de referencia (puedes adaptarla si tienes lógica compleja de edades/género aquí también)
         if ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-            $valorRef = $prueba->reactivoEnUso->valoresReferencia->first();
-            $valorMin = rtrim(rtrim(number_format($valorRef->valor_min, 2, '.', ''), '0'), '.');
-            $valorMax = rtrim(rtrim(number_format($valorRef->valor_max, 2, '.', ''), '0'), '.');
-            $referencia = "$valorMin - $valorMax";
-            $unidades = $valorRef->unidades ?? '';
+            
+            $cliente = $this->record->cliente;
+            $generoCliente = $cliente->genero;
+            $todosLosValores = $prueba->reactivoEnUso->valoresReferencia;
+            $valorRef = null;
+
+            // 1. LÓGICA DE EMBARAZO (Si existe la columna en la orden)
+            if (isset($this->record->semanas_gestacion) && $this->record->semanas_gestacion) {
+                $grupoEmbarazo = GrupoEtario::where('unidad_tiempo', 'semanas')
+                    ->where('edad_min', '<=', $this->record->semanas_gestacion)
+                    ->where('edad_max', '>=', $this->record->semanas_gestacion)
+                    ->first();
+
+                if ($grupoEmbarazo) {
+                    $valorRef = $todosLosValores->where('grupo_etario_id', $grupoEmbarazo->id)->first();
+                }
+            }
+
+            // 2. LÓGICA DE EDAD CRONOLÓGICA (Si no aplicó embarazo)
+            if (!$valorRef) {
+                $grupoEtarioCliente = $cliente->getGrupoEtario();
+
+                if ($grupoEtarioCliente) {
+                    // Búsqueda exacta: Grupo + Género
+                    $valorRef = $todosLosValores
+                        ->where('grupo_etario_id', $grupoEtarioCliente->id)
+                        ->where('genero', $generoCliente)
+                        ->first();
+                        //dd($generoCliente, $grupoEtarioCliente->id, $todosLosValores->toArray());
+
+                    // Respaldo: Grupo + Ambos
+                    if (!$valorRef) {
+                        $valorRef = $todosLosValores
+                            ->where('grupo_etario_id', $grupoEtarioCliente->id)
+                            ->where('genero', 'Ambos')
+                            ->first();
+                    }
+                }
+            }
+
+            // 3. FALLBACKS (Sin grupo etario específico)
+            if (!$valorRef) $valorRef = $todosLosValores->whereNull('grupo_etario_id')->where('genero', $generoCliente)->first();
+            if (!$valorRef) $valorRef = $todosLosValores->whereNull('grupo_etario_id')->where('genero', 'Ambos')->first();
+            if (!$valorRef) $valorRef = $todosLosValores->first();
+
+            // Formatear el texto final
+            if ($valorRef) {
+                $valorMin = rtrim(rtrim(number_format($valorRef->valor_min, 2, '.', ''), '0'), '.');
+                $valorMax = rtrim(rtrim(number_format($valorRef->valor_max, 2, '.', ''), '0'), '.');
+                
+                $referencia = match ($valorRef->operador) {
+                    'rango' => "$valorMin - $valorMax",
+                    '<=' => "≤ $valorMax",
+                    '<' => "< $valorMax",
+                    '>=' => "≥ $valorMin",
+                    '>' => "> $valorMin",
+                    '=' => "= $valorMin",
+                    default => $valorRef->descriptivo ?? "$valorMin - $valorMax",
+                };
+                $unidades = $valorRef->unidades ?? '';
+            }
         }
         
         return [
