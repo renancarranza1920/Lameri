@@ -8,7 +8,7 @@
     // Mapeo de colores para los estados
     $statusColor = match($record->estado) {
         'pendiente' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400',
-        'en_proceso' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400',
+        'en proceso' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400',
         'pausada' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400',
         'finalizado' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
         'cancelado' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-400',
@@ -125,7 +125,7 @@
         <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Estado de las Pruebas</h3>
         <div class="space-y-4">
             @foreach($record->detalleOrden->whereNotNull('examen_id') as $detalle)
-                @if($detalle->examen && $detalle->examen->pruebas->isNotEmpty())
+                @if($detalle->examen && $detalle->examen->pruebas->isNotEmpty() && !$detalle->examen->es_externo)
                     <div class="p-3 border rounded-lg dark:border-gray-700">
                         <p class="font-semibold text-gray-800 dark:text-gray-200">{{ $detalle->examen->nombre }}</p>
                         <ul class="mt-2 space-y-1 pl-4">
@@ -185,6 +185,7 @@
                 <span class="text-gray-900 dark:text-white">Total a Pagar:</span>
                 <span class="font-mono text-success-600 dark:text-success-500">${{ number_format($record->total, 2) }}</span>
             </div>
+
         </div>
     </div>
 </div>
