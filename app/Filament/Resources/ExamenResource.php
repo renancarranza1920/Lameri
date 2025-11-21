@@ -109,6 +109,13 @@ class ExamenResource extends Resource
                     ->badge()
                     ->color(fn($state) => $state ? 'success' : 'danger'),
 
+                    Tables\Columns\BooleanColumn::make('es_externo')
+                        ->label('Origen')
+                        ->trueIcon('heroicon-o-paper-airplane')
+                        ->falseIcon('heroicon-o-home')
+                        ->color(fn($state) => $state ? 'danger' : 'success')
+                        ->sortable(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creado')
                     ->dateTime()
@@ -165,6 +172,7 @@ class ExamenResource extends Resource
                       Action::make('addPruebas')
                     ->label('Añadir Pruebas')
                     ->icon('heroicon-o-plus-circle')
+                    ->visible(fn (Examen $record) => $record->es_externo === false)
                     ->color('gray')
                     ->modalHeading(fn (Examen $record) => 'Añadir pruebas a: ' . $record->nombre)
                     ->form([

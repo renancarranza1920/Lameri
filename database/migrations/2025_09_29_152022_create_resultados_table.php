@@ -14,11 +14,19 @@ return new class extends Migration
       Schema::create('resultados', function (Blueprint $table) {
     $table->id();
     $table->foreignId('detalle_orden_id')->constrained('detalle_orden')->cascadeOnDelete();
-    $table->foreignId('prueba_id')->constrained('pruebas')->cascadeOnDelete();
+    $table->unsignedBigInteger('prueba_id')->nullable();
+        
+        // 2. Luego le agregamos la restricción de llave foránea manualmente
+        $table->foreign('prueba_id')
+              ->references('id')
+              ->on('pruebas')
+              ->cascadeOnDelete();
+
     $table->string('resultado');
     $table->string('valor_referencia_externo')->nullable(); // Para guardar la referencia de pruebas externas
     $table->text('observaciones')->nullable();
     $table->boolean('fuera_de_rango')->default(false);
+    $table->boolean('es_externo')->default(false); // Indica si el resultado es de una prueba externa
     $table->timestamps();
 });
     }
