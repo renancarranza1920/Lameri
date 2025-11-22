@@ -19,6 +19,8 @@ class CodigoResource extends Resource
     protected static ?string $navigationLabel = 'Cupones de Descuento';
     protected static ?string $pluralModelLabel = 'Cupones';
     protected static ?string $modelLabel = 'Cupón';
+    protected static ?string $navigationGroup = 'Catálogos y Ajustes';
+protected static ?int $navigationSort = 3;
 
   public static function form(Form $form): Form
     {

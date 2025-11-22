@@ -25,8 +25,12 @@ use App\Models\Reactivo;
 class ReactivoResource extends Resource
 {
     protected static ?string $model = Reactivo::class;
+
+    protected static ?string $navigationGroup = 'Gestión de Laboratorio';
+    protected static ?int $navigationSort = 4;
     protected static ?string $navigationIcon = 'heroicon-o-beaker';
-    protected static ?string $navigationGroup = 'Catálogos de Laboratorio';
+
+    
 
     public static function form(Form $form): Form
     {

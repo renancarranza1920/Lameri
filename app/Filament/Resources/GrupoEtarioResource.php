@@ -20,6 +20,9 @@ class GrupoEtarioResource extends Resource
     protected static ?string $modelLabel = 'Grupo Etario';
     protected static ?string $pluralModelLabel = 'Grupos Etarios';
 
+    protected static ?string $navigationGroup = 'Catálogos y Ajustes';
+protected static ?int $navigationSort = 2;
+
     public static function form(Form $form): Form
     {
         return $form

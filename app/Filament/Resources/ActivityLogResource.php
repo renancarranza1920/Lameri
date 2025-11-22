@@ -27,6 +27,8 @@ class ActivityLogResource extends Resource
     protected static ?string $modelLabel = 'Bitácora';
     protected static ?string $pluralModelLabel = 'Bitácora';
 
+protected static ?int $navigationSort = 3;
+
     public static function form(Form $form): Form
     {
         return $form->schema([]);

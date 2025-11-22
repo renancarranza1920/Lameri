@@ -18,6 +18,8 @@ class ClientesResource extends Resource
 {
     protected static ?string $model = Cliente::class;
 
+    protected static ?string $navigationGroup = 'Atención al Paciente';
+    protected static ?int $navigationSort = 3;
     protected static ?string $navigationIcon = 'heroicon-o-identification';
     protected static ?string $navigationLabel = 'Clientes';
     protected static ?string $pluralModelLabel = 'Clientes';

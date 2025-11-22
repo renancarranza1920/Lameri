@@ -13,6 +13,8 @@ class CotizacionResource extends Resource
 {
     protected static ?string $model = null;
 
+    protected static ?string $navigationGroup = 'Atención al Paciente';
+    protected static ?int $navigationSort = 4;
     protected static ?string $navigationIcon = 'heroicon-o-calculator';
     protected static ?string $navigationLabel = 'Cotizaciones';
     protected static ?string $modelLabel = 'Cotización';
