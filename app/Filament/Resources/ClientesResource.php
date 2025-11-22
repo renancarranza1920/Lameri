@@ -243,4 +243,5 @@ class ClientesResource extends Resource
             'expediente' => Pages\Expediente::route('/{record}/expediente'),
         ];
     }
+
 }

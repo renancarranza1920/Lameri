@@ -481,19 +481,15 @@ class DatabaseSeeder extends Seeder
     ];
 
 
-    $paginas = [
-        'dashboard',
-       'buscar::expediente',
-       'detalle::orden::kanban',
-    ];
+   
 
     //////////////////////////////////////////////PERMISOS GRANULARES AUTOMÁTICOS/////////////////////////////////////////////////////
    
    //--- Permisos específicos para clientes ----//
     $clienteActions = [
-    'ver_detalle_cliente',    // Para el botón 'ver-modal'
-    'cambiar_estado_cliente', // Para el botón 'cambiar_estado'
-    'ver_expediente_cliente', // Para el botón 'expediente'
+    'ver_detalle_clientes',    // Para el botón 'ver-modal'
+    'cambiar_estado_clientes', // Para el botón 'cambiar_estado'
+    'ver_expediente_clientes', // Para el botón 'expediente'
 ];
 
 foreach ($clienteActions as $permission) {
@@ -511,21 +507,93 @@ foreach ($clienteActions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-/////////
-
-    // Permisos para páginas específicas
-    foreach ($paginas as $page) {
-        $permissions = [
-            "view_{$page}",
-            "access_{$page}",
+/////////// --- Permisos Granulares para EXÁMENES ---
+        $examenActions = [
+            'ver_detalle_examenes',     // Para botón 'ver-modal'
+            'agregar_pruebas_examenes', // Para botón 'addPruebas'
+            'cambiar_estado_examenes',  // Para botón 'cambiar_estado'
         ];
 
-        foreach ($permissions as $permission) {
+        foreach ($examenActions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        Log::info("Permisos generados para la página: {$page}");
-    }
+//////////////////// --- Permisos Granulares para ÓRDENES ---
+        $ordenActions = [
+            'procesar_muestras_orden',   // Para "Gestionar Muestras"
+            'ingresar_resultados_orden', // Para "Ingresar Resultados"
+            'imprimir_etiquetas_orden',  // Para "Imprimir Etiquetas"
+            'ver_pruebas_orden',         // Para "Ver Pruebas"
+            'pausar_orden',              // Para "Pausar"
+            'reanudar_orden',            // Para "Reanudar"
+            'finalizar_orden',           // Para "Finalizar"
+            'generar_reporte_orden',     // Para "Generar Reporte PDF"
+            'cancelar_orden',            // Para "Cancelar"
+        ];
+
+        foreach ($ordenActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        ///// // --- Permisos Granulares para PERFILES ---
+        $perfilActions = [
+            'cambiar_estado_perfiles', // Para el botón 'toggleEstado'
+        ];
+
+        foreach ($perfilActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        //// // --- Permisos Granulares para PRUEBAS ---
+        $pruebaActions = [
+            'ver_pruebas_conjuntas', // Para el botón de la cabecera "Ver Pruebas en Matriz"
+        ];
+
+        foreach ($pruebaActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        //// // --- Permisos Granulares para REACTIVOS ---
+        $reactivoActions = [
+            'activar_reactivos',       // Para 'setActive'
+            'gestionar_valores_ref',   // Para 'gestionarValores'
+            'reabastecer_reactivos',   // Para 'restock'
+            'agotar_reactivos',        // Para 'marcarAgotado'
+        ];
+
+        foreach ($reactivoActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+        /// // --- Permisos Granulares para TIPOS DE EXAMEN ---
+        $tipoExamenActions = [
+            'cambiar_estado_tipo_examenes', // Para el botón 'toggleEstado'
+        ];
+
+        foreach ($tipoExamenActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        /// // --- Permisos Granulares para PÁGINAS ---
+        $paginasActions = [
+            'acceder_buscador_expedientes', // Para poder entrar al menú "Buscar Expediente"
+        ];
+
+        foreach ($paginasActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        //// --- Permisos Granulares para KANBAN ETIQUETAS ---
+        $kanbanActions = [
+            'imprimir_etiquetas_kanban', // Para todos los botones de imprimir (ZPL)
+            'mover_etiquetas_kanban',    // Para poder arrastrar y soltar tarjetas
+        ];
+
+        foreach ($kanbanActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        //
+    
     // Permisos por recurso
     foreach ($resources as $resource) {
         $permissions = [
