@@ -152,7 +152,7 @@ class ClientesResource extends Resource
                     ->default(null),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()->visible(fn () => auth()->user()->can('update_clientes')),
 
                 Action::make('ver-modal')
                     ->label('Ver')
