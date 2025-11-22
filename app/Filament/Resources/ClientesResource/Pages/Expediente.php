@@ -225,7 +225,6 @@ class Expediente extends Page implements HasTable
             $datos_agrupados[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
         }
 
-        
         // 3. Datos de Firma y Sello
         $usuarioQueFirma = auth()->user();
         $rutaFirma = $usuarioQueFirma?->firma_path ?? null;
