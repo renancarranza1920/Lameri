@@ -469,8 +469,63 @@ class DatabaseSeeder extends Seeder
         'role',
         'tipo::examen',
         'user',
+        'activity::log',
+        'codigo',
+        'cotizacion',
+        'grupo::etario',
+        'muestra',
+        'prueba',
+        'reactivo',
+        'tipo::prueba',
+
     ];
 
+
+    $paginas = [
+        'dashboard',
+       'buscar::expediente',
+       'detalle::orden::kanban',
+    ];
+
+    //////////////////////////////////////////////PERMISOS GRANULARES AUTOMÁTICOS/////////////////////////////////////////////////////
+   
+   //--- Permisos específicos para clientes ----//
+    $clienteActions = [
+    'ver_detalle_cliente',    // Para el botón 'ver-modal'
+    'cambiar_estado_cliente', // Para el botón 'cambiar_estado'
+    'ver_expediente_cliente', // Para el botón 'expediente'
+];
+
+foreach ($clienteActions as $permission) {
+    Permission::firstOrCreate(['name' => $permission]);
+}
+
+/// ///// Permisos Granulares para COTIZACIONES (Herramienta)
+        $cotizacionActions = [
+            'access_cotizaciones',      // Para poder ver el menú y entrar a la pantalla
+            'generar_pdf_cotizacion',   // Para el botón de generar/imprimir el PDF
+            'enviar_cotizacion_email',  // (Opcional) Si tienes botón de enviar por correo
+        ];
+
+        foreach ($cotizacionActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+/////////
+
+    // Permisos para páginas específicas
+    foreach ($paginas as $page) {
+        $permissions = [
+            "view_{$page}",
+            "access_{$page}",
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        Log::info("Permisos generados para la página: {$page}");
+    }
     // Permisos por recurso
     foreach ($resources as $resource) {
         $permissions = [
