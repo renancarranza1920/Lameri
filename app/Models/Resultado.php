@@ -18,7 +18,10 @@ class Resultado extends Model
     use HasFactory, LogsActivity;
 
     protected $guarded = [];
-
+    public function realizadoPor()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
     // 3. ESPECIFICAR TIPO DE RETORNO
     public function detalleOrden(): BelongsTo 
     { 
@@ -32,28 +35,39 @@ class Resultado extends Model
     }
 
     // 4. AÑADIR EL MÉTODO DE CONFIGURACIÓN DE LA BITÁCORA
+   // 4. CONFIGURACIÓN DE BITÁCORA MEJORADA
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName('Resultados') // Nombre del módulo
-            
+            ->useLogName('Resultados')
             ->setDescriptionForEvent(function(string $eventName) {
-                // Traducimos el evento
-                $eventoTraducido = match($eventName) {
+                $evento = match($eventName) {
                     'created' => 'ingresado',
                     'updated' => 'actualizado',
                     'deleted' => 'eliminado',
                     default => $eventName
                 };
-                
-                // Creamos una descripción detallada
-                return "Se ha {$eventoTraducido} un resultado para la prueba ID [{$this->prueba_id}] en la orden [ID: {$this->detalleOrden->orden_id}]. Nuevo valor: {$this->resultado}";
+
+                // --- MEJORA AQUÍ ---
+                // Determinamos el nombre real de la prueba
+                $nombrePrueba = 'Desconocida';
+
+                if ($this->prueba) {
+                    // Si es interno, tomamos el nombre de la relación
+                    $nombrePrueba = $this->prueba->nombre;
+                } elseif ($this->prueba_nombre_snapshot) {
+                    // Si es externo, tomamos el nombre que guardaste manualmente
+                    $nombrePrueba = $this->prueba_nombre_snapshot . ' (Externo)';
+                }
+                // -------------------
+
+                // Obtenemos el ID de la orden de forma segura
+                $ordenId = $this->detalleOrden ? $this->detalleOrden->orden_id : 'N/A';
+
+                return "Resultado {$evento} para '{$nombrePrueba}' en Orden #{$ordenId}. Valor: {$this->resultado}";
             })
-            
-            // Rastrear todos los campos (ya que usas $guarded)
-            ->logUnguarded() 
-            
-            ->logOnlyDirty() 
+            ->logUnguarded()
+            ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
 }

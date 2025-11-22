@@ -321,6 +321,7 @@ public function isOrderComplete(): bool
                 ],
                 [
                     'resultado' => $r['resultado'],
+                    'user_id' => auth()->id(),
                     'prueba_nombre_snapshot' => $r['prueba_nombre'],
                     'valor_referencia_snapshot' => $r['valor_referencia'],
                     'unidades_snapshot' => $r['unidades'],
@@ -337,6 +338,7 @@ public function isOrderComplete(): bool
             'prueba_id' => null, // No tiene ID de catálogo
             'prueba_nombre_snapshot' => $ext['prueba_nombre'],
             'resultado' => $ext['resultado'],
+            'user_id' => auth()->id(),
             'valor_referencia_snapshot' => $ext['valor_referencia'],
             'unidades_snapshot' => $ext['unidades'],
             'es_externo' => 1, // Forzamos 1 para externos

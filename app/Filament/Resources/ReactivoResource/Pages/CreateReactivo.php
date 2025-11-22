@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateReactivo extends CreateRecord
 {
     protected static string $resource = ReactivoResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

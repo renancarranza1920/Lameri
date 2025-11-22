@@ -11,13 +11,6 @@ class EditCodigo extends EditRecord
 {
     protected static string $resource = CodigoResource::class;
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\DeleteAction::make(),
-        ];
-    }
-
     // El método mutateFormDataBeforeFill ya NO es necesario
 
     protected function handleRecordUpdate(Model $record, array $data): Model

@@ -22,9 +22,10 @@ use Illuminate\Database\Eloquent\Builder;
 class PruebaResource extends Resource
 {
     protected static ?string $model = Prueba::class;
+    protected static ?string $navigationGroup = 'Gestión de Laboratorio';
+    protected static ?int $navigationSort = 3;
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $pluralModelLabel = 'Pruebas';
-    protected static ?string $navigationGroup = 'Catálogos de Laboratorio';
 
     public static function form(Form $form): Form
       {

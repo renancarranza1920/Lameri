@@ -10,12 +10,12 @@ use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Grid;
-
+use App\Filament\Pages\BuscarExpediente;
+use Filament\Tables\Actions\Action; 
 use Filament\Tables\Concerns\InteractsWithTable; 
 use Filament\Tables\Contracts\HasTable;         
 use Filament\Tables\Table;                      
-use Filament\Tables\Columns\TextColumn;         
-use Filament\Tables\Actions\Action;             
+use Filament\Tables\Columns\TextColumn;          
 use App\Models\Orden;
 use Filament\Forms\Components\ViewField; 
 use Barryvdh\DomPDF\Facade\Pdf;       
@@ -403,5 +403,23 @@ class Expediente extends Page implements HasTable
             'es_fuera_de_rango' => $es_fuera_de_rango, // <-- Devuelve la bandera
         ];
     }
+protected function getHeaderActions(): array
+    {
+        return [
+            // Usamos la barra invertida \ para decirle a PHP que busque la clase exacta
+            // Esta es la acción de PÁGINA (Header)
+            \Filament\Actions\Action::make('regresar_buscar') 
+                ->label('Buscar Otro Paciente')
+                ->url(\App\Filament\Pages\BuscarExpediente::getUrl())
+                ->icon('heroicon-o-magnifying-glass')
+                ->color('gray'),
 
+            \Filament\Actions\Action::make('regresar a clientes') 
+                ->label('Lista de Clientes')
+                ->url($this->getResource()::getUrl('index'))
+                ->icon('heroicon-o-users')
+                ->color('gray'),
+        ];
+    }
+   
 }

@@ -23,6 +23,8 @@ class TipoExamenResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Tipo de Exámenes';
     protected static ?string $modelLabel = 'Tipo de Examen';
+    protected static ?string $navigationGroup = 'Catálogos y Ajustes';
+protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -89,7 +91,8 @@ class TipoExamenResource extends Resource
                     ->default(null),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                ->label('Editar'),
                 Action::make('toggleEstado')
                     ->label(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                     ->icon(fn($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
@@ -106,8 +109,8 @@ class TipoExamenResource extends Resource
                             ->send();
                     })
                     ->requiresConfirmation()
-                    ->iconButton()
-            ])
+                    ->iconButton(),             
+                ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
