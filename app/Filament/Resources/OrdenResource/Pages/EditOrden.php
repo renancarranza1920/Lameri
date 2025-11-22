@@ -12,13 +12,6 @@ class EditOrden extends EditRecord
 {
     protected static string $resource = OrdenResource::class;
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\DeleteAction::make(),
-        ];
-    }
-
      protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');

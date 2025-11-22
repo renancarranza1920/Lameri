@@ -35,12 +35,14 @@ class PerfilResource extends Resource
     protected static ?string $model = Perfil::class;
     //definiendo el nombre de la opción en el menu
     
+    protected static ?string $navigationGroup = 'Gestión de Laboratorio';
+    protected static ?int $navigationSort = 2;
     protected static ?string $navigationLabel = 'Perfiles';
     //nombre plural
     protected static ?string $pluralModelLabel = 'Perfiles';
     //nombre singular
     protected static ?string $modelLabel = 'Perfil';
-    protected static ?string $navigationIcon = 'heroicon-o-beaker';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
     {

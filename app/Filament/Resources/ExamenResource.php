@@ -20,6 +20,8 @@ class ExamenResource extends Resource
 {
     protected static ?string $model = Examen::class;
 
+    protected static ?string $navigationGroup = 'Gestión de Laboratorio';
+    protected static ?int $navigationSort = 1;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document';
     protected static ?string $navigationLabel = 'Exámenes';
     protected static ?string $pluralModelLabel = 'Exámenes';

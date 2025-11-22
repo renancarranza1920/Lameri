@@ -95,6 +95,12 @@ class AdminPanelProvider extends PanelProvider
         $panel->brandLogo(fn () => view('components.logo'));
         $panel->favicon(asset('storage/iconlab.png'));
 
+        $panel->navigationGroups([
+            'Atención al Paciente',    // Grupo 1 (Arriba)
+            'Gestión de Laboratorio',  // Grupo 2
+            'Catálogos y Ajustes',     // Grupo 3
+            'Administración',          // Grupo 4 (Abajo)
+        ]);
         
         
         // Finalmente, devuelve el objeto $panel configurado

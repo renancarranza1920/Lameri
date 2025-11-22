@@ -53,6 +53,9 @@ class OrdenResource extends Resource
 {
     protected static ?string $model = Orden::class;
 
+    protected static ?string $navigationGroup = 'Atención al Paciente';
+    protected static ?int $navigationSort = 2;
+
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
     protected static ?string $navigationLabel = 'Órdenes';
     protected static ?string $slug = 'ordenes';
