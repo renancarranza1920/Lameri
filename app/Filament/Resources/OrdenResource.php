@@ -459,7 +459,8 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->icon('heroicon-o-beaker')
                     ->iconButton()
                     ->color('info')
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente']))
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente'])
+                    && auth()->user()->can('procesar_muestras_orden'))
                     ->modalHeading('Registrar Muestras Recibidas')
                     ->modalSubmitActionLabel('Guardar Estado')
                     ->form(function (Orden $record) {
@@ -552,7 +553,8 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->icon('heroicon-o-pencil-square')
                     ->iconButton()
                     ->color('primary')
-                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso') // <-- ¡LÓGICA CLAVE!
+                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso'
+                    && auth()->user()->can('ingresar_resultados_orden'))
                     ->url(fn(Orden $record): string => static::getUrl('ingresar-resultados', ['record' => $record])),
 
                 Tables\Actions\Action::make('imprimirEtiquetas')
@@ -561,7 +563,8 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->iconButton()
                     ->color('gray')
                     // Visible si la orden no está finalizada o cancelada
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente']))
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente'])
+                    && auth()->user()->can('imprimir_etiquetas_orden'))
                     ->url(fn(Orden $record): string => DetalleOrdenKanban::getUrl(['ordenId' => $record->id])),
 
                 Tables\Actions\Action::make('ver')
@@ -588,7 +591,8 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->icon('heroicon-o-clipboard-document-check')
                     ->iconButton()
                     ->color('gray')
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado']))
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado'])
+                    && auth()->user()->can('ver_pruebas_orden'))
                     ->modalHeading('Pruebas a Realizar')
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Cerrar')
@@ -603,7 +607,8 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->icon('heroicon-o-pause-circle')
                     ->iconButton()
                     ->color('warning')
-                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso' &&
+                        auth()->user()->can('pausar_orden'))
                     ->requiresConfirmation()
                     ->form([Textarea::make('motivo_pausa')->label('Motivo de la Pausa')->required()])
                     ->action(function (Orden $record, array $data) {
@@ -618,7 +623,8 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->icon('heroicon-o-play-circle')
                     ->iconButton()
                     ->color('success')
-                    ->visible(fn(Orden $record): bool => $record->estado === 'pausada')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'pausada' &&
+                        auth()->user()->can('reanudar_orden'))
                     ->requiresConfirmation()
                     ->action(function (Orden $record) {
                         $record->estado = 'en proceso';
@@ -632,7 +638,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->icon('heroicon-o-check-circle')
                     ->iconButton()
                     ->color('success')
-                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso' && auth()->user()->can('finalizar_orden'))
                     ->requiresConfirmation()
                     ->action(function (Orden $record) {
                         $record->estado = 'finalizado';
@@ -645,7 +651,8 @@ Forms\Components\Hidden::make('codigo_aplicado'),
     ->icon('heroicon-o-printer')
     ->iconButton()
     ->color('gray')
-    ->visible(fn(Orden $record): bool => $record->estado === 'finalizado')
+    ->visible(fn(Orden $record): bool => $record->estado === 'finalizado' &&
+                        auth()->user()->can('generar_reporte_orden'))
     ->action(function (Orden $record) {
         // 1. Cargar relaciones necesarias
         $orden = $record->load([
@@ -767,7 +774,9 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->icon('heroicon-o-x-circle')
                     ->iconButton()
                     ->color('danger')
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso', 'pausada']))
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso', 'pausada'])
+                    &&
+                        auth()->user()->can('cancelar_orden'))
                     ->requiresConfirmation()
                     ->action(function (Orden $record) {
                         $record->estado = 'cancelado';

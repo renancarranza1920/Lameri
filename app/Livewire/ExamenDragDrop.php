@@ -22,6 +22,7 @@ class ExamenDragDrop extends Component implements HasForms
     public $busquedaSeleccionado = [];
     public $perfilId;
  public bool $isProcessing = false;
+ 
 
     public $colapsadoDisponible = false;
     public $colapsadoSeleccionado = false;

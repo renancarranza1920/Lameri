@@ -17,25 +17,33 @@
                         <h4 class="font-bold mb-2">{{ $tipo }}</h4>
                         
                         {{-- Este div ahora deshabilita TODA la lista mientras se añade CUALQUIER examen --}}
-                        <div 
-                            class="flex flex-wrap gap-2" 
-                            wire:loading.class="opacity-50 pointer-events-none" 
-                            wire:target="addExamen"
-                        >
-                            @foreach($examenes as $examen)
-                                <div wire:key="examen-disponible-{{ $examen->id }}" class="examen-tag flex items-center gap-2" wire:click="addExamen({{ $examen->id }})">
-                                    <span class="flex-grow">{{ $examen->nombre }}</span>
-                                    
-                                    {{-- El spinner individual --}}
-                                    <div wire:loading wire:target="addExamen({{ $examen->id }})">
-                                        <svg class="animate-spin h-4 w-4 text-gray-800 dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
+                        {{-- EN LA LISTA DE DISPONIBLES --}}
+<div class="flex flex-wrap gap-2">
+    @foreach($examenes as $examen)
+        {{-- 
+            1. Cambiamos 'div' por 'button type="button"'
+            2. Agregamos 'wire:loading.attr="disabled"' (Esto es la MAGIA)
+            3. Agregamos clases 'disabled:...' para que se vea gris cuando se bloquea
+        --}}
+        <button 
+            type="button"
+            wire:key="examen-disponible-{{ $examen->id }}" 
+            class="examen-tag flex items-center gap-2 text-left w-auto disabled:opacity-50 disabled:cursor-not-allowed transition-all" 
+            wire:click="addExamen({{ $examen->id }})"
+            wire:loading.attr="disabled" 
+        >
+            <span class="flex-grow">{{ $examen->nombre }}</span>
+            
+            {{-- Spinner (se muestra solo al cargar este ID) --}}
+            <div wire:loading wire:target="addExamen({{ $examen->id }})">
+                <svg class="animate-spin h-4 w-4 text-gray-800 dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+        </button>
+    @endforeach
+</div>
                     </div>
                 @empty
                     <p class="text-sm text-gray-500 dark:text-gray-300">No hay exámenes disponibles.</p>

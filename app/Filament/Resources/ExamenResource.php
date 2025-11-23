@@ -146,6 +146,7 @@ class ExamenResource extends Resource
                 Action::make('ver-modal')
                     ->label('Ver')
                     ->icon('heroicon-s-eye')
+                    ->visible(fn () => auth()->user()->can('ver_detalle_examenes'))
                     ->modalHeading('Detalle del Examen')
                     ->color('gray')
                     ->modalWidth('lg')
@@ -174,7 +175,7 @@ class ExamenResource extends Resource
                       Action::make('addPruebas')
                     ->label('Añadir Pruebas')
                     ->icon('heroicon-o-plus-circle')
-                    ->visible(fn (Examen $record) => $record->es_externo === false)
+                    ->visible(fn (Examen $record) => $record->es_externo === false && auth()->user()->can('agregar_pruebas_examenes'))
                     ->color('gray')
                     ->modalHeading(fn (Examen $record) => 'Añadir pruebas a: ' . $record->nombre)
                     ->form([
@@ -216,6 +217,7 @@ class ExamenResource extends Resource
                     ->color(fn($record) => $record->estado ? 'danger' : 'success')
                     ->tooltip(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                     ->requiresConfirmation()
+                    ->visible(fn () => auth()->user()->can('cambiar_estado_examenes'))
                     ->action(function ($record) {
                         $record->estado = !$record->estado;
                         $record->save();
