@@ -19,33 +19,16 @@ class ListPerfils extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
-    public function getTabs(): array
+ public function getTabs(): array
     {
-        // Obtener los 3 tipos de examen con más exámenes asociados
-        $topTipoIds = Examen::select('tipo_examen_id')
-            ->groupBy('tipo_examen_id')
-            ->orderByRaw('COUNT(*) DESC')
-            ->limit(3)
-            ->pluck('tipo_examen_id');
+        return [
+            'todos' => Tab::make('Todos'),
 
-        // Cargar los nombres de esos tipos
-        $tipos = TipoExamen::whereIn('id', $topTipoIds)->get();
+            'simples' => Tab::make('Pequeños (1-3 Exámenes)')
+                ->modifyQueryUsing(fn ($query) => $query->has('examenes', '<=', 3)),
 
-        $tabs = [
-            'Todos' => Tab::make()->label('Todos'),
+            'complejos' => Tab::make('Completos (+4 Exámenes)')
+                ->modifyQueryUsing(fn ($query) => $query->has('examenes', '>', 3)),
         ];
-
-        foreach ($tipos as $tipo) {
-            $tabs[$tipo->nombre] = Tab::make()
-                ->label($tipo->nombre)
-                ->modifyQueryUsing(function ($query) use ($tipo) {
-                    // Filtra perfiles que tengan exámenes de este tipo
-                    $query->whereHas('examenes', function ($q) use ($tipo) {
-                        $q->where('tipo_examen_id', $tipo->id);
-                    });
-                });
-        }
-
-        return $tabs;
     }
 }

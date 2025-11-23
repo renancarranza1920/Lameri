@@ -31,6 +31,14 @@ class EditPrueba extends EditRecord
                     Select::make('tipo_prueba_id')
                         ->relationship('tipoPrueba', 'nombre')
                         ->searchable()
+                        ->createOptionAction(fn($action) => $action->visible(true))
+                        //crear modal para agregar nuevo tipo de prueba
+                        ->createOptionForm([
+                            TextInput::make('nombre')
+                                ->label('Nombre del Tipo de Prueba')
+                                ->required()
+                                ->maxLength(255),
+                        ])
                         ->preload(),
                 ])
             ]);

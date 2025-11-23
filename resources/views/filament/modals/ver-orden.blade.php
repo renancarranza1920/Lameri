@@ -67,10 +67,16 @@
                     @foreach ($agrupadoPorPerfil as $perfilId => $items)
                         @if ($perfilId)
                             @php $primerItem = $items->first(); @endphp
-                            <tr class="font-bold bg-gray-50 dark:bg-gray-800/50">
-                                <td class="p-3 text-gray-900 dark:text-white">{{ $primerItem->nombre_perfil ?? 'Perfil sin nombre' }}</td>
-                                <td class="p-3 text-right font-mono text-gray-900 dark:text-white">${{ number_format($primerItem->precio_perfil, 2) }}</td>
-                            </tr>
+                            <tr class="font-bold bg-gray-100 dark:bg-gray-700">
+    <td class="p-3 text-gray-800 dark:text-gray-100">
+        {{ $primerItem->nombre_perfil ?? 'Perfil sin nombre' }}
+    </td>
+
+    <td class="p-3 text-right font-mono text-gray-800 dark:text-gray-100">
+        ${{ number_format($primerItem->precio_perfil, 2) }}
+    </td>
+</tr>
+
                             @foreach ($items as $detalle)
                                 <tr class="text-gray-600 dark:text-gray-400">
                                     <td class="py-2 pl-6 pr-3">

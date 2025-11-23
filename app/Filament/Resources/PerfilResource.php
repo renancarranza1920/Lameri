@@ -57,6 +57,10 @@ class PerfilResource extends Resource
     logger('Perfil ID:', ['perfilId' => $perfilId]);
         return $form
             ->schema([
+                   Forms\Components\Card::make()
+                    ->schema([
+                        Forms\Components\Section::make('Información del Perfil')
+                            ->schema([
                 Forms\Components\TextInput::make('nombre')
                     ->required()
                     ->maxLength(255),
@@ -69,6 +73,7 @@ class PerfilResource extends Resource
                 Forms\Components\Toggle::make('estado')
                     ->label('Estado')
                     ->default(true),
+                            ])->columns(2),
                    
 
 
@@ -111,7 +116,8 @@ class PerfilResource extends Resource
 
                 
 
-            ]);
+            ])
+                ]);
     }
 
     public static function table(Table $table): Table

@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CodigoResource\Pages;
 use App\Models\Codigo;
 use Filament\Forms;
+use Filament\Forms\Components\Card;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -15,7 +16,7 @@ use Filament\Forms\Set;
 class CodigoResource extends Resource
 {
     protected static ?string $model = Codigo::class;
-    protected static ?string $navigationIcon = 'heroicon-s-receipt-percent';
+    protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
     protected static ?string $navigationLabel = 'Cupones de Descuento';
     protected static ?string $pluralModelLabel = 'Cupones';
     protected static ?string $modelLabel = 'Cupón';
@@ -25,6 +26,8 @@ protected static ?int $navigationSort = 3;
   public static function form(Form $form): Form
     {
         return $form->schema([
+            Card::make()
+                ->schema([
             Forms\Components\Section::make('Información del Cupón')
                 ->columns(2)
                 ->schema([
@@ -69,6 +72,7 @@ protected static ?int $navigationSort = 3;
                         ->minDate(now())
                         ->requiredIf('tiene_vencimiento', true)
                         ->visible(fn (Get $get) => $get('tiene_vencimiento')),
+                ]),
                 ]),
         ]);
     }

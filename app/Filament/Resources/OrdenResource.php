@@ -550,7 +550,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
 
                 Tables\Actions\Action::make('ingresarResultados')
                     ->tooltip('Ingresar Resultados')
-                    ->icon('heroicon-o-pencil-square')
+                    ->icon('heroicon-o-document-plus')
                     ->iconButton()
                     ->color('primary')
                     ->visible(fn(Orden $record): bool => $record->estado === 'en proceso'
@@ -597,11 +597,20 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Cerrar')
                     ->form(function (Orden $record) {
+                        // 1. Cargamos resultados para no hacer consultas en el loop
+                        $record->load('resultados'); 
+
                         $detalles = $record->detalleOrden()->with('examen.pruebas')->get();
                         $examenes = $detalles->map(fn($detalle) => $detalle->examen)->filter()->unique('id');
-                        return [Forms\Components\View::make('filament.modals.ver-orden-pruebas')->viewData(['examenes' => $examenes])];
-                    }),
 
+                        return [
+                            Forms\Components\View::make('filament.modals.ver-orden-pruebas')
+                                ->viewData([
+                                    'examenes' => $examenes,
+                                    'orden' => $record, // <--- ¡ESTO ES LO NUEVO! Pasamos la orden completa
+                                ])
+                        ];
+                    }),
                 Tables\Actions\Action::make('pausarOrden')
                     ->tooltip('Pausar Orden')
                     ->icon('heroicon-o-pause-circle')

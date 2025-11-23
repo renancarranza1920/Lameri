@@ -43,6 +43,15 @@ protected static ?int $navigationSort = 4;
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')->searchable()->sortable(),
+            ])
+            ->filters([
+                //
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
     

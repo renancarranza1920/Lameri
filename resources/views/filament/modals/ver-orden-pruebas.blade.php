@@ -1,37 +1,59 @@
 {{-- resources/views/filament/modals/ver-orden-pruebas.blade.php --}}
 
-@props(['examenes'])
+@props(['examenes', 'orden']) {{-- Recibimos la orden aquí --}}
 
 <div class="space-y-6">
     @if($examenes && $examenes->count() > 0)
         @foreach ($examenes as $examen)
             <div class="space-y-2">
-                {{-- Encabezado: Azul corporativo en claro, azul claro legible en oscuro --}}
                 <h3 class="text-lg font-bold text-[#1E73BE] dark:text-blue-400">
                     Examen: {{ $examen->nombre }}
                 </h3>
                 
                 @if($examen->pruebas && $examen->pruebas->count() > 0)
-                    {{-- Contenedor de la tabla con bordes redondeados --}}
-                    {{-- dark:border-gray-700: Borde gris en modo oscuro --}}
                     <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                         <table class="w-full text-sm text-left border-collapse">
                             <thead>
-                                {{-- Fondo gris muy claro en modo luz, gris oscuro en modo noche --}}
                                 <tr class="bg-gray-50 dark:bg-gray-800">
-                                    {{-- TH: Borde gris claro en luz, gris oscuro en noche. Texto oscuro en luz, blanco en noche --}}
                                     <th class="p-3 font-medium border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white">
                                         Prueba a Realizar
+                                    </th>
+                                    {{-- Nueva columna de Estado --}}
+                                    <th class="p-3 font-medium border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-center w-24">
+                                        Estado
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($examen->pruebas as $prueba)
-                                    {{-- Fondo blanco en luz, transparente/oscuro en noche --}}
+                                    {{-- LÓGICA DE ESTADO --}}
+                                    @php
+                                        // Buscamos si existe un resultado para esta prueba en esta orden
+                                        $resultadoExiste = $orden->resultados
+                                            ->where('prueba_id', $prueba->id)
+                                            // Opcional: filtramos por detalle si es necesario, 
+                                            // pero para visualización general esto basta
+                                            ->first();
+                                        
+                                        // Determinamos si está completado (tiene valor)
+                                        $estaCompleto = $resultadoExiste && $resultadoExiste->resultado;
+                                    @endphp
+
                                     <tr class="bg-white dark:bg-transparent">
-                                        {{-- TD: Borde gris claro en luz, gris oscuro en noche. Texto gris en luz, gris claro en noche --}}
                                         <td class="p-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-white">
                                             {{ $prueba->nombre }}
+                                        </td>
+                                        {{-- Columna de Icono --}}
+                                        <td class="p-3 border border-gray-200 dark:border-gray-700 text-center">
+                                            @if($estaCompleto)
+                                                <div class="flex justify-center" title="Completado">
+                                                    <x-heroicon-s-check-circle class="h-6 w-6 text-green-500"/>
+                                                </div>
+                                            @else
+                                                <div class="flex justify-center" title="Pendiente">
+                                                    <x-heroicon-o-clock class="h-6 w-6 text-gray-400"/>
+                                                </div>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach
