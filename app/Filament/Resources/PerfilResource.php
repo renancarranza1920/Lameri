@@ -144,6 +144,7 @@ class PerfilResource extends Resource
                 ->label(fn ($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                 ->icon(fn ($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                 ->color(fn ($record) => $record->estado ? 'danger' : 'success')
+                ->visible(fn () => auth()->user()->can('cambiar_estado_perfiles'))
                 ->tooltip(fn ($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                 ->action(function ($record) {
                     $record->estado = $record->estado ? 0 : 1;

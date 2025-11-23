@@ -113,13 +113,10 @@ class ExamenDragDrop extends Component implements HasForms
     }
 
     // Método para agregar examen a la lista de seleccionados
-    public function addExamen($id)
+   public function addExamen($id)
     {
-         if ($this->isProcessing) { return; } // Si está ocupado, no hagas nada.
-        $this->isProcessing = true; // Levanta la bandera.
-
-        try {
         $examen = $this->examenesDisponibles->firstWhere('id', $id);
+
         if ($examen) {
             $this->examenesSeleccionados[] = [
                 'id' => $examen->id,
@@ -127,28 +124,25 @@ class ExamenDragDrop extends Component implements HasForms
                 'tipo' => $examen->tipoExamen->nombre ?? 'Sin Tipo',
             ];
             
-            $this->emitSelectionUpdated(); // Nuevo
+            // array_values no es necesario aquí porque [] agrega al final, 
+            // pero si quieres estar 100% seguro, puedes usarlo también.
+            $this->emitSelectionUpdated();
         }
-    } finally {
-        $this->isProcessing = false; // Baja la bandera
     }
-}
 
     // Método para remover examen (actualizado)
-    public function removeExamen($id)
+ public function removeExamen($id)
     {
-        if ($this->isProcessing) { return; } // Si está ocupado, no hagas nada.
-        $this->isProcessing = true; // Levanta la bandera.
-
-        try {
-        $this->examenesSeleccionados = array_filter(
+        // Filtramos para quitar el elemento
+        $filtrado = array_filter(
             $this->examenesSeleccionados, 
             fn ($examen) => $examen['id'] !== $id
         );
-        $this->emitSelectionUpdated(); // Nuevo
-    } finally {
-        $this->isProcessing = false; // Baja la bandera
-    }
+
+        // 🔥 CORRECCIÓN VITAL: Reindexar el array para que sea una lista [0,1,2] y no un objeto {0,2}
+        $this->examenesSeleccionados = array_values($filtrado);
+        
+        $this->emitSelectionUpdated();
     }
 
        // Nuevo método para emitir la actualización

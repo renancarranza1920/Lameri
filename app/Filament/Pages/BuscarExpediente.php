@@ -27,9 +27,13 @@ protected static ?int $navigationSort = 1;
 
     public ?array $data = [];
     public $resultados = [];
-
-    public function mount(): void
+public static function canAccess(): bool
     {
+        return auth()->user()->can('acceder_buscador_expedientes');
+    }
+    public function mount(): void
+    {   
+        abort_unless(auth()->user()->can('acceder_buscador_expedientes'), 403);
         $this->form->fill();
         // Iniciamos vacío o con los últimos creados si prefieres
         $this->resultados = []; 
