@@ -11,8 +11,8 @@
         </div>
         @if ($nombre_cliente)
             <div class="mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Cliente</h3>
-                <div class="text-sm text-gray-700 dark:text-gray-300">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-400 mb-2">Cliente</h3>
+                <div class="text-sm text-gray-600 dark:text-gray-400">
                     <p><strong>Nombre:</strong> {{ $nombre_cliente }}</p>
                 </div>
             </div>

@@ -17,15 +17,26 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
                     @foreach($valores as $valor)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                            <td class="px-4 py-3 align-top text-gray-700 dark:text-gray-300">
+                        {{-- 
+                            SIN HOVER:
+                            - Se eliminaron las clases hover:bg-... y dark:hover:bg-...
+                            - dark:text-white: Asegura texto blanco en modo oscuro.
+                        --}}
+                        <tr>
+                            
+                            {{-- Columna 1 --}}
+                            <td class="px-4 py-3 align-top text-gray-700 dark:text-white">
                                 <div class="font-medium">{{ $valor->grupoEtario?->nombre ?? 'N/A' }}</div>
                                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ $valor->genero }}</div>
                             </td>
-                            <td class="px-4 py-3 align-top text-gray-700 dark:text-gray-300">
+
+                            {{-- Columna 2 --}}
+                            <td class="px-4 py-3 align-top text-gray-700 dark:text-white">
                                 {{ $valor->descriptivo ?? 'N/A' }}
                             </td>
-                            <td class="px-4 py-3 align-top font-mono text-gray-700 dark:text-gray-300">
+
+                            {{-- Columna 3 (Valores) --}}
+                            <td class="px-4 py-3 align-top font-mono text-gray-700 dark:text-white font-bold">
                                 @php
                                     $valorMin = rtrim(rtrim(number_format($valor->valor_min, 2, '.', ''), '0'), '.');
                                     $valorMax = rtrim(rtrim(number_format($valor->valor_max, 2, '.', ''), '0'), '.');
@@ -45,9 +56,13 @@
                                     = {{ $valorMin }}
                                 @endif
                             </td>
-                            <td class="px-4 py-3 align-top text-gray-700 dark:text-gray-300">
+
+                            {{-- Columna 4 (Unidades) --}}
+                            <td class="px-4 py-3 align-top text-gray-700 dark:text-white">
                                 {{ $valor->unidades }}
                             </td>
+
+                            {{-- Columna 5 (Nota) --}}
                             <td class="px-4 py-3 align-top text-sm text-gray-500 dark:text-gray-400 italic">
                                 {{ $valor->nota }}
                             </td>
@@ -57,7 +72,7 @@
             </table>
         </div>
     @else
-        <div class="p-4 text-center text-gray-500 dark:text-gray-400">
+        <div class="p-4 text-center text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
             No hay valores de referencia registrados para este reactivo.
         </div>
     @endif
