@@ -144,6 +144,7 @@ class PruebaResource extends Resource
             ->headerActions([ // <-- AÑADIMOS UN BOTÓN EN LA CABECERA
                 Tables\Actions\Action::make('pruebas_conjuntas')
                     ->label('Ver Pruebas en Matriz')
+                    ->visible(fn () => auth()->user()->can('ver_pruebas_conjuntas')) // 🔒 VALIDACIÓN
                     ->icon('heroicon-o-table-cells')
                     ->color('gray')
                     // Esto nos llevará a la nueva página que creamos

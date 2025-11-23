@@ -74,6 +74,7 @@ class ReactivoResource extends Resource
                 Tables\Actions\EditAction::make()->visible($esAccionable),
                 Action::make('setActive')
                     ->label('Poner en Uso')
+                    ->visible(fn () => auth()->user()->can('activar_reactivos'))
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     // Usamos el atributo correcto para la visibilidad
@@ -91,7 +92,7 @@ class ReactivoResource extends Resource
                     ->label('Valores de Referencia')
                     ->icon('heroicon-o-clipboard-document-list')
                     ->color('gray')
-                    ->visible($esAccionable)
+                    ->visible($esAccionable && auth()->user()->can('gestionar_valores_ref')) 
                     ->modalWidth('4xl')
                     ->modalSubmitActionLabel('Guardar')
                     ->fillForm(fn(Reactivo $record) => [
@@ -229,7 +230,7 @@ class ReactivoResource extends Resource
                     ->icon('heroicon-o-arrow-path-rounded-square')
                     ->color('primary')
                     // Solo es visible si el reactivo NO está disponible
-                    ->visible(fn(Reactivo $record) => $record->estado !== 'disponible')
+                    ->visible(fn(Reactivo $record) => $record->estado !== 'disponible' && auth()->user()->can('reabastecer_reactivos'))
                     ->modalHeading('Reabastecer Reactivo')
                     ->modalDescription('Esto creará un nuevo registro de reactivo basado en este, con todos sus valores de referencia duplicados.')
                     ->modalSubmitActionLabel('Confirmar Reabastecimiento')
@@ -272,7 +273,8 @@ class ReactivoResource extends Resource
                     ->icon('heroicon-o-archive-box-x-mark')
                     ->color('danger')
                     // El botón solo es visible si el reactivo está 'disponible'
-                    ->visible(fn(Reactivo $record) => $record->estado === 'disponible')
+                    ->visible(fn(Reactivo $record) => $record->estado === 'disponible' &&
+                        auth()->user()->can('agotar_reactivos'))
                     ->requiresConfirmation()
                     ->modalHeading('Marcar Reactivo como Agotado')
                     ->modalDescription('Esta acción es irreversible. ¿Estás seguro?')

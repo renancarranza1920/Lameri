@@ -46,6 +46,7 @@ return [
             'delete_any',
             'force_delete',
             'force_delete_any',
+            
         ],
 
         'page' => 'page',
@@ -56,7 +57,7 @@ return [
         'pages' => true,
         'widgets' => true,
         'resources' => true,
-        'custom_permissions' => false,
+        'custom_permissions' => true,
     ],
 
     'generator' => [
@@ -88,5 +89,7 @@ return [
     'register_role_policy' => [
         'enabled' => true,
     ],
+
+   
 
 ];

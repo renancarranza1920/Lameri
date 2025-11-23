@@ -159,6 +159,7 @@ class ClientesResource extends Resource
                 Action::make('ver-modal')
                     ->label('Ver')
                     ->icon('heroicon-s-eye')
+                    ->visible(fn () => auth()->user()->can('ver_detalle_clientes'))
                     ->modalHeading('Detalle del Cliente')
                     ->color('gray')
                     ->modalWidth('lg')
@@ -201,6 +202,7 @@ class ClientesResource extends Resource
                     ->label(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                     ->icon(fn($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                     ->color(fn($record) => $record->estado ? 'danger' : 'success')
+                    ->visible(fn () => auth()->user()->can('cambiar_estado_clientes'))
                     ->tooltip(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                     ->requiresConfirmation()
                     ->action(function ($record) {
@@ -217,6 +219,7 @@ class ClientesResource extends Resource
                     ->label('Expediente')
                     ->icon('heroicon-o-folder-open') // Un ícono adecuado
                     ->color('info') // Color del botón
+                    ->visible(fn () => auth()->user()->can('ver_expediente_clientes')) 
                     ->url(fn (Cliente $record): string => ClientesResource::getUrl('expediente', ['record' => $record->id]))
 
             ])
@@ -243,4 +246,5 @@ class ClientesResource extends Resource
             'expediente' => Pages\Expediente::route('/{record}/expediente'),
         ];
     }
+
 }

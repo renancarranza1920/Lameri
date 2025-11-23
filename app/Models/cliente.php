@@ -130,4 +130,6 @@ class Cliente extends Model
 
         return $grupo; // Devuelve el grupo o null si no encaja en nada (ej. > 120 años)
     }
+
+    
 }

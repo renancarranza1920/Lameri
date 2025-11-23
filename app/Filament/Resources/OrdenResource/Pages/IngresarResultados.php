@@ -29,6 +29,7 @@ class IngresarResultados extends Page implements HasForms
     public function mount(Orden $record): void
     {
         abort_unless(static::getResource()::canView($record), 404);
+        abort_unless(auth()->user()->can('ingresar_resultados_orden'), 403);
         $this->record = $record;
         // Cargamos los datos iniciales (internos y externos) al formulario
         $this->form->fill($this->prepareInitialData());
@@ -260,7 +261,7 @@ public function isOrderComplete(): bool
 
     protected function getFormActions(): array
     { 
-        return [Action::make('save')->label('Guardar Resultados')->submit('save')]; 
+        return [Action::make('save')->label('Guardar Resultados')->submit('save')->visible(fn() => auth()->user()->can('ingresar_resultados_orden'))]; 
     }
     
     protected function getHeaderActions(): array

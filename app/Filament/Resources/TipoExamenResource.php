@@ -42,6 +42,7 @@ protected static ?int $navigationSort = 1;
                         Forms\Components\Toggle::make('estado')
                             ->label('Activo')
                             ->required()
+                            
                             ->default(true)
                             ->inline(false),
                     ])
@@ -60,6 +61,7 @@ protected static ?int $navigationSort = 1;
 
                 Tables\Columns\TextColumn::make('estado')
                     ->label('Estado')
+                    
                     ->formatStateUsing(function ($state) {
                         return $state
                             ? '✅ Activo'
@@ -97,6 +99,7 @@ protected static ?int $navigationSort = 1;
                     ->label(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                     ->icon(fn($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                     ->color(fn($record) => $record->estado ? 'danger' : 'success')
+                    ->visible(fn () => auth()->user()->can('cambiar_estado_tipo_examenes')) // 🔒 VALIDACIÓN
                     ->tooltip(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                     ->action(function ($record) {
                         $record->estado = $record->estado ? 0 : 1;

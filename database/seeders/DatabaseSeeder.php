@@ -43,7 +43,7 @@ class DatabaseSeeder extends Seeder
         // Generar permisos automáticamente
         $this->generatePermissions();
 
-       
+        $this->createRolesAndAssignPermissions();
 
         // 🔑 Limpiar caché de permisos antes de asignar
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
@@ -481,19 +481,15 @@ class DatabaseSeeder extends Seeder
     ];
 
 
-    $paginas = [
-        'dashboard',
-       'buscar::expediente',
-       'detalle::orden::kanban',
-    ];
+   
 
     //////////////////////////////////////////////PERMISOS GRANULARES AUTOMÁTICOS/////////////////////////////////////////////////////
    
    //--- Permisos específicos para clientes ----//
     $clienteActions = [
-    'ver_detalle_cliente',    // Para el botón 'ver-modal'
-    'cambiar_estado_cliente', // Para el botón 'cambiar_estado'
-    'ver_expediente_cliente', // Para el botón 'expediente'
+    'ver_detalle_clientes',    // Para el botón 'ver-modal'
+    'cambiar_estado_clientes', // Para el botón 'cambiar_estado'
+    'ver_expediente_clientes', // Para el botón 'expediente'
 ];
 
 foreach ($clienteActions as $permission) {
@@ -511,21 +507,93 @@ foreach ($clienteActions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-/////////
-
-    // Permisos para páginas específicas
-    foreach ($paginas as $page) {
-        $permissions = [
-            "view_{$page}",
-            "access_{$page}",
+/////////// --- Permisos Granulares para EXÁMENES ---
+        $examenActions = [
+            'ver_detalle_examenes',     // Para botón 'ver-modal'
+            'agregar_pruebas_examenes', // Para botón 'addPruebas'
+            'cambiar_estado_examenes',  // Para botón 'cambiar_estado'
         ];
 
-        foreach ($permissions as $permission) {
+        foreach ($examenActions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        Log::info("Permisos generados para la página: {$page}");
-    }
+//////////////////// --- Permisos Granulares para ÓRDENES ---
+        $ordenActions = [
+            'procesar_muestras_orden',   // Para "Gestionar Muestras"
+            'ingresar_resultados_orden', // Para "Ingresar Resultados"
+            'imprimir_etiquetas_orden',  // Para "Imprimir Etiquetas"
+            'ver_pruebas_orden',         // Para "Ver Pruebas"
+            'pausar_orden',              // Para "Pausar"
+            'reanudar_orden',            // Para "Reanudar"
+            'finalizar_orden',           // Para "Finalizar"
+            'generar_reporte_orden',     // Para "Generar Reporte PDF"
+            'cancelar_orden',            // Para "Cancelar"
+        ];
+
+        foreach ($ordenActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        ///// // --- Permisos Granulares para PERFILES ---
+        $perfilActions = [
+            'cambiar_estado_perfiles', // Para el botón 'toggleEstado'
+        ];
+
+        foreach ($perfilActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        //// // --- Permisos Granulares para PRUEBAS ---
+        $pruebaActions = [
+            'ver_pruebas_conjuntas', // Para el botón de la cabecera "Ver Pruebas en Matriz"
+        ];
+
+        foreach ($pruebaActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        //// // --- Permisos Granulares para REACTIVOS ---
+        $reactivoActions = [
+            'activar_reactivos',       // Para 'setActive'
+            'gestionar_valores_ref',   // Para 'gestionarValores'
+            'reabastecer_reactivos',   // Para 'restock'
+            'agotar_reactivos',        // Para 'marcarAgotado'
+        ];
+
+        foreach ($reactivoActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+        /// // --- Permisos Granulares para TIPOS DE EXAMEN ---
+        $tipoExamenActions = [
+            'cambiar_estado_tipo_examenes', // Para el botón 'toggleEstado'
+        ];
+
+        foreach ($tipoExamenActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        /// // --- Permisos Granulares para PÁGINAS ---
+        $paginasActions = [
+            'acceder_buscador_expedientes', // Para poder entrar al menú "Buscar Expediente"
+        ];
+
+        foreach ($paginasActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        //// --- Permisos Granulares para KANBAN ETIQUETAS ---
+        $kanbanActions = [
+            'imprimir_etiquetas_kanban', // Para todos los botones de imprimir (ZPL)
+            'mover_etiquetas_kanban',    // Para poder arrastrar y soltar tarjetas
+        ];
+
+        foreach ($kanbanActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        //
+    
     // Permisos por recurso
     foreach ($resources as $resource) {
         $permissions = [
@@ -568,7 +636,96 @@ foreach ($clienteActions as $permission) {
 
     Log::info('Permisos totales generados automáticamente:', ['total' => Permission::count()]);
 }
+private function createRolesAndAssignPermissions()
+    {
+        // =====================================================================
+        // 1. ROL: RECEPCIÓN
+        // =====================================================================
+        $roleRecepcion = Role::firstOrCreate(['name' => 'recepcion']);
+        $roleRecepcion->syncPermissions([
+            // --- Acceso General ---
+            'access_admin_panel',
+            //iew_dashboard',
+           //page_BuscarExpediente',
+            'acceder_buscador_expedientes',
 
+            // --- Clientes (Gestión completa pero sin borrar a lo loco) ---
+            'view_any_clientes', 'view_clientes', 'create_clientes', 'update_clientes',
+            'ver_detalle_clientes', 'ver_expediente_clientes', 
+            // NO le damos 'delete' ni 'cambiar_estado' para evitar errores, solo admin
+
+            // --- Órdenes (Gestión administrativa) ---
+            'view_any_orden', 'view_orden', 'create_orden', 'update_orden',
+            'imprimir_etiquetas_orden', // Para re-imprimir si hace falta
+            'generar_reporte_orden',    // Para entregar al paciente
+            'cancelar_orden',           // Si el paciente se arrepiente antes de pagar
+            
+            // --- Cotizaciones ---
+            'view_any_cotizacion', 'create_cotizacion', 'access_cotizaciones', 
+            'generar_pdf_cotizacion', 'enviar_cotizacion_email',
+
+            // --- Catálogos (Solo lectura para consulta de precios) ---
+            'view_any_examen', 'view_examen',
+            'view_any_perfil', 'view_perfil',
+            'view_any_codigo', // Ver cupones para aplicarlos
+        ]);
+        Log::info('Rol Recepción configurado.');
+
+        // =====================================================================
+        // 2. ROL: TOMA DE MUESTRAS
+        // =====================================================================
+        $roleTomaMuestras = Role::firstOrCreate(['name' => 'toma_muestras']);
+        $roleTomaMuestras->syncPermissions([
+            'access_admin_panel',
+            
+            // --- Órdenes (Solo ver para procesar) ---
+            'view_any_orden', 'view_orden', 
+            
+      // --- Operativo Muestras ---
+            //age_DetalleOrdenKanban',    // Acceso al tablero
+            'imprimir_etiquetas_kanban',  // Imprimir stickers
+            'mover_etiquetas_kanban',     // Cambiar estado de tubos
+            'procesar_muestras_orden',    // Botón de recibir muestra en la lista
+            'imprimir_etiquetas_orden',   // Botón en la lista
+            
+            // --- Consultas básicas ---
+            'view_any_clientes', // Para confirmar identidad
+            'view_clientes',
+            'view_any_muestra',  // Ver catálogo de tubos
+        ]);
+        Log::info('Rol Toma de Muestras configurado.');
+
+        // =====================================================================
+        // 3. ROL: LABORATORISTA
+        // =====================================================================
+        $roleLaboratorista = Role::firstOrCreate(['name' => 'laboratorista']);
+        $roleLaboratorista->syncPermissions([
+            'access_admin_panel',
+         // 'view_dashboard',
+            
+            // --- Procesamiento Analítico ---
+            'view_any_orden', 'view_orden', 
+            'ingresar_resultados_orden', // ¡Su función principal!
+            'ver_pruebas_orden',         // Ver qué toca hacer
+            'pausar_orden',              // Si falta muestra o reactivo
+            'reanudar_orden',
+            'finalizar_orden',           // Validación final técnica
+
+            // --- Gestión Técnica (Catálogos) ---
+            'view_any_reactivo', 'view_reactivo', 'create_reactivo', 'update_reactivo',
+            'activar_reactivos', 'gestionar_valores_ref', 'reabastecer_reactivos', 'agotar_reactivos',
+            
+            'view_any_examen', 'view_examen', 'ver_detalle_examenes',
+            'view_any_prueba', 'view_prueba', 'ver_pruebas_conjuntas',
+            'view_any_muestra',
+           // 'view_any_grupo_etario',
+
+            // --- Bitácora (Auditoría) ---
+            // Le damos acceso de lectura para que revise historial de cambios en resultados
+            'view_any_activity::log', 'view_activity::log', 
+        ]);
+        Log::info('Rol Laboratorista configurado.');
+    }
 
 }
 
