@@ -34,6 +34,8 @@ class ExamenResource extends Resource
             ->schema([
                 Forms\Components\Card::make()
                     ->schema([
+                        Forms\Components\Section::make('Información ')
+                            ->schema([
                         Forms\Components\Select::make('tipo_examen_id')
                             ->label('Tipo de Examen')
                             ->relationship('tipoExamen', 'nombre')
@@ -77,6 +79,7 @@ class ExamenResource extends Resource
                     Forms\Components\Toggle::make('estado')
                         ->label('Activo')->required()->default(true)->inline(false),
                 ])->columns(2),
+                ])
             ]);
     }
 
@@ -129,6 +132,12 @@ class ExamenResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('gestionar_muestras')
+        ->label('Catálogo de Muestras')
+        ->url(MuestraResource::getUrl('index')) // <--- Te lleva a la tabla oculta
+        ->color('gray'),
             ])
             ->filters([
                 SelectFilter::make('estado')

@@ -211,6 +211,8 @@ class CreateOrden extends CreateRecord
                         'nombre_perfil' => $nombrePerfil,
                         'precio_perfil' => $precioPerfil,
                     ];
+
+                   
                 });
 
                 foreach ($examenesPerfil as $examenp) {

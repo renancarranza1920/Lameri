@@ -230,83 +230,65 @@
     </footer>
 
     <div class="header">
-        <div class="header-left">
-            <img src="{{ public_path('storage/logo.png') }}" alt="Logo"
-                style="max-width: 90px; vertical-align: middle;">
-
+        <div class="header-left" style="width: 70%; vertical-align: top;">
             <div style="font-weight: bold; font-size: 13px; color: #003366; margin-top: 3px;">
                 LABORATORIO CLÍNICO MERINO
             </div>
-
             <p style="font-size: 9px; margin: 2px 0;">
                 <span style="color:#444;">4ª CALLE ORIENTE #6, B° SAN FRANCISCO, SAN VICENTE.</span>
             </p>
-
             <p style="font-size: 9px; margin: 0; color: #333; line-height: 1.5;">
-
-                <!-- Grupo de Teléfono -->
                 <span style="display: inline-block; vertical-align: middle;">
-                    <!-- CAMBIO: width y height de 10 a 8 -->
                     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjIgMTYuOTJ2M2EyIDIgMCAwIDEtMi4xOCAyIDE5Ljc5IDE5Ljc5IDAgMCAxLTguNjMtMy4wNyAxOS41IDE5LjUgMCAwIDEtNi02IDE5Ljc5IDE5Ljc5IDAgMCAxLTMuMDctOC42M0EyIDIgMCAwIDEgNC4xMSAySDdBMiAyIDAgMCAxIDkgMy4yNmExMi44NCAxMi44NCAwIDAgMCAuNyAyLjgxIDIgMiAwIDAgMS0uNDUgMi4xMUw4LjA5IDkuOTFhMTYgMTYgMCAwIDAgNiA2bDEuMjctMS4yN2EyIDIgMCAwIDEgMi4xMS0uNDUgMTIuODQgMTIuODQgMCAwIDAgMi44MS43QTIgMiAwIDAgMSAyMiAxNi45MnoiPjwvcGF0aD48L3N2Zz4="
                         width="8" height="8" style="vertical-align: middle; margin-right: 3px;" />
                 </span>
-                <span style="display: inline-block; vertical-align: middle; font-weight: bold;">
-                    2606-6596
-                </span>
-
-                <!-- Separador -->
-                <span
-                    style="display: inline-block; vertical-align: middle; margin-left: 8px; margin-right: 8px; color: #888;">
-                    |
-                </span>
-
-                <!-- Grupo de WhatsApp (con icono SVG corregido) -->
+                <a> </a>
+                <span style="display: inline-block; vertical-align: middle; font-weight: bold;">2606-6596</span>
+                <span style="display: inline-block; vertical-align: middle; margin-left: 8px; margin-right: 8px; color: #888;">|</span>
                 <span style="display: inline-block; vertical-align: middle;">
-                    <!-- CAMBIO: width y height de 10 a 8 -->
                     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjEgMTEuNWE4LjM4IDguMzggMCAwIDEtLjkgMy44IDguNSA4LjUgMCAwIDEtNy42IDQuNyA4LjM4IDguMzggMCAwIDEtMy44LS45TDMgMjFsMS45LTUuN2E4LjM4IDguMzggMCAwIDEtLjktMy44IDguNSA4LjUgMCAwIDEgNC43LTcuNiA4LjM4IDguMzggMCAwIDEgMy44LS45aC41YTguNDggOC40OCAwIDAgMSA4IDh2LjV6Ij48L3BhdGg+PC9zdmc+Cg=="
                         width="8" height="8" style="vertical-align: middle; margin-right: 3px;" />
                 </span>
-                <span style="display: inline-block; vertical-align: middle; font-weight: bold;">
-                    WhatsApp: 7595-4210
-                </span>
+                 <a> </a>
+                <span style="display: inline-block; vertical-align: middle; font-weight: bold;">WhatsApp: 7595-4210</span>
             </p>
         </div>
+        <div class="header-right" style="width: 30%; text-align: right;">
+            <img src="{{ public_path('storage/logo.png') }}" alt="Logo" style="max-width: 90px; vertical-align: middle;">
+        </div>
+    </div>
 
-        <div class="header-right">
-            <div class="patient-info">
-                <table>
-                    <tr>
-                        <td width="35%"><strong>PACIENTE:</strong></td>
-                        <td width="65%">{{ $orden->cliente->nombre }} {{ $orden->cliente->apellido }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>EDAD:</strong></td>
-                        <td>{{ \Carbon\Carbon::parse($orden->cliente->fecha_nacimiento)->age }} AÑOS</td>
-                    </tr>
-                    <tr>
-                        <td><strong>GÉNERO:</strong></td>
-                        <td>{{ $orden->cliente->genero ?? 'No especificado' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>NRO. ORDEN:</strong></td>
-                        <td>{{ $orden->id }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>FECHA DE REPORTE:</strong></td>
-                        <td>{{ now()->format('d/m/Y') }}</td>
-                    </tr>
-                </table>
-                <!-- --- ¡NUEVA SECCIÓN DE OBSERVACIONES! --- -->
-    @if (!empty($orden->observaciones))
-        <div class="observaciones-box">
-            <strong>Observaciones de la Orden:</strong>
-            {{-- Usamos nl2br(e(...)) para respetar los saltos de línea y evitar ataques XSS --}}
-            <p style="margin: 0; padding: 0;">{!! nl2br(e($orden->observaciones)) !!}</p>
-        </div>
-    @endif
-    <!-- --- FIN DE OBSERVACIONES --- -->
+    <!-- Nueva ubicación para la información del cliente -->
+    <div style="margin-top: 5px; padding: 5px; font-size: 9px;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="width: 35%; font-weight: bold; color: #1E73BE; padding: 2px;">Nombre del Paciente:</td>
+                <td style="width: 65%; border-bottom: 1px solid #ccc; padding: 2px;">{{ $orden->cliente->nombre }} {{ $orden->cliente->apellido }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; color: #1E73BE; padding: 2px;">Edad:</td>
+                <td style="border-bottom: 1px solid #ccc; padding: 2px;">{{ \Carbon\Carbon::parse($orden->cliente->fecha_nacimiento)->age }} años</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; color: #1E73BE; padding: 2px;">Género:</td>
+                <td style="border-bottom: 1px solid #ccc; padding: 2px;">{{ $orden->cliente->genero ?? 'No especificado' }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; color: #1E73BE; padding: 2px;">Número de Orden:</td>
+                <td style="border-bottom: 1px solid #ccc; padding: 2px;">{{ $orden->id }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; color: #1E73BE; padding: 2px;">Fecha de Reporte:</td>
+                <td style="border-bottom: 1px solid #ccc; padding: 2px;">{{ now()->format('d/m/Y') }}</td>
+            </tr>
+        </table>
+
+        @if (!empty($orden->observaciones))
+            <div class="observaciones-box" style="margin-top: 10px;">
+                <strong style="color: #1E73BE;">Observaciones:</strong>
+                <p style="margin: 0; padding: 0; color: #333;">{!! nl2br(e($orden->observaciones)) !!}</p>
             </div>
-        </div>
+        @endif
     </div>
 
 

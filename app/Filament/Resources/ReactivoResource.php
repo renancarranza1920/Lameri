@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Card;
+use Filament\Forms\Components\Section;
 use Filament\Notifications\Notification;
 use Livewire\Component as Livewire;
 // ... otras declaraciones 'use'
@@ -38,6 +39,8 @@ class ReactivoResource extends Resource
             ->schema([
                 Card::make()
                     ->schema([
+                        Section::make('Información del Reactivo')
+                            ->schema([
                         Select::make('prueba_id')->relationship('prueba', 'nombre')->required()->searchable()->preload(),
                         TextInput::make('nombre')->required()->maxLength(255),
                         TextInput::make('lote'),
@@ -46,6 +49,7 @@ class ReactivoResource extends Resource
                         Forms\Components\Toggle::make('en_uso')->default(false)->label('¿En Uso?')->helperText('Solo un reactivo por prueba puede estar en uso. Al activar este, cualquier otro reactivo para la misma prueba será desactivado.'),
                         Textarea::make('descripcion')->columnSpanFull(),
                     ])->columns(2)
+                    ]),
             ]);
     }
 

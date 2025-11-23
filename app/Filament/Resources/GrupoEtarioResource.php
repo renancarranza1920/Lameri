@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\GrupoEtarioResource\Pages;
 use App\Models\GrupoEtario;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -29,6 +30,8 @@ protected static ?int $navigationSort = 2;
             ->schema([
                 Forms\Components\Card::make()
                     ->schema([
+                        Section::make('Detalles del Grupo Etario')
+                            ->schema([
                         Forms\Components\TextInput::make('nombre')
                             ->required()
                             ->maxLength(255)
@@ -66,6 +69,7 @@ protected static ?int $navigationSort = 2;
                                     ->required(),
                             ]),
                             
+                            ])->columns(2),
                     ])->columns(1), // El Card tiene 1 columna principal
             ]);
     }

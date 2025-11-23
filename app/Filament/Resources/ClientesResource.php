@@ -100,48 +100,39 @@ class ClientesResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->recordUrl(null)
+            ->recordTitleAttribute('nombre')
             ->columns([
                 Tables\Columns\TextColumn::make('NumeroExp')
-                    ->label('Expediente')
-                    ->sortable()
-                    ->searchable(),
+                    ->label('No. Expediente')
+                    ->weight('bold')
+                    ->copyable()
+                    ->sortable(), // Mantenemos sortable pero quitamos searchable
 
                 Tables\Columns\TextColumn::make('nombre_completo')
-                    ->label('Nombre')
-                    ->getStateUsing(fn($record) => $record->nombre . ' ' . $record->apellido)
-                    ->sortable(['nombre', 'apellido'])
-                    ->searchable(['nombre', 'apellido']),
+                    ->label('Paciente')
+                    ->getStateUsing(fn (Cliente $record) => $record->nombre . ' ' . $record->apellido)
+                    ->sortable(['nombre']),
 
                 Tables\Columns\TextColumn::make('fecha_nacimiento')
                     ->label('Edad')
-                    ->getStateUsing(fn($record) => $record->fecha_nacimiento ? \Carbon\Carbon::parse($record->fecha_nacimiento)->age : '-')
-                    ->sortable()
-                    ->formatStateUsing(fn($state) => $state . ' años'),
+                    ->date('d/m/Y')
+                    ->description(fn (Cliente $record) => \Carbon\Carbon::parse($record->fecha_nacimiento)->age . ' años'),
 
                 Tables\Columns\TextColumn::make('telefono')
                     ->label('Teléfono')
-                    ->getStateUsing(fn($record) => $record->telefono ?? '-')
-                    ->sortable()
-                    ->searchable(),
+                    ->icon('heroicon-m-phone'),
 
                 Tables\Columns\TextColumn::make('correo')
                     ->label('Correo')
-                    ->getStateUsing(fn($record) => $record->correo ?? '-')
-                    ->sortable()
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('direccion')
-                    ->label('Dirección')
-                    ->getStateUsing(fn($record) => $record->direccion ?? '-')
-                    ->sortable()
-                    ->searchable(),
-
+                    ->toggleable(isToggledHiddenByDefault: true),
+                
                 Tables\Columns\TextColumn::make('estado')
-                    ->label('Estado')
-                    ->formatStateUsing(fn($state) => $state ? '✅ Activo' : '❌ Inactivo')
                     ->badge()
-                    ->color(fn($state) => $state ? 'success' : 'danger'),
+                    ->color(fn (string $state): string => match ($state) {
+                        'Activo' => 'success',
+                        'Inactivo' => 'danger',
+                        default => 'gray',
+                    }),
             ])
             ->filters([
                 SelectFilter::make('estado')

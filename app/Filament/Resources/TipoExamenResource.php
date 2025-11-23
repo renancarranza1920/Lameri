@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TipoExamenResource\Pages;
 use App\Models\TipoExamen;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -32,8 +33,10 @@ protected static ?int $navigationSort = 1;
             ->schema([
                 Forms\Components\Card::make()
                     ->schema([
+                        Section::make('Información General')
+                            ->schema([
                         Forms\Components\TextInput::make('nombre')
-                            ->label('Nombre del Tipo de Examen')
+                            ->label('Nombre')
                             ->placeholder('Ej: Hematología, Microbiología...')
                             ->required()
                             ->reactive()
@@ -46,6 +49,7 @@ protected static ?int $navigationSort = 1;
                             ->default(true)
                             ->inline(false),
                     ])
+                    ])->columns(2),
             ]);
     }
 
