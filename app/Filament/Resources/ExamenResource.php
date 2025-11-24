@@ -15,6 +15,7 @@ use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Support\HtmlString;
 
 class ExamenResource extends Resource
 {
@@ -225,17 +226,50 @@ class ExamenResource extends Resource
                     ->icon(fn($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                     ->color(fn($record) => $record->estado ? 'danger' : 'success')
                     ->tooltip(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
+
                     ->requiresConfirmation()
-                    ->visible(fn () => auth()->user()->can('cambiar_estado_examenes'))
+
+                    // 1. Encabezado del modal dinámico
+                    ->modalHeading(fn($record) => $record->estado ? '¿Desactivar Examen?' : '¿Activar Examen?')
+
+                    // 2. Descripción dinámica con formato de lista
+                    ->modalDescription(function (Examen $record) {
+    if ($record->estado) {
+        $perfiles = $record->perfiles;
+
+        if ($perfiles->isNotEmpty()) {
+
+            // Construcción de lista alineada a la izquierda con guiones
+            $listaHtml = '<div style="text-align: center;">';
+            foreach ($perfiles as $perfil) {
+                $listaHtml .= '• ' . e($perfil->nombre) . '<br>';
+            }
+            $listaHtml .= '</div>';
+
+            return new HtmlString(
+                "Este examen pertenece a estos perfiles:<br>" .
+                $listaHtml .
+                "<br>¿Está seguro de dar de baja al examen?" .
+                "<br>Si continúa, el examen se desactivará pero permanecerá en los perfiles y el precio no cambiará." 
+            );
+        }
+    }
+
+    return '¿Estás seguro de que deseas cambiar el estado de este examen?';
+})
+
+
+
                     ->action(function ($record) {
+                        // LÓGICA ACTUALIZADA: Permitimos el cambio tras confirmación
                         $record->estado = !$record->estado;
                         $record->save();
+
                         Notification::make()
                             ->title($record->estado ? 'Examen activado' : 'Examen desactivado')
                             ->success()
                             ->send();
                     })
-                    ->requiresConfirmation()
                     ->iconButton()
             ])
             ->bulkActions([
@@ -245,7 +279,7 @@ class ExamenResource extends Resource
             ]);
     }
 
-     public static function getRelations(): array
+    public static function getRelations(): array
     {
         return [
             PruebasRelationManager::class,
