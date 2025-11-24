@@ -25,7 +25,11 @@
                 @if (!empty($perfilesSeleccionados))
                     @foreach ($perfilesSeleccionados as $item)
                         @php
-                            $perfil = \App\Models\Perfil::with('examenes')->find($item['perfil_id']);
+                            // --- CAMBIO AQUÍ: Filtramos solo exámenes activos ---
+                            $perfil = \App\Models\Perfil::with(['examenes' => function ($query) {
+                                $query->where('estado', 1);
+                            }])->find($item['perfil_id']);
+                            
                             if (!$perfil) continue;
                             $precioPerfil = floatval($item['precio_hidden'] ?? $perfil->precio);
                             $total += $precioPerfil;
@@ -41,6 +45,7 @@
                 @if (!empty($examenesSeleccionados))
                     @foreach ($examenesSeleccionados as $item)
                         @php
+                            // Opcional: También podrías filtrar aquí si quisieras ocultar exámenes sueltos inactivos
                             $examen = \App\Models\Examen::find($item['examen_id']);
                             if (!$examen) continue;
                             $precioExamen = floatval($item['precio_hidden'] ?? $examen->precio);

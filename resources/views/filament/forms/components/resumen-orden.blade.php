@@ -48,7 +48,12 @@
                 @if (!empty($perfilesSeleccionados))
                     @foreach ($perfilesSeleccionados as $item)
                         @php
-                            $perfil = \App\Models\Perfil::with('examenes')->find($item['perfil_id']);
+                            // --- AQUÍ ESTÁ EL CAMBIO PARA LO VISUAL ---
+                            // Filtramos la relación 'examenes' para traer solo los activos (estado = 1)
+                            $perfil = \App\Models\Perfil::with(['examenes' => function ($query) {
+                                $query->where('estado', 1);
+                            }])->find($item['perfil_id']);
+
                             if (!$perfil) continue;
 
                             $precioPerfil = floatval($item['precio_hidden'] ?? $perfil->precio);
@@ -62,6 +67,7 @@
                             </td>
                         </tr>
 
+                        {{-- Ahora este loop solo mostrará los exámenes activos --}}
                         @foreach ($perfil->examenes as $examen)
                             <tr class="text-sm text-gray-600 dark:text-gray-600">
                                 <td class="pt-0 pb-2 pl-6 pr-4">- {{ $examen->nombre }}</td>

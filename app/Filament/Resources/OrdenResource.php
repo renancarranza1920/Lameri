@@ -239,7 +239,8 @@ class OrdenResource extends Resource
                                         ->schema([
                                             Select::make('examen_id')
                                                 ->label('Buscar Examen')
-                                                ->options(\App\Models\Examen::pluck('nombre', 'id')->toArray())
+                                                ->options(\App\Models\Examen::where('estado', 1)
+                                                ->pluck('nombre', 'id')->toArray())
                                                 ->searchable()
                                                 ->preload()
                                                 ->reactive()
