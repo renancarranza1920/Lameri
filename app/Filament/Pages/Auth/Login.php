@@ -76,6 +76,41 @@ class Login extends SimplePage
         ]);
     }
 
+    /**
+     * Fallback notification to show when rate limiter blocks requests.
+     *
+     * Algunos paquetes de rate limiting no inyectan este helper en la
+     * página de Login; añadimos una implementación aquí para evitar el
+     * error "method does not exist" y proporcionar una notificación útil.
+     *
+     * @param  \DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException  $exception
+     * @return \Filament\Notifications\Notification|null
+     */
+    protected function getRateLimitedNotification(TooManyRequestsException $exception): ?Notification
+    {
+        $seconds = null;
+
+        if (property_exists($exception, 'secondsUntilAvailable')) {
+            $seconds = $exception->secondsUntilAvailable;
+        } elseif (method_exists($exception, 'availableAt')) {
+            try {
+                $availableAt = $exception->availableAt();
+                if ($availableAt instanceof \DateTimeInterface) {
+                    $seconds = max(0, $availableAt->getTimestamp() - time());
+                }
+            } catch (\Throwable $e) {
+                $seconds = null;
+            }
+        }
+
+        $body = $seconds ? "Demasiados intentos. Intenta de nuevo en {$seconds} segundos." : 'Demasiados intentos. Intenta de nuevo más tarde.';
+
+        return Notification::make()
+            ->title('Demasiados intentos')
+            ->danger()
+            ->body($body);
+    }
+
     public function form(Form $form): Form
     {
         return $form;
