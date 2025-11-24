@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\MuestraResource\Pages;
+use App\Filament\Resources\ExamenResource;
 use App\Models\Muestra;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -13,7 +14,7 @@ use Filament\Tables\Table;
 class MuestraResource extends Resource
 {
     protected static ?string $model = Muestra::class;
-    
+
     // Esta línea oculta el resource del menú de navegación.
     protected static bool $shouldRegisterNavigation = false;
 
@@ -23,7 +24,7 @@ class MuestraResource extends Resource
     protected static ?string $modelLabel = 'Muestra Biológica';
     protected static ?string $navigationGroup = 'Catálogos y Ajustes';
     // Si tienes shouldRegisterNavigation = true
-protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
@@ -44,6 +45,14 @@ protected static ?int $navigationSort = 4;
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')->searchable()->sortable(),
             ])
+            ->headerActions([
+                Tables\Actions\Action::make('gestionar_examenes')
+                    ->label('Volver a Exámenes')
+                    // Usamos ExamenResource::getUrl('index') para la redirección
+                    ->url(ExamenResource::getUrl('index'))
+                    ->icon('heroicon-o-arrow-left') // Icono de vuelta
+                    ->color('gray'),
+            ])
             ->filters([
                 //
             ])
@@ -54,7 +63,7 @@ protected static ?int $navigationSort = 4;
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
-    
+
     public static function getPages(): array
     {
         return [
