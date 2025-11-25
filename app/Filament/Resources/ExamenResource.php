@@ -340,9 +340,7 @@ class ExamenResource extends Resource
                     ->iconButton()
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                
             ]);
     }
 

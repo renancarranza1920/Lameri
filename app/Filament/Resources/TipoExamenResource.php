@@ -119,9 +119,7 @@ protected static ?int $navigationSort = 1;
                     ->iconButton(),             
                 ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                
             ]);
     }
 

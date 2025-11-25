@@ -132,7 +132,29 @@ class PerfilResource extends Resource
                 Tables\Actions\Action::make('toggleEstado')
                     ->label(fn ($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                     ->icon(fn ($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
-                    ->color(fn ($record) => $record->estado ? 'danger' : 'success')
+                    
+                    // --- LÓGICA DE COLOR (SEMÁFORO) ---
+                    ->color(function ($record) {
+                        // Si está activo (true), la acción es "Dar de baja" -> Rojo
+                        if ($record->estado) {
+                            return 'danger';
+                        }
+                        
+                        // Si está inactivo (false), la acción es "Dar de alta".
+                        // Verificamos si cumple la regla.
+                        $examenesActivos = $record->examenes()
+                            ->where('estado', 1)
+                            ->count();
+                        
+                        // Si tiene menos de 2 -> Amarillo (Advertencia)
+                        if ($examenesActivos < 2) {
+                            return 'warning';
+                        }
+                        
+                        // Si tiene 2 o más -> Verde (Todo bien)
+                        return 'success';
+                    })
+
                     ->visible(fn () => auth()->user()->can('cambiar_estado_perfiles'))
                     ->tooltip(fn ($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
                     ->requiresConfirmation()
@@ -150,7 +172,7 @@ class PerfilResource extends Resource
                                 return "¿Está seguro de que desea dar de alta este perfil?";
                             }
                             
-                            // Si NO cumple (menos de 2), mostramos la advertencia de la regla
+                            // Si NO cumple (menos de 2), mostramos la advertencia SIN pregunta
                             return "Para activar este perfil, debe contener al menos 2 exámenes activos. Actualmente tiene {$examenesActivos}.";
                         }
                         return "¿Está seguro de que desea dar de baja este perfil?";
@@ -169,8 +191,8 @@ class PerfilResource extends Resource
                                 Notification::make()
                                     ->title('No se puede activar el perfil')
                                     ->body("Este perfil solo cuenta con {$examenesActivos} examen(es) activo(s). Se requieren mínimo 2 exámenes activos para darlo de alta.")
-                                    ->danger() // Rojo para indicar error
-                                    ->duration(10000) // Que dure un poco más para que lean
+                                    ->warning() // Alerta Amarilla
+                                    ->duration(10000) 
                                     ->send();
                                 
                                 return; // DETENEMOS LA EJECUCIÓN, no se guarda el cambio
@@ -190,7 +212,7 @@ class PerfilResource extends Resource
                     ->iconButton(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+               
             ]);
     }
 
