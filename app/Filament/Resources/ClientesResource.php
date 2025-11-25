@@ -215,9 +215,7 @@ class ClientesResource extends Resource
                     ->url(fn (Cliente $record): string => ClientesResource::getUrl('expediente', ['record' => $record->id])),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                
             ]);
     }
 
