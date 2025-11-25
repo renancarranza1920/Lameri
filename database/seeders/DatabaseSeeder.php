@@ -12,9 +12,8 @@ use App\Models\Examen;
 use App\Models\User;
 use App\Models\cliente;
 use App\Models\Muestra;
-use App\Models\Perfil; // <-- import the Perfil model
+use App\Models\Perfil;
 use App\Models\DetallePerfil;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Hash;
 use Illuminate\Database\Seeder;
 use Log;
@@ -301,7 +300,7 @@ class DatabaseSeeder extends Seeder
             ['nombre' => 'Antiestreptolisina O (ASO)', 'precio' => 10, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Antígenos Febriles', 'precio' => 10, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'AntimioticondrialesIgG', 'precio' => 60, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Anti-cardiolipinasLgM', 'precio' => 60, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Anti-cardiolipinasIgM', 'precio' => 60, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Antinucleares Ac (ANA)', 'precio' => 40, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Dengue IgG/IgM+Ag(DUO)', 'precio' => 25, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Factor reumatoideo (latex RA)', 'precio' => 10, 'recipiente' => 'quimica_sanguinea'],
@@ -551,13 +550,18 @@ class DatabaseSeeder extends Seeder
 
         // Insertar muestras
         $muestras = [
+            ['nombre' => 'Baciloscopia', 'descripcion' => null, 'instrucciones_paciente' => null],
             ['nombre' => 'Cabello', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Cultivo de Esputo', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Cultivo de Liquido Cefalorraquideo', 'descripcion' => null, 'instrucciones_paciente' => null],
             ['nombre' => 'Flema', 'descripcion' => null, 'instrucciones_paciente' => null],
             ['nombre' => 'Heces', 'descripcion' => null, 'instrucciones_paciente' => null],
             ['nombre' => 'Hisopado Anal', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Hisopado Faringeo', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Hisopado Bucal', 'descripcion' => null, 'instrucciones_paciente' => null],
             ['nombre' => 'Hisopado de Heridas', 'descripcion' => null, 'instrucciones_paciente' => null],
             ['nombre' => 'Hisopado de Oido', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Hisopado Faringeo', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Hisopado Ocular', 'descripcion' => null, 'instrucciones_paciente' => null],
             ['nombre' => 'Orina', 'descripcion' => null, 'instrucciones_paciente' => null],
             ['nombre' => 'Plasma', 'descripcion' => null, 'instrucciones_paciente' => null],
             ['nombre' => 'Sangre Completa', 'descripcion' => null, 'instrucciones_paciente' => null],
@@ -568,6 +572,7 @@ class DatabaseSeeder extends Seeder
             ['nombre' => 'Semen', 'descripcion' => null, 'instrucciones_paciente' => null],
             ['nombre' => 'Suero', 'descripcion' => null, 'instrucciones_paciente' => null],
             ['nombre' => 'Uñas', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Hisopado Nasal', 'descripcion' => null, 'instrucciones_paciente' => null]
         ];
 
         foreach ($muestras as $muestra) {
@@ -582,8 +587,170 @@ class DatabaseSeeder extends Seeder
 
         Log::info('Muestras insertadas correctamente.');
 
+        // Bactereología - Relación Examen-Muestra
+        $relacionesMuestras = [
+            1 => [5],
+            2 => [16, 17, 18, 19, 12],
+            3 => [6],
+            4 => [22, 2],
+            5 => [19, 7, 16, 17, 18, 23, 9],
+            6 => [22, 2],
+            7 => [13]
+        ];
 
+        foreach ($relacionesMuestras as $examen_id => $muestra_ids) {
+            $examen = Examen::find($examen_id);
+            if ($examen) {
+                // Sincronizar las muestras con el examen
+                $examen->muestras()->sync($muestra_ids, false);
+                Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
+            }
+        }
 
+        // Coagulacion - Relación Examen-Muestra
+        $relacionesMuestrasCoagulacion = [
+            8 => [14],
+            9 => [15],
+            10 => [15],
+            11 => [15],
+            12 => [14],
+            13 => [14],
+            14 => [14]
+        ];
+        foreach ($relacionesMuestrasCoagulacion as $examen_id => $muestra_ids) {
+            $examen = Examen::find($examen_id);
+            if ($examen) {
+                // Sincronizar las muestras con el examen
+                $examen->muestras()->sync($muestra_ids, false);
+                Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
+            }
+        }
+        
+        // Coprologia - Relación Examen-Muestra
+        $relacionesMuestrasCoprologia = [
+            15 => [6],
+            16 => [6],
+            17 => [6],
+            18 => [6],
+            19 => [6]
+        ];
+        foreach ($relacionesMuestrasCoprologia as $examen_id => $muestra_ids) {
+            $examen = Examen::find($examen_id);
+            if ($examen) {
+                // Sincronizar las muestras con el examen
+                $examen->muestras()->sync($muestra_ids, false);
+                Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
+            }
+        }
+
+        // Electrolitos - Relación Examen-Muestra
+        $relacionesMuestrasElectrolitos = [
+            20 => [21],
+            21 => [21],
+            22 => [21],
+            23 => [21],
+            24 => [21],
+            25 => [21]
+        ];
+        foreach ($relacionesMuestrasElectrolitos as $examen_id => $muestra_ids) {
+            $examen = Examen::find($examen_id);
+            if ($examen) {
+                // Sincronizar las muestras con el examen
+                $examen->muestras()->sync($muestra_ids, false);
+                Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
+            }
+        }
+        
+        
+        // Endocrinologia - Relación Examen-Muestra
+        $relacionesMuestrasEndocrinologia = [
+            26 => [21],
+            27 => [21],
+            28 => [21],
+            29 => [21],
+            30 => [21],
+            31 => [21],
+            32 => [21],
+            33 => [21],
+            34 => [21],
+            35 => [21],
+            36 => [21],
+            37 => [21],
+            38 => [21],
+            39 => [21],
+            40 => [21],
+            41 => [21]
+        ];
+        foreach ($relacionesMuestrasEndocrinologia as $examen_id => $muestra_ids) {
+            $examen = Examen::find($examen_id);
+            if ($examen) {
+                // Sincronizar las muestras con el examen
+                $examen->muestras()->sync($muestra_ids, false);
+                Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
+            }
+        }
+
+        // Hematologia - Relación Examen-Muestra
+        $relacionesMuestrasHematologia = [
+            42 => [15],
+            43 => [15],
+            44 => [15,23],
+            45 => [15],
+            46 => [15],
+            47 => [15],
+            48 => [15],
+            49 => [15],
+            50 => [15],
+            51 => [15],
+            52 => [15]
+        ];
+        foreach ($relacionesMuestrasHematologia as $examen_id => $muestra_ids) {
+            $examen = Examen::find($examen_id);
+            if ($examen) {
+                // Sincronizar las muestras con el examen
+                $examen->muestras()->sync($muestra_ids, false);
+                Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
+            }
+        }
+
+        //Immunologia - Relación Examen-Muestra
+        $relacionesMuestrasImmunologia = [
+            53 => [21],
+            54 => [21],
+            55 => [21],
+            56 => [23],
+            57 => [21],
+            58 => [21],
+            59 => [21],
+            60 => [21],
+            61 => [21],
+            62 => [21],
+            63 => [21],
+            64 => [21],
+            65 => [21],
+            66 => [21],
+            67 => [21],
+            68 => [21],
+            69 => [21],
+            70 => [21],
+            71 => [21],
+            72 => [21],
+            73 => [21],
+            74 => [21],
+            75 => [21],
+            76 => [21],
+            77 => [21],
+            78 => [21],
+            79 => [21]
+        ];
+        foreach ($relacionesMuestrasImmunologia as $examen_id => $muestra_ids) {
+            $examen = Examen::find($examen_id);
+            if ($examen) {
+                // Sincronizar las muestras con el examen
+                $examen->muestras()->sync($muestra_ids, false);
+                Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
+            }
+        }
 
         //grupos etarios
         DB::table('grupos_etarios')->insert([
