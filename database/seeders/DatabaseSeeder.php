@@ -11,6 +11,9 @@ use App\Models\TipoExamen;
 use App\Models\Examen;
 use App\Models\User;
 use App\Models\cliente;
+use App\Models\Muestra;
+use App\Models\Perfil; // <-- import the Perfil model
+use App\Models\DetallePerfil;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Hash;
 use Illuminate\Database\Seeder;
@@ -24,7 +27,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-             Log::info('Iniciando el seeder...');
+        Log::info('Iniciando el seeder...');
 
         // Crear usuario administrador
         $admin = User::factory()->create([
@@ -55,22 +58,22 @@ class DatabaseSeeder extends Seeder
         $admin->assignRole($adminRole);
 
         Log::info('Rol y permisos asignados al usuario administrador.');
-    
 
-    
+
+
         cliente::insert([
             [
-            'NumeroExp' => 'EA25001',
-            'nombre' => 'Erick Eduardo',
-            'apellido' => 'Alonzo Dominguez',
-            'fecha_nacimiento' => '1995-05-15',
-            'genero' => 'Masculino',
-            'telefono' => '12345678',
-            'correo' => 'ad18017@ues.edu.sv',
-            'direccion' => 'Calle Falsa 123',
-            'estado' => 'Activo',
-            'created_at' => now(),
-            'updated_at' => now(),
+                'NumeroExp' => 'EA25001',
+                'nombre' => 'Erick Eduardo',
+                'apellido' => 'Alonzo Dominguez',
+                'fecha_nacimiento' => '1995-05-15',
+                'genero' => 'Masculino',
+                'telefono' => '12345678',
+                'correo' => 'ad18017@ues.edu.sv',
+                'direccion' => 'Calle Falsa 123',
+                'estado' => 'Activo',
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'NumeroExp' => 'RC25001',
@@ -141,7 +144,7 @@ class DatabaseSeeder extends Seeder
         // Insertar exámenes de Bacteriología (ordenados alfabéticamente)
         $examenes = [
             ['nombre' => 'Baciloscopia-BAAR', 'precio' => 10, 'recipiente' => 'uroanalisis'],
-            ['nombre' => 'Coloración de Gram', 'precio' => 10,'recipiente' => 'uroanalisis'],
+            ['nombre' => 'Coloración de Gram', 'precio' => 10, 'recipiente' => 'uroanalisis'],
             ['nombre' => 'Coprocultivo', 'precio' => 12, 'recipiente' => 'coprologia'],
             ['nombre' => 'Cultivo de hongos', 'precio' => 20, 'recipiente' => 'cultivo_secreciones'],
             ['nombre' => 'Cultivo de secreciones', 'precio' => 15, 'recipiente' => 'coprologia'],
@@ -166,8 +169,8 @@ class DatabaseSeeder extends Seeder
         $examenes = [
             ['nombre' => 'Fibrinógeno', 'precio' => 15, 'recipiente' => 'cuagulacion'],
             ['nombre' => 'Retracción de coagulo', 'precio' => 20, 'recipiente' => 'cuagulacion'],
-            ['nombre' => 'Tempo de coagulación', 'precio' => 6, 'recipiente' => 'cuagulacion'],
-            ['nombre' => 'Tempo de sangramiento', 'precio' => 6, 'recipiente' => 'cuagulacion'],
+            ['nombre' => 'Tiempo de coagulación', 'precio' => 10, 'recipiente' => 'cuagulacion'],
+            ['nombre' => 'Tiempo de sangramiento', 'precio' => 10, 'recipiente' => 'cuagulacion'],
             ['nombre' => 'Tiempo de tromb. parcial Act.', 'precio' => 12, 'recipiente' => 'cuagulacion'],
             ['nombre' => 'Tiempo de trombina', 'precio' => 12, 'recipiente' => 'cuagulacion'],
             ['nombre' => 'Tiempo y valor de protrombina', 'precio' => 10, 'recipiente' => 'cuagulacion'],
@@ -191,17 +194,17 @@ class DatabaseSeeder extends Seeder
             ['nombre' => 'Azul de metileno', 'precio' => 10, 'recipiente' => 'coprologia'],
             ['nombre' => 'General de heces', 'precio' => 2, 'recipiente' => 'coprologia'],
             ['nombre' => 'Helicobacter Pylori-Ag', 'precio' => 15, 'recipiente' => 'coprologia'],
-            ['nombre' => 'Sangre oculta', 'precio' => 10, 'recipiente' => 'coprologia'],
+            ['nombre' => 'Sangre oculta', 'precio' => 15, 'recipiente' => 'coprologia'],
             ['nombre' => 'Sustancia Reductora', 'precio' => 20, 'recipiente' => 'coprologia'],
         ];
 
         foreach ($examenes as $examen) {
             Examen::firstOrCreate([
-            'nombre' => $examen['nombre'],
-            'tipo_examen_id' => $tipo->id,
-            'precio' => $examen['precio'],
-            'recipiente' => $examen['recipiente'],
-            'estado' => true
+                'nombre' => $examen['nombre'],
+                'tipo_examen_id' => $tipo->id,
+                'precio' => $examen['precio'],
+                'recipiente' => $examen['recipiente'],
+                'estado' => true
             ]);
         }
 
@@ -234,19 +237,19 @@ class DatabaseSeeder extends Seeder
         // Insertar exámenes de Endocrinología
         $examenes = [
             ['nombre' => 'B-hcG-Cuant', 'precio' => 35, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Cortisol', 'precio' => 30, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Cortisol', 'precio' => 35, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'FSH', 'precio' => 35, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Hormona de crecimiento', 'precio' => 50, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Hormona paratiroidea PHT', 'precio' => 50, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Insulina', 'precio' => 35, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Insulina post-prandial', 'precio' => 35, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'LH', 'precio' => 15, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Progesterona', 'precio' => 30, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'LH', 'precio' => 35, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Progesterona', 'precio' => 50, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Prolactina', 'precio' => 35, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'T3 libre', 'precio' => 12, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'T3 total', 'precio' => 10, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'T4 libre', 'precio' => 12, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'T4 total', 'precio' => 10, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'T3 libre', 'precio' => 15, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'T3 total', 'precio' => 12, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'T4 libre', 'precio' => 15, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'T4 total', 'precio' => 12, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Testosterona', 'precio' => 35, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'TSH 3ra Generacion', 'precio' => 15, 'recipiente' => 'quimica_sanguinea'],
         ];
@@ -270,10 +273,10 @@ class DatabaseSeeder extends Seeder
             ['nombre' => 'Concentrado straut (T.cruzi)', 'precio' => 15, 'recipiente' => 'hematologia'],
             ['nombre' => 'Eosinófilos sangre nasales', 'precio' => 10, 'recipiente' => 'hematologia'],
             ['nombre' => 'Eritrosedimentación', 'precio' => 6, 'recipiente' => 'hematologia'],
-            ['nombre' => 'Fotis de sangre periférica', 'precio' => 10, 'recipiente' => 'hematologia'],
+            ['nombre' => 'Frotis de sangre periférica', 'precio' => 10, 'recipiente' => 'hematologia'],
             ['nombre' => 'Hb y Ht', 'precio' => 5, 'recipiente' => 'hematologia'],
             ['nombre' => 'Hemograma', 'precio' => 5, 'recipiente' => 'hematologia'],
-            ['nombre' => 'Leucograma', 'precio' => 6, 'recipiente' => 'hematologia'],
+            ['nombre' => 'Leucograma', 'precio' => 5, 'recipiente' => 'hematologia'],
             ['nombre' => 'Plasmodium (gota gruesa)', 'precio' => 15, 'recipiente' => 'hematologia'],
             ['nombre' => 'Plaquetas', 'precio' => 5, 'recipiente' => 'hematologia'],
             ['nombre' => 'Reticulocitos', 'precio' => 10, 'recipiente' => 'hematologia'],
@@ -298,19 +301,19 @@ class DatabaseSeeder extends Seeder
             ['nombre' => 'Antiestreptolisina O (ASO)', 'precio' => 10, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Antígenos Febriles', 'precio' => 10, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'AntimioticondrialesIgG', 'precio' => 60, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Anti-cardiolipinasLgM', 'precio' => 45, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Anti-cardiolipinasLgM', 'precio' => 60, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Antinucleares Ac (ANA)', 'precio' => 40, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Dengue IgG/IgM+Ag(DUO)', 'precio' => 25, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Factor reumatoideo (latex RA)', 'precio' => 10, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'FTA - ABS (treponema)', 'precio' => 130, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Helicobacter Pylori Ac. IgG', 'precio' => 15, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Hepatitis A Ac. IgM', 'precio' => 40, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Hepatitis B Ag. de superficie', 'precio' => 25, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Hepatitis C Ac', 'precio' => 25, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Hepatitis B Ag. de superficie', 'precio' => 40, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Hepatitis C Ac', 'precio' => 40, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'IgE total', 'precio' => 35, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'InmunoglobulinasIgA (microsomal)', 'precio' => 30, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'InmunoglobulinasIgG (microsomal)', 'precio' => 30, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'InmunoglobulinasIgM (microsomal)', 'precio' => 30, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'InmunoglobulinasIgA (microsomal)', 'precio' => 35, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'InmunoglobulinasIgG (microsomal)', 'precio' => 35, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'InmunoglobulinasIgM (microsomal)', 'precio' => 35, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Monotest', 'precio' => 25, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Prueba de embarazo sangre', 'precio' => 7, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Proteína C reactiva', 'precio' => 10, 'recipiente' => 'quimica_sanguinea'],
@@ -359,18 +362,18 @@ class DatabaseSeeder extends Seeder
             ['nombre' => 'Acido Úrico', 'precio' => 4, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Albumina', 'precio' => 8, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Amilasa', 'precio' => 12, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Bilirrubina Total y Directa', 'precio' => 12, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Bilirrubina Total', 'precio' => 6, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Bilirrubina Directa', 'precio' => 6, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Colesterol Alta Densidad - HDL', 'precio' => 6, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Colesterol Baja Densidad - LDL', 'precio' => 6, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Colesterol total', 'precio' => 4, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Creatin Fosfokinasa (CPK)', 'precio' => 15, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Creatin Fosfokinasa (PKMB)', 'precio' => 20, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Creatin Fosfokinasa (CPKMB)', 'precio' => 20, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Creatinina', 'precio' => 4, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Deshidrogenasa', 'precio' => 15, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Deshidrogenasa Lactida (LDH)', 'precio' => 15, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Ferritina', 'precio' => 30, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Fosfatasa Acida', 'precio' => 12, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Fosfatasa Alcalina', 'precio' => 8, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Fracción MB', 'precio' => 20, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Gamma Glutamil (GCT)', 'precio' => 15, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Glucosa', 'precio' => 3, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Glucosa Post Prandial', 'precio' => 3, 'recipiente' => 'quimica_sanguinea'],
@@ -380,13 +383,13 @@ class DatabaseSeeder extends Seeder
             ['nombre' => 'Hemoglobina Glicosilada AIC', 'precio' => 15, 'recipiente' => 'hematologia'],
             ['nombre' => 'Hierro Capacidad de Fijación', 'precio' => 20, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Hierro Sérico', 'precio' => 10, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Láctida-LDH', 'precio' => 15, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Lipasa', 'precio' => 20, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Nitrógeno Ureico', 'precio' => 4, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Proteina totales y Dif', 'precio' => 12, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Proteína C Reactiva Cardiaca', 'precio' => 25, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Test O\' Sulivan', 'precio' => 20, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Transamidas Oxalacética', 'precio' => 6, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Transaminasa Oxalacética', 'precio' => 6, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Transaminasa Pirúvica', 'precio' => 6, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Triglicéridos', 'precio' => 4, 'recipiente' => 'quimica_sanguinea'],
         ];
 
@@ -430,7 +433,7 @@ class DatabaseSeeder extends Seeder
         $tipoUroanalisis = TipoExamen::where('nombre', 'Uroanálisis')->first();
 
         $examenesUroanalisis = [
-            ['nombre' => 'Examen general orina', 'precio' => 2, 'recipiente' => 'uroanalisis'],
+            ['nombre' => 'General orina', 'precio' => 2, 'recipiente' => 'uroanalisis'],
             ['nombre' => 'Prueba de embarazo en orina', 'precio' => 5, 'recipiente' => 'uroanalisis'],
         ];
 
@@ -443,60 +446,199 @@ class DatabaseSeeder extends Seeder
                 'estado' => true,
             ]);
         }
+
+        //PERFIL
+        $perfiles = [
+            ['nombre' => 'Perfil Hepático', 'precio' => 35, 'estado' => 1,],
+            ['nombre' => 'Perfil de Rutina', 'precio' => 25, 'estado' => 1,],
+            ['nombre' => 'Perfil Renal', 'precio' => 30, 'estado' => 1,],
+            ['nombre' => 'Perfil Prenatal', 'precio' => 50, 'estado' => 1,],
+            ['nombre' => 'Perfil Tiroideo Total', 'precio' => 25, 'estado' => 1,],
+            ['nombre' => 'Perfil Tiroideo Libre', 'precio' => 25, 'estado' => 1,],
+        ];
+        foreach ($perfiles as $pf) {
+            Perfil::firstOrCreate(
+                ['nombre' => $pf['nombre']],
+                [
+                    'precio' => $pf['precio'],
+                    'estado' => $pf['estado'],
+                ]
+            );
+        }
+
+        $detallehepatico = [
+            ['perfil_id' => 1, 'examen_id' => 90],
+            ['perfil_id' => 1, 'examen_id' => 91],
+            ['perfil_id' => 1, 'examen_id' => 101],
+            ['perfil_id' => 1, 'examen_id' => 116],
+            ['perfil_id' => 1, 'examen_id' => 117],
+        ];
+        foreach ($detallehepatico as $dhep) {
+            DetallePerfil::firstOrCreate(
+                ['perfil_id' => $dhep['perfil_id'], 'examen_id' => $dhep['examen_id']]
+            );
+        }
+
+        $detallerutina = [
+            ['perfil_id' => 2, 'examen_id' => 16],
+            ['perfil_id' => 2, 'examen_id' => 127],
+            ['perfil_id' => 2, 'examen_id' => 48],
+            ['perfil_id' => 2, 'examen_id' => 87],
+            ['perfil_id' => 2, 'examen_id' => 94],
+            ['perfil_id' => 2, 'examen_id' => 97],
+            ['perfil_id' => 2, 'examen_id' => 103],
+            ['perfil_id' => 2, 'examen_id' => 112],
+            ['perfil_id' => 2, 'examen_id' => 118]
+        ];
+        foreach ($detallerutina as $drut) {
+            DetallePerfil::firstOrCreate(
+                ['perfil_id' => $drut['perfil_id'], 'examen_id' => $drut['examen_id']]
+            );
+        }
+
+        $detallerenal = [
+            ['perfil_id' => 3, 'examen_id' => 24],
+            ['perfil_id' => 3, 'examen_id' => 25],
+            ['perfil_id' => 3, 'examen_id' => 48],
+            ['perfil_id' => 3, 'examen_id' => 87],
+            ['perfil_id' => 3, 'examen_id' => 97],
+            ['perfil_id' => 3, 'examen_id' => 112],
+            ['perfil_id' => 3, 'examen_id' => 127]
+
+        ];
+        foreach ($detallerenal as $dren) {
+            DetallePerfil::firstOrCreate(
+                ['perfil_id' => $dren['perfil_id'], 'examen_id' => $dren['examen_id']]
+            );
+        }
+
+        $detalleprenatal = [
+            ['perfil_id' => 4, 'examen_id' => 48],
+            ['perfil_id' => 4, 'examen_id' => 75],
+            ['perfil_id' => 4, 'examen_id' => 76],
+            ['perfil_id' => 4, 'examen_id' => 77],
+            ['perfil_id' => 4, 'examen_id' => 79],
+            ['perfil_id' => 4, 'examen_id' => 103],
+            ['perfil_id' => 4, 'examen_id' => 127]
+        ];
+        foreach ($detalleprenatal as $dpre) {
+            DetallePerfil::firstOrCreate(
+                ['perfil_id' => $dpre['perfil_id'], 'examen_id' => $dpre['examen_id']]
+            );
+        }
+
+        $detalletiroideototal = [
+            ['perfil_id' => 5, 'examen_id' => 37],
+            ['perfil_id' => 5, 'examen_id' => 39],
+            ['perfil_id' => 5, 'examen_id' => 41],
+        ];
+        foreach ($detalletiroideototal as $dtot) {
+            DetallePerfil::firstOrCreate(
+                ['perfil_id' => $dtot['perfil_id'], 'examen_id' => $dtot['examen_id']]
+            );
+        }
+
+        $detalletiroideolibre = [
+            ['perfil_id' => 6, 'examen_id' => 36],
+            ['perfil_id' => 6, 'examen_id' => 38],
+            ['perfil_id' => 6, 'examen_id' => 41],
+        ];
+        foreach ($detalletiroideolibre as $dtol) {
+            DetallePerfil::firstOrCreate(
+                ['perfil_id' => $dtol['perfil_id'], 'examen_id' => $dtol['examen_id']]
+            );
+        }
+
+        // Insertar muestras
+        $muestras = [
+            ['nombre' => 'Cabello', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Flema', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Heces', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Hisopado Anal', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Hisopado Faringeo', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Hisopado de Heridas', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Hisopado de Oido', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Orina', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Plasma', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Sangre Completa', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Secreción de Absceso', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Secreciones Nasales', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Secreciones Uretrales', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Secreciones Vaginales', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Semen', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Suero', 'descripcion' => null, 'instrucciones_paciente' => null],
+            ['nombre' => 'Uñas', 'descripcion' => null, 'instrucciones_paciente' => null],
+        ];
+
+        foreach ($muestras as $muestra) {
+            Muestra::firstOrCreate(
+                ['nombre' => $muestra['nombre']],
+                [
+                    'descripcion' => $muestra['descripcion'],
+                    'instrucciones_paciente' => $muestra['instrucciones_paciente'],
+                ]
+            );
+        }
+
+        Log::info('Muestras insertadas correctamente.');
+
+
+
+
         //grupos etarios
-      DB::table('grupos_etarios')->insert([
-            ['nombre'=>'Embarazo temprano','edad_min'=>0,'edad_max'=>12,'unidad_tiempo'=>'semanas','genero'=>'Femenino','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Embarazo medio','edad_min'=>13,'edad_max'=>27,'unidad_tiempo'=>'semanas','genero'=>'Femenino','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Embarazo tardío','edad_min'=>28,'edad_max'=>42,'unidad_tiempo'=>'semanas','genero'=>'Femenino','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Neonatos','edad_min'=>0,'edad_max'=>28,'unidad_tiempo'=>'días','genero'=>'Ambos','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Lactantes','edad_min'=>1,'edad_max'=>12,'unidad_tiempo'=>'meses','genero'=>'Ambos','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Niños','edad_min'=>1,'edad_max'=>12,'unidad_tiempo'=>'años','genero'=>'Ambos','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Adolescentes','edad_min'=>13,'edad_max'=>17,'unidad_tiempo'=>'años','genero'=>'Ambos','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Adultos','edad_min'=>18,'edad_max'=>64,'unidad_tiempo'=>'años','genero'=>'Ambos','created_at'=>now(),'updated_at'=>now()],
-            ['nombre'=>'Adultos mayores','edad_min'=>65,'edad_max'=>120,'unidad_tiempo'=>'años','genero'=>'Ambos','created_at'=>now(),'updated_at'=>now()],
+        DB::table('grupos_etarios')->insert([
+            ['nombre' => 'Embarazo temprano', 'edad_min' => 0, 'edad_max' => 12, 'unidad_tiempo' => 'semanas', 'genero' => 'Femenino', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Embarazo medio', 'edad_min' => 13, 'edad_max' => 27, 'unidad_tiempo' => 'semanas', 'genero' => 'Femenino', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Embarazo tardío', 'edad_min' => 28, 'edad_max' => 42, 'unidad_tiempo' => 'semanas', 'genero' => 'Femenino', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Neonatos', 'edad_min' => 0, 'edad_max' => 28, 'unidad_tiempo' => 'días', 'genero' => 'Ambos', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Lactantes', 'edad_min' => 1, 'edad_max' => 12, 'unidad_tiempo' => 'meses', 'genero' => 'Ambos', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Niños', 'edad_min' => 1, 'edad_max' => 12, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Adolescentes', 'edad_min' => 13, 'edad_max' => 17, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Adultos', 'edad_min' => 18, 'edad_max' => 64, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Adultos mayores', 'edad_min' => 65, 'edad_max' => 120, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
-       
-       
+
+
     }
     private function generatePermissions()
-{
-    $resources = [
-        'clientes',
-        'examen',
-        'orden',
-        'perfil',
-        'role',
-        'tipo::examen',
-        'user',
-        'activity::log',
-        'codigo',
-        'cotizacion',
-        'grupo::etario',
-        'muestra',
-        'prueba',
-        'reactivo',
-        'tipo::prueba',
+    {
+        $resources = [
+            'clientes',
+            'examen',
+            'orden',
+            'perfil',
+            'role',
+            'tipo::examen',
+            'user',
+            'activity::log',
+            'codigo',
+            'cotizacion',
+            'grupo::etario',
+            'muestra',
+            'prueba',
+            'reactivo',
+            'tipo::prueba',
 
-    ];
+        ];
 
 
-   
 
-    //////////////////////////////////////////////PERMISOS GRANULARES AUTOMÁTICOS/////////////////////////////////////////////////////
-   
-   //--- Permisos específicos para clientes ----//
-    $clienteActions = [
-    'ver_detalle_clientes',    // Para el botón 'ver-modal'
-    'cambiar_estado_clientes', // Para el botón 'cambiar_estado'
-    'ver_expediente_clientes', // Para el botón 'expediente'
-];
 
-foreach ($clienteActions as $permission) {
-    Permission::firstOrCreate(['name' => $permission]);
-}
+        //////////////////////////////////////////////PERMISOS GRANULARES AUTOMÁTICOS/////////////////////////////////////////////////////
 
-/// ///// Permisos Granulares para COTIZACIONES (Herramienta)
+        //--- Permisos específicos para clientes ----//
+        $clienteActions = [
+            'ver_detalle_clientes',    // Para el botón 'ver-modal'
+            'cambiar_estado_clientes', // Para el botón 'cambiar_estado'
+            'ver_expediente_clientes', // Para el botón 'expediente'
+        ];
+
+        foreach ($clienteActions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        /// ///// Permisos Granulares para COTIZACIONES (Herramienta)
         $cotizacionActions = [
             'access_cotizaciones',      // Para poder ver el menú y entrar a la pantalla
             'generar_pdf_cotizacion',   // Para el botón de generar/imprimir el PDF
@@ -507,7 +649,7 @@ foreach ($clienteActions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-/////////// --- Permisos Granulares para EXÁMENES ---
+        /////////// --- Permisos Granulares para EXÁMENES ---
         $examenActions = [
             'ver_detalle_examenes',     // Para botón 'ver-modal'
             'agregar_pruebas_examenes', // Para botón 'addPruebas'
@@ -518,7 +660,7 @@ foreach ($clienteActions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-//////////////////// --- Permisos Granulares para ÓRDENES ---
+        //////////////////// --- Permisos Granulares para ÓRDENES ---
         $ordenActions = [
             'procesar_muestras_orden',   // Para "Gestionar Muestras"
             'ingresar_resultados_orden', // Para "Ingresar Resultados"
@@ -593,50 +735,50 @@ foreach ($clienteActions as $permission) {
         }
 
         //
-    
-    // Permisos por recurso
-    foreach ($resources as $resource) {
-        $permissions = [
-            "view_{$resource}",
-            "view_any_{$resource}",
-            "create_{$resource}",
-            "update_{$resource}",
-            "restore_{$resource}",
-            "restore_any_{$resource}",
-            "replicate_{$resource}",
-            "reorder_{$resource}",
-            "delete_{$resource}",
-            "delete_any_{$resource}",
-            "force_delete_{$resource}",
-            "force_delete_any_{$resource}",
+
+        // Permisos por recurso
+        foreach ($resources as $resource) {
+            $permissions = [
+                "view_{$resource}",
+                "view_any_{$resource}",
+                "create_{$resource}",
+                "update_{$resource}",
+                "restore_{$resource}",
+                "restore_any_{$resource}",
+                "replicate_{$resource}",
+                "reorder_{$resource}",
+                "delete_{$resource}",
+                "delete_any_{$resource}",
+                "force_delete_{$resource}",
+                "force_delete_any_{$resource}",
+            ];
+
+            foreach ($permissions as $permission) {
+                Permission::firstOrCreate(['name' => $permission]);
+            }
+
+            Log::info("Permisos generados para el recurso: {$resource}");
+        }
+
+        // Permisos especiales/globales
+        $specialPermissions = [
+            'impersonate_user',
+            'access_admin_panel',
+            'manage_settings',
+            'export_data',
+            'import_data',
+            'view_reports',
         ];
 
-        foreach ($permissions as $permission) {
+        foreach ($specialPermissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        Log::info("Permisos generados para el recurso: {$resource}");
+        Log::info('Permisos especiales generados.', ['count' => count($specialPermissions)]);
+
+        Log::info('Permisos totales generados automáticamente:', ['total' => Permission::count()]);
     }
-
-    // Permisos especiales/globales
-    $specialPermissions = [
-        'impersonate_user',
-        'access_admin_panel',
-        'manage_settings',
-        'export_data',
-        'import_data',
-        'view_reports',
-    ];
-
-    foreach ($specialPermissions as $permission) {
-        Permission::firstOrCreate(['name' => $permission]);
-    }
-
-    Log::info('Permisos especiales generados.', ['count' => count($specialPermissions)]);
-
-    Log::info('Permisos totales generados automáticamente:', ['total' => Permission::count()]);
-}
-private function createRolesAndAssignPermissions()
+    private function createRolesAndAssignPermissions()
     {
         // =====================================================================
         // 1. ROL: RECEPCIÓN
@@ -646,27 +788,39 @@ private function createRolesAndAssignPermissions()
             // --- Acceso General ---
             'access_admin_panel',
             //iew_dashboard',
-           //page_BuscarExpediente',
+            //page_BuscarExpediente',
             'acceder_buscador_expedientes',
 
             // --- Clientes (Gestión completa pero sin borrar a lo loco) ---
-            'view_any_clientes', 'view_clientes', 'create_clientes', 'update_clientes',
-            'ver_detalle_clientes', 'ver_expediente_clientes', 
+            'view_any_clientes',
+            'view_clientes',
+            'create_clientes',
+            'update_clientes',
+            'ver_detalle_clientes',
+            'ver_expediente_clientes',
             // NO le damos 'delete' ni 'cambiar_estado' para evitar errores, solo admin
 
             // --- Órdenes (Gestión administrativa) ---
-            'view_any_orden', 'view_orden', 'create_orden', 'update_orden',
+            'view_any_orden',
+            'view_orden',
+            'create_orden',
+            'update_orden',
             'imprimir_etiquetas_orden', // Para re-imprimir si hace falta
             'generar_reporte_orden',    // Para entregar al paciente
             'cancelar_orden',           // Si el paciente se arrepiente antes de pagar
-            
+
             // --- Cotizaciones ---
-            'view_any_cotizacion', 'create_cotizacion', 'access_cotizaciones', 
-            'generar_pdf_cotizacion', 'enviar_cotizacion_email',
+            'view_any_cotizacion',
+            'create_cotizacion',
+            'access_cotizaciones',
+            'generar_pdf_cotizacion',
+            'enviar_cotizacion_email',
 
             // --- Catálogos (Solo lectura para consulta de precios) ---
-            'view_any_examen', 'view_examen',
-            'view_any_perfil', 'view_perfil',
+            'view_any_examen',
+            'view_examen',
+            'view_any_perfil',
+            'view_perfil',
             'view_any_codigo', // Ver cupones para aplicarlos
         ]);
         Log::info('Rol Recepción configurado.');
@@ -677,17 +831,18 @@ private function createRolesAndAssignPermissions()
         $roleTomaMuestras = Role::firstOrCreate(['name' => 'toma_muestras']);
         $roleTomaMuestras->syncPermissions([
             'access_admin_panel',
-            
+
             // --- Órdenes (Solo ver para procesar) ---
-            'view_any_orden', 'view_orden', 
-            
-      // --- Operativo Muestras ---
+            'view_any_orden',
+            'view_orden',
+
+            // --- Operativo Muestras ---
             //age_DetalleOrdenKanban',    // Acceso al tablero
             'imprimir_etiquetas_kanban',  // Imprimir stickers
             'mover_etiquetas_kanban',     // Cambiar estado de tubos
             'procesar_muestras_orden',    // Botón de recibir muestra en la lista
             'imprimir_etiquetas_orden',   // Botón en la lista
-            
+
             // --- Consultas básicas ---
             'view_any_clientes', // Para confirmar identidad
             'view_clientes',
@@ -701,10 +856,11 @@ private function createRolesAndAssignPermissions()
         $roleLaboratorista = Role::firstOrCreate(['name' => 'laboratorista']);
         $roleLaboratorista->syncPermissions([
             'access_admin_panel',
-         // 'view_dashboard',
-            
+            // 'view_dashboard',
+
             // --- Procesamiento Analítico ---
-            'view_any_orden', 'view_orden', 
+            'view_any_orden',
+            'view_orden',
             'ingresar_resultados_orden', // ¡Su función principal!
             'ver_pruebas_orden',         // Ver qué toca hacer
             'pausar_orden',              // Si falta muestra o reactivo
@@ -712,17 +868,28 @@ private function createRolesAndAssignPermissions()
             'finalizar_orden',           // Validación final técnica
 
             // --- Gestión Técnica (Catálogos) ---
-            'view_any_reactivo', 'view_reactivo', 'create_reactivo', 'update_reactivo',
-            'activar_reactivos', 'gestionar_valores_ref', 'reabastecer_reactivos', 'agotar_reactivos',
-            
-            'view_any_examen', 'view_examen', 'ver_detalle_examenes',
-            'view_any_prueba', 'view_prueba', 'ver_pruebas_conjuntas',
+            'view_any_reactivo',
+            'view_reactivo',
+            'create_reactivo',
+            'update_reactivo',
+            'activar_reactivos',
+            'gestionar_valores_ref',
+            'reabastecer_reactivos',
+            'agotar_reactivos',
+
+            'view_any_examen',
+            'view_examen',
+            'ver_detalle_examenes',
+            'view_any_prueba',
+            'view_prueba',
+            'ver_pruebas_conjuntas',
             'view_any_muestra',
-           // 'view_any_grupo_etario',
+            // 'view_any_grupo_etario',
 
             // --- Bitácora (Auditoría) ---
             // Le damos acceso de lectura para que revise historial de cambios en resultados
-            'view_any_activity::log', 'view_activity::log', 
+            'view_any_activity::log',
+            'view_activity::log',
         ]);
         Log::info('Rol Laboratorista configurado.');
     }
