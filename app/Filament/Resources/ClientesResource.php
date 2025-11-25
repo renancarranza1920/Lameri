@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ClientesResource\Pages;
-use App\Filament\Resources\ClientesResource\Pages\ViewExpediente;
 use App\Models\Cliente;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -29,10 +28,8 @@ class ClientesResource extends Resource
     {
         return $form
             ->schema([
-                // Card principal con todas las secciones
                 Forms\Components\Card::make()
                     ->schema([
-                        // Sección Datos Personales
                         Forms\Components\Section::make('Datos Personales')
                             ->schema([
                                 Forms\Components\Grid::make(2)
@@ -53,18 +50,16 @@ class ClientesResource extends Resource
                                             ->placeholder('dd/mm/aaaa')
                                             ->maxDate(now()->subYears(5)),
 
-                                            Forms\Components\Select::make('genero')
-                                        ->label('Género')
-                                        ->options([
-                                            'Masculino' => 'Masculino',
-                                            'Femenino' => 'Femenino',
-                                        ])
-                                        ->required(),
+                                        Forms\Components\Select::make('genero')
+                                            ->label('Género')
+                                            ->options([
+                                                'Masculino' => 'Masculino',
+                                                'Femenino' => 'Femenino',
+                                            ])
+                                            ->required(),
                                     ]),
-                                    
                             ]),
 
-                        // Sección Contacto
                         Forms\Components\Section::make('Contacto')
                             ->schema([
                                 Forms\Components\Grid::make(2)
@@ -88,11 +83,20 @@ class ClientesResource extends Resource
                                     ]),
                             ]),
 
+                        /* AQUÍ VA EL TOGGLE CON ESTADO TEXTO */
                         Forms\Components\Toggle::make('estado')
-                            ->label('Activo')
-                            ->required()
-                            ->default(true)
-                            ->inline(false),
+                            ->label('Estado')
+                            ->inline(false)
+                            ->onColor('success')
+                            ->offColor('danger')
+                            ->onIcon('heroicon-o-check')
+                            ->offIcon('heroicon-o-x-mark')
+                            ->default('Activo')
+                            ->formatStateUsing(fn ($state) => $state ? 'Activo' : 'Inactivo')
+                            ->dehydrateStateUsing(fn ($state) => $state ? 'Activo' : 'Inactivo')
+                            ->afterStateHydrated(function ($state, $set) {
+                                $set('estado', $state === 'Activo');
+                            }),
                     ]),
             ]);
     }
@@ -106,7 +110,7 @@ class ClientesResource extends Resource
                     ->label('No. Expediente')
                     ->weight('bold')
                     ->copyable()
-                    ->sortable(), // Mantenemos sortable pero quitamos searchable
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('nombre_completo')
                     ->label('Paciente')
@@ -125,24 +129,20 @@ class ClientesResource extends Resource
                 Tables\Columns\TextColumn::make('correo')
                     ->label('Correo')
                     ->toggleable(isToggledHiddenByDefault: true),
-                
+
+                /* ESTADO COMO TEXTO */
                 Tables\Columns\TextColumn::make('estado')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'Activo' => 'success',
-                        'Inactivo' => 'danger',
-                        default => 'gray',
-                    }),
+                    ->color(fn ($state) => $state === 'Activo' ? 'success' : 'danger'),
             ])
             ->filters([
+                /* FILTRO USANDO TEXTO */
                 SelectFilter::make('estado')
                     ->label('Estado')
                     ->options([
-                        '1' => 'Activos',
-                        '0' => 'Inactivos',
-                    ])
-                    ->attribute('estado')
-                    ->default(null),
+                        'Activo' => 'Activo',
+                        'Inactivo' => 'Inactivo',
+                    ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->visible(fn () => auth()->user()->can('update_clientes')),
@@ -186,41 +186,39 @@ class ClientesResource extends Resource
                             ->label('Fecha de Nacimiento')
                             ->disabled()
                             ->default(fn($record) => $record->fecha_nacimiento),
-
                     ]),
 
+                /* CAMBIO DE ESTADO TEXTO */
                 Action::make('cambiar_estado')
-                    ->label(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
-                    ->icon(fn($record) => $record->estado ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
-                    ->color(fn($record) => $record->estado ? 'danger' : 'success')
+                    ->label(fn($record) => $record->estado === 'Activo' ? 'Dar de baja' : 'Dar de alta')
+                    ->icon(fn($record) => $record->estado === 'Activo' ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->color(fn($record) => $record->estado === 'Activo' ? 'danger' : 'success')
                     ->visible(fn () => auth()->user()->can('cambiar_estado_clientes'))
-                    ->tooltip(fn($record) => $record->estado ? 'Dar de baja' : 'Dar de alta')
+                    ->tooltip(fn($record) => $record->estado === 'Activo' ? 'Dar de baja' : 'Dar de alta')
                     ->requiresConfirmation()
                     ->action(function ($record) {
-                        $record->estado = !$record->estado;
+                        $record->estado = $record->estado === 'Activo' ? 'Inactivo' : 'Activo';
                         $record->save();
+
                         Notification::make()
-                            ->title($record->estado ? 'Cliente activado' : 'Cliente desactivado')
+                            ->title($record->estado === 'Activo' ? 'Cliente activado' : 'Cliente desactivado')
                             ->success()
                             ->send();
                     })
                     ->iconButton(),
 
-                    Action::make('expediente')
+                Action::make('expediente')
                     ->label('Expediente')
-                    ->icon('heroicon-o-folder-open') // Un ícono adecuado
-                    ->color('info') // Color del botón
-                    ->visible(fn () => auth()->user()->can('ver_expediente_clientes')) 
-                    ->url(fn (Cliente $record): string => ClientesResource::getUrl('expediente', ['record' => $record->id]))
-
+                    ->icon('heroicon-o-folder-open')
+                    ->color('info')
+                    ->visible(fn () => auth()->user()->can('ver_expediente_clientes'))
+                    ->url(fn (Cliente $record): string => ClientesResource::getUrl('expediente', ['record' => $record->id])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    
                 ]),
             ]);
-            
     }
 
     public static function getRelations(): array
@@ -237,5 +235,4 @@ class ClientesResource extends Resource
             'expediente' => Pages\Expediente::route('/{record}/expediente'),
         ];
     }
-
 }

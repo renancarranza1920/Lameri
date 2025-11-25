@@ -23,7 +23,6 @@ class MuestraResource extends Resource
     protected static ?string $pluralModelLabel = 'Muestras Biológicas';
     protected static ?string $modelLabel = 'Muestra Biológica';
     protected static ?string $navigationGroup = 'Catálogos y Ajustes';
-    // Si tienes shouldRegisterNavigation = true
     protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
