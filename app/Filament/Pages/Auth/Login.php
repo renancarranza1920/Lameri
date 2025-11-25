@@ -19,6 +19,7 @@ use Filament\Pages\SimplePage;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Validation\ValidationException;
 use Filament\Forms\Get; // Añadido para la validación condicional
+use Filament\Forms\Set; // Añadido: para limpiar el campo opuesto cuando cambia
 
 class Login extends SimplePage
 {
@@ -156,8 +157,11 @@ class Login extends SimplePage
         return TextInput::make('email')
             ->label('Correo Electrónico')
             ->email()
+            ->live()
             // Hacemos que sea requerido SÓLO si el campo de username está vacío
-            ->required(fn (Get $get) => !filled($get('username'))) 
+            ->required(fn (Get $get) => !filled($get('username')))
+            // Al actualizar el email, borramos el username para evitar valores duplicados en el state
+            ->afterStateUpdated(fn (Set $set) => $set('username', null))
             ->extraInputAttributes(['tabindex' => 1]);
     }
     
@@ -165,8 +169,11 @@ class Login extends SimplePage
     {
         return TextInput::make('username')
             ->label('Nombre de usuario')
+            ->live()
             // Hacemos que sea requerido SÓLO si el campo de email está vacío
-            ->required(fn (Get $get) => !filled($get('email'))) 
+            ->required(fn (Get $get) => !filled($get('email')))
+            // Al actualizar el username, borramos el email para evitar valores duplicados en el state
+            ->afterStateUpdated(fn (Set $set) => $set('email', null))
             ->extraInputAttributes(['tabindex' => 1]);
     }
 

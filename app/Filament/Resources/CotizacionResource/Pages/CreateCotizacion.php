@@ -168,44 +168,66 @@ class CreateCotizacion extends ResourcePage implements HasForms
     }
 
     public function generatePdfPreview(bool $download = true)
-    {
-        $state = $this->form->getState();
-        $total = 0;
-        $dataPerfiles = [];
-        foreach ($state['perfiles_seleccionados'] ?? [] as $item) {
-            $perfil = Perfil::with('examenes')->find($item['perfil_id']);
-            if ($perfil) {
-                $precio = floatval($item['precio_hidden'] ?? $perfil->precio);
-                $dataPerfiles[] = ['nombre' => $perfil->nombre, 'precio' => $precio, 'examenes' => $perfil->examenes];
-                $total += $precio;
-            }
-        }
-        $dataExamenes = [];
-        foreach ($state['examenes_seleccionados'] ?? [] as $item) {
-            $examen = Examen::find($item['examen_id']);
-            if ($examen) {
-                $precio = floatval($item['precio_hidden'] ?? $examen->precio);
-                $dataExamenes[] = ['nombre' => $examen->nombre, 'precio' => $precio];
-                $total += $precio;
-            }
-        }
-        $data = [
-            'cliente_nombre' => $state['nombre_completo'] ?? 'N/A',
-            'perfiles' => $dataPerfiles,
-            'examenes' => $dataExamenes,
-            'total' => $total,
-            'usuario_nombre' => Auth::user()?->name ?? 'N/A',
-        ];
-        $pdf = Pdf::loadView('pdf.cotizacion', $data)->setPaper('letter', 'portrait');
+{
+    $state = $this->form->getState();
+    $total = 0;
+    $dataPerfiles = [];
 
-        if ($download) {
-            return response()->streamDownload(fn() => print ($pdf->stream()), 'cotizacion-' . date('Y-m-d') . '.pdf');
-        } else {
-            $nombreArchivo = 'cotizaciones/cotizacion-' . uniqid() . '.pdf';
-            Storage::disk('public')->put($nombreArchivo, $pdf->output());
-            return asset('storage/' . $nombreArchivo);
+    foreach ($state['perfiles_seleccionados'] ?? [] as $item) {
+        
+        // --- AQUÍ ESTÁ EL CAMBIO ---
+        // En lugar de Perfil::with('examenes'), usamos el array con la función anónima
+        // para filtrar solo los activos (estado = 1)
+        $perfil = Perfil::with(['examenes' => function ($query) {
+            $query->where('estado', 1);
+        }])->find($item['perfil_id']);
+
+        if ($perfil) {
+            $precio = floatval($item['precio_hidden'] ?? $perfil->precio);
+            
+            // $perfil->examenes ya viene filtrado desde la base de datos
+            $dataPerfiles[] = [
+                'nombre' => $perfil->nombre, 
+                'precio' => $precio, 
+                'examenes' => $perfil->examenes
+            ];
+            
+            $total += $precio;
         }
     }
+
+    $dataExamenes = [];
+    foreach ($state['examenes_seleccionados'] ?? [] as $item) {
+        $examen = Examen::find($item['examen_id']);
+        
+        // Opcional: También puedes validar aquí si el examen suelto sigue activo
+        // if ($examen && $examen->estado == 1) { ... }
+
+        if ($examen) {
+            $precio = floatval($item['precio_hidden'] ?? $examen->precio);
+            $dataExamenes[] = ['nombre' => $examen->nombre, 'precio' => $precio];
+            $total += $precio;
+        }
+    }
+
+    $data = [
+        'cliente_nombre' => $state['nombre_completo'] ?? 'N/A',
+        'perfiles' => $dataPerfiles,
+        'examenes' => $dataExamenes,
+        'total' => $total,
+        'usuario_nombre' => Auth::user()?->name ?? 'N/A',
+    ];
+
+    $pdf = Pdf::loadView('pdf.cotizacion', $data)->setPaper('letter', 'portrait');
+
+    if ($download) {
+        return response()->streamDownload(fn() => print ($pdf->stream()), 'cotizacion-' . date('Y-m-d') . '.pdf');
+    } else {
+        $nombreArchivo = 'cotizaciones/cotizacion-' . uniqid() . '.pdf';
+        Storage::disk('public')->put($nombreArchivo, $pdf->output());
+        return asset('storage/' . $nombreArchivo);
+    }
+}
 
     protected function getTextSummary(Get $get): string
     {

@@ -199,21 +199,30 @@ class CreateOrden extends CreateRecord
             foreach ($perfiles as $perfil) {
                 $examenesPerfil = [];
                 $precioPerfil = $perfil['precio_hidden'];
-                $nombrePerfil = Perfil::find($perfil['perfil_id'])?->nombre ?? 'Perfil desconocido';
+                
+                // Obtenemos el nombre del perfil para guardarlo en el detalle
+                $perfilModel = Perfil::find($perfil['perfil_id']);
+                $nombrePerfil = $perfilModel?->nombre ?? 'Perfil desconocido';
 
-                Perfil::find($perfil['perfil_id'])?->examenes->each(function ($examen) use (&$examenesPerfil, $precioPerfil, $nombrePerfil) {
-                    $examenesPerfil[] = [
-                        'examen_id' => $examen->id,
-                        'nombre_examen' => $examen->nombre,
-                        'precio_examen' => $examen->precio,
-                        'perfil_id' => $examen->pivot->perfil_id,
-                        'recipiente' => $examen->recipiente,
-                        'nombre_perfil' => $nombrePerfil,
-                        'precio_perfil' => $precioPerfil,
-                    ];
-
-                   
-                });
+                // --- AQUÍ APLICAMOS EL FILTRO ---
+                if ($perfilModel) {
+                    // Cambiamos ->examenes (propiedad) por ->examenes() (método)
+                    // para poder filtrar con ->where('estado', 1)
+                    $perfilModel->examenes()
+                        ->where('estado', 1) // <--- FILTRO ACTIVOS
+                        ->get()              // <--- EJECUTAR CONSULTA
+                        ->each(function ($examen) use (&$examenesPerfil, $precioPerfil, $nombrePerfil) {
+                            $examenesPerfil[] = [
+                                'examen_id' => $examen->id,
+                                'nombre_examen' => $examen->nombre,
+                                'precio_examen' => $examen->precio,
+                                'perfil_id' => $examen->pivot->perfil_id,
+                                'recipiente' => $examen->recipiente,
+                                'nombre_perfil' => $nombrePerfil,
+                                'precio_perfil' => $precioPerfil,
+                            ];
+                        });
+                }
 
                 foreach ($examenesPerfil as $examenp) {
                     $orden->detalleOrden()->create([
