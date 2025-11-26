@@ -752,6 +752,111 @@ class DatabaseSeeder extends Seeder
             }
         }
 
+        // Tumorales - Relación Examen-Muestra
+        $relacionesMuestrasTumorales = [
+            80 => [21],
+            81 => [21],
+            82 => [21],
+            83 => [21],
+            84 => [21],
+            85 => [21],
+            86 => [21]
+        ];
+        foreach ($relacionesMuestrasTumorales as $examen_id => $muestra_ids) {
+            $examen = Examen::find($examen_id);
+            if ($examen) {
+                // Sincronizar las muestras con el examen
+                $examen->muestras()->sync($muestra_ids, false);
+                Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
+            }
+        }
+
+        // Quimica Sanguinea - Relación Examen-Muestra 22
+        $relacionesMuestrasQuimicaSanguinea = [
+            87 => [21],
+            88 => [21],
+            89 => [21],
+            90 => [21],
+            91 => [21],
+            92 => [21],
+            93 => [21],
+            94 => [21],
+            95 => [21],
+            96 => [21],
+            97 => [21],
+            98 => [21],
+            99 => [21],
+            100 => [21],
+            101 => [21],
+            102 => [21],
+            103 => [21],
+            104 => [21],
+            105 => [21],
+            106 => [21],
+            107 => [21],
+            108 => [15],
+            109 => [21],
+            110 => [21],
+            111 => [21],
+            112 => [21],
+            113 => [21],
+            114 => [21],
+            115 => [21],
+            116 => [21],
+            117 => [21],
+            118 => [21],
+            119 => [21],
+            120 => [21],
+            121 => [21],
+            122 => [21],
+            123 => [21],
+            124 => [21],
+            125 => [21],
+            126 => [21]
+        ];
+        foreach ($relacionesMuestrasQuimicaSanguinea as $examen_id => $muestra_ids) {
+            $examen = Examen::find($examen_id);
+            if ($examen) {
+                // Sincronizar las muestras con el examen
+                $examen->muestras()->sync($muestra_ids, false);
+                Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
+            }
+        } 
+
+        //Quimica Urinaria - Relación Examen-Muestra
+        $relacionesMuestrasQuimicaUrinaria = [
+            127 => [13],
+            128 => [13],
+            129 => [13],
+            130 => [13],
+            131 => [13],
+            132 => [13],
+            133 => [13],
+            134 => [13]
+        ];
+        foreach ($relacionesMuestrasQuimicaUrinaria as $examen_id => $muestra_ids) {
+            $examen = Examen::find($examen_id);
+            if ($examen) {
+                // Sincronizar las muestras con el examen
+                $examen->muestras()->sync($muestra_ids, false);
+                Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
+            }
+        }
+
+        // Uroanalisis - Relación Examen-Muestra
+        $relacionesMuestrasUroanalisis = [
+            135 => [13],
+            136 => [13]
+        ];
+        foreach ($relacionesMuestrasUroanalisis as $examen_id => $muestra_ids) {
+            $examen = Examen::find($examen_id);
+            if ($examen) {
+                // Sincronizar las muestras con el examen
+                $examen->muestras()->sync($muestra_ids, false);
+                Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
+            }
+        }
+
         //grupos etarios
         DB::table('grupos_etarios')->insert([
             ['nombre' => 'Embarazo temprano', 'edad_min' => 0, 'edad_max' => 12, 'unidad_tiempo' => 'semanas', 'genero' => 'Femenino', 'created_at' => now(), 'updated_at' => now()],
