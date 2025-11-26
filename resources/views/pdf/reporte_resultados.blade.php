@@ -135,7 +135,6 @@
             padding-left: 0;
         }
 
-        /* Estilos para la tabla de matriz */
         .matrix-table {
             width: 100%;
             border-collapse: collapse;
@@ -304,18 +303,31 @@
 
         @foreach($examenes as $examen)
             @php
-                // AGRUPACIÓN POR TIPO DE PRUEBA (SIN OCULTAR COLUMNAS)
+                // 1. LÓGICA INTELIGENTE: ¿Mostrar Columna Referencia?
+                // Escaneamos todas las pruebas de este examen.
+                $tieneReferencias = false;
+                if (!empty($examen['pruebas_unitarias'])) {
+                    foreach($examen['pruebas_unitarias'] as $p) {
+                        // Si encontramos AL MENOS UNA referencia válida o una unidad, activamos la columna para todo el examen.
+                        // Importante: Filtramos 'N/A' porque tu backend lo pone por defecto si no hay dato.
+                        $refLimpia = trim(strip_tags($p['referencia'] ?? ''));
+                        $uniLimpia = trim($p['unidades'] ?? '');
+                        
+                        if ( ($refLimpia !== '' && $refLimpia !== 'N/A') || $uniLimpia !== '') {
+                            $tieneReferencias = true;
+                            break; // Ya encontramos una, no necesitamos seguir buscando
+                        }
+                    }
+                }
+
+                // 2. AGRUPACIÓN POR TIPO DE PRUEBA
                 $pruebasCollection = collect($examen['pruebas_unitarias']);
                 
-                // Agrupar usando 'tipo_prueba'
                 $agrupadas = $pruebasCollection->groupBy(function($item) {
                     return $item['tipo_prueba'] ?? ''; 
                 });
 
-                // Separar las sin tipo (key vacío) de las con tipo
                 $sinGrupo = $agrupadas->pull('') ?? collect();
-                
-                // Ordenar los grupos restantes alfabéticamente
                 $conGrupo = $agrupadas->sortKeys();
             @endphp
 
@@ -323,19 +335,22 @@
                 <thead>
                     @if (!empty($examen['pruebas_unitarias']))
                         <tr>
-                            <!-- Anchos Fijos: 40% Prueba, 25% Resultado, 35% Referencia -->
-                            <th style="width: 40%;">PRUEBA</th>
-                            <th style="width: 25%;">RESULTADO</th>
-                            <th style="width: 35%;">RANGO DE REFERENCIA</th>
+                            <!-- Ajuste dinámico de anchos -->
+                            <th style="width: {{ $tieneReferencias ? '40%' : '60%' }};">PRUEBA</th>
+                            <th style="width: {{ $tieneReferencias ? '25%' : '40%' }};">RESULTADO</th>
+                            
+                            @if($tieneReferencias)
+                                <th style="width: 35%;">RANGO DE REFERENCIA</th>
+                            @endif
                         </tr>
                     @endif
                 </thead>
                 <tbody>
                     <tr class="examen-title-row">
-                        <td colspan="3">EXAMEN: {{ $examen['nombre'] }}</td>
+                        <td colspan="{{ $tieneReferencias ? 3 : 2 }}">EXAMEN: {{ $examen['nombre'] }}</td>
                     </tr>
 
-                    {{-- A. Pruebas SIN GRUPO (Primero) --}}
+                    {{-- A. PRUEBAS SIN GRUPO (Primero) --}}
                     @foreach($sinGrupo as $pruebaData)
                         <tr class="result-row">
                             <td>
@@ -346,7 +361,9 @@
                                     {!! $pruebaData['resultado'] !!}
                                 </div>
                             </td>
-                            <td>{!! $pruebaData['referencia'] !!} {{ $pruebaData['unidades'] }}</td>
+                            @if($tieneReferencias)
+                                <td>{!! $pruebaData['referencia'] !!} {{ $pruebaData['unidades'] }}</td>
+                            @endif
                         </tr>
                     @endforeach
 
@@ -354,7 +371,7 @@
                     @foreach($conGrupo as $nombreGrupo => $items)
                         <!-- Fila separadora del grupo -->
                         <tr class="group-title-row">
-                            <td colspan="3">{{ $nombreGrupo }}</td>
+                            <td colspan="{{ $tieneReferencias ? 3 : 2 }}">{{ $nombreGrupo }}</td>
                         </tr>
                         
                         @foreach($items as $pruebaData)
@@ -367,7 +384,9 @@
                                         {!! $pruebaData['resultado'] !!}
                                     </div>
                                 </td>
-                                <td>{!! $pruebaData['referencia'] !!} {{ $pruebaData['unidades'] }}</td>
+                                @if($tieneReferencias)
+                                    <td>{!! $pruebaData['referencia'] !!} {{ $pruebaData['unidades'] }}</td>
+                                @endif
                             </tr>
                         @endforeach
                     @endforeach
