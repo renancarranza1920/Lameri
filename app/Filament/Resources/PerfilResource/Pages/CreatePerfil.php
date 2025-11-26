@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CreatePerfil extends CreateRecord
 {
+     protected static bool $canCreateAnother = false;
     protected static string $resource = PerfilResource::class;
 
     protected function handleRecordCreation(array $data): Model
