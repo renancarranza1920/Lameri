@@ -121,7 +121,7 @@
 
         .result-value {
             font-weight: bold;
-            padding-left: 10px;
+            padding-left: 0; /* Ajustado a 0 para alineación correcta en columna propia */
         }
 
         /* Estilos para la tabla de matriz */
@@ -242,14 +242,14 @@
                     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjIgMTYuOTJ2M2EyIDIgMCAwIDEtMi4xOCAyIDE5Ljc5IDE5Ljc5IDAgMCAxLTguNjMtMy4wNyAxOS41IDE5LjUgMCAwIDEtNi02IDE5Ljc5IDE5Ljc5IDAgMCAxLTMuMDctOC42M0EyIDIgMCAwIDEgNC4xMSAySDdBMiAyIDAgMCAxIDkgMy4yNmExMi44NCAxMi44NCAwIDAgMCAuNyAyLjgxIDIgMiAwIDAgMS0uNDUgMi4xMUw4LjA5IDkuOTFhMTYgMTYgMCAwIDAgNiA2bDEuMjctMS4yN2EyIDIgMCAwIDEgMi4xMS0uNDUgMTIuODQgMTIuODQgMCAwIDAgMi44MS43QTIgMiAwIDAgMSAyMiAxNi45MnoiPjwvcGF0aD48L3N2Zz4="
                         width="8" height="8" style="vertical-align: middle; margin-right: 3px;" />
                 </span>
-                <a> </a>
+                <a> </a>
                 <span style="display: inline-block; vertical-align: middle; font-weight: bold;">2606-6596</span>
                 <span style="display: inline-block; vertical-align: middle; margin-left: 8px; margin-right: 8px; color: #888;">|</span>
                 <span style="display: inline-block; vertical-align: middle;">
                     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjEgMTEuNWE4LjM4IDguMzggMCAwIDEtLjkgMy44IDguNSA4LjUgMCAwIDEtNy42IDQuNyA4LjM4IDguMzggMCAwIDEtMy44LS45TDMgMjFsMS45LTUuN2E4LjM4IDguMzggMCAwIDEtLjktMy44IDguNSA4LjUgMCAwIDEgNC43LTcuNiA4LjM4IDguMzggMCAwIDEgMy44LS45aC41YTguNDggOC40OCAwIDAgMSA4IDh2LjV6Ij48L3BhdGg+PC9zdmc+Cg=="
                         width="8" height="8" style="vertical-align: middle; margin-right: 3px;" />
                 </span>
-                 <a> </a>
+                 <a> </a>
                 <span style="display: inline-block; vertical-align: middle; font-weight: bold;">WhatsApp: 7595-4210</span>
             </p>
         </div>
@@ -300,10 +300,10 @@
                 <thead>
                     @if (!empty($examen['pruebas_unitarias']))
                         <tr>
-                            <th style="width: 35%;">RESULTADO</th>
-                            <th style="width: 35%;">RANGO DE REFERENCIA</th>
-                            <th style="width: 15%;">UNIDAD</th>
-                            <th style="width: 15%;">FECHA RESULTADO</th>
+                            <th style="width: 30%;">PRUEBA</th>
+                            <th style="width: 20%;">RESULTADO</th>
+                            <th style="width: 30%;">RANGO DE REFERENCIA</th>
+                            <th style="width: 20%;">UNIDAD</th>
                         </tr>
                     @endif
                 </thead>
@@ -316,14 +316,14 @@
                         <tr class="result-row">
                             <td>
                                 <div class="result-prueba-name">{{ $pruebaData['nombre'] }}</div>
-                                <!-- --- ¡CAMBIO AQUÍ! --- -->
+                            </td>
+                            <td>
                                 <div class="result-value @if($pruebaData['es_fuera_de_rango']) fuera-de-rango @endif">
                                     {!! $pruebaData['resultado'] !!}
                                 </div>
                             </td>
                             <td>{!! $pruebaData['referencia'] !!}</td>
                             <td>{{ $pruebaData['unidades'] }}</td>
-                            <td>{{ $pruebaData['fecha_resultado'] }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -349,7 +349,6 @@
                                             $celda = $matriz['data'][$fila][$columna] ?? null;
                                         @endphp
 
-                                        <!-- --- ¡CAMBIO AQUÍ! --- -->
                                         <td class="@if($celda && $celda['es_fuera_de_rango']) fuera-de-rango @endif">
                                             {{ $celda['resultado'] ?? 'N/A' }}
                                         </td>
@@ -397,11 +396,11 @@
                     {{-- 1. IMAGEN DE BASE (Sello del Usuario) --}}
                     @if ($pathSelloUsuario && file_exists($pathSelloUsuario))
                         <img src="{{ $pathSelloUsuario }}" alt="Sello Usuario" style="position: absolute; 
-                                        top: 0; 
-                                        left: 0; 
-                                        width: 100%; 
-                                        height: 100%; 
-                                        object-fit: contain;">
+                                                top: 0; 
+                                                left: 0; 
+                                                width: 100%; 
+                                                height: 100%; 
+                                                object-fit: contain;">
                     @else
                         <div style="width: 100%; height: 100%; border: 1px dashed #ccc;">[Sello Usr Faltante]</div>
                     @endif
@@ -409,13 +408,13 @@
                     {{-- 2. IMAGEN DE ARRIBA (Firma del Usuario) --}}
                     @if ($pathFirmaUsuario && file_exists($pathFirmaUsuario))
                         <img src="{{ $pathFirmaUsuario }}" alt="Firma" style="position: absolute; 
-                                        top: 8%; 
-                                        left: 50%; 
-                                        transform: translate(-50%, -50%); /* Centrado */
-                                        max-width: 90%; 
-                                        height: auto; 
-                                        object-fit: contain;
-                                        z-index: 10;">
+                                                top: 8%; 
+                                                left: 50%; 
+                                                transform: translate(-50%, -50%); /* Centrado */
+                                                max-width: 90%; 
+                                                height: auto; 
+                                                object-fit: contain;
+                                                z-index: 10;">
                     @endif
                 </div>
             </div>

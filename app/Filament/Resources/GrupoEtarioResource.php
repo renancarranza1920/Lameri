@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Notifications\Notification; // <-- Importante para las notificaciones
 
 class GrupoEtarioResource extends Resource
 {
@@ -22,7 +23,7 @@ class GrupoEtarioResource extends Resource
     protected static ?string $pluralModelLabel = 'Grupos Etarios';
 
     protected static ?string $navigationGroup = 'Catálogos y Ajustes';
-protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -32,43 +33,43 @@ protected static ?int $navigationSort = 2;
                     ->schema([
                         Section::make('Detalles del Grupo Etario')
                             ->schema([
-                        Forms\Components\TextInput::make('nombre')
-                            ->required()
-                            ->maxLength(255)
-                            ->label('Nombre del Grupo')
-                            ->unique(ignoreRecord: true), // Asegurar nombre único
+                                Forms\Components\TextInput::make('nombre')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->label('Nombre del Grupo')
+                                    ->unique(ignoreRecord: true), // Asegurar nombre único
 
-                        Forms\Components\Select::make('genero')
-                            ->label('Género Aplicable')
-                            ->options(['Masculino' => 'Masculino', 'Femenino' => 'Femenino', 'Ambos' => 'Ambos'])
-                            ->default('Ambos')
-                            ->required(),
-                        
-                        Forms\Components\Grid::make(3) // Usamos 3 columnas para el rango
-                            ->schema([
-                                Forms\Components\TextInput::make('edad_min')
-                                    ->label('Edad Mínima')
-                                    ->numeric()
-                                    ->minValue(0)
+                                Forms\Components\Select::make('genero')
+                                    ->label('Género Aplicable')
+                                    ->options(['Masculino' => 'Masculino', 'Femenino' => 'Femenino', 'Ambos' => 'Ambos'])
+                                    ->default('Ambos')
                                     ->required(),
+                                
+                                Forms\Components\Grid::make(3) // Usamos 3 columnas para el rango
+                                    ->schema([
+                                        Forms\Components\TextInput::make('edad_min')
+                                            ->label('Edad Mínima')
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->required(),
 
-                                Forms\Components\TextInput::make('edad_max')
-                                    ->label('Edad Máxima')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->required(),
-                                    
-                                Forms\Components\Select::make('unidad_tiempo')
-                                    ->label('Unidad')
-                                    ->options([
-                                        'días' => 'Días', 
-                                        'semanas' => 'Semanas', 
-                                        'meses' => 'Meses', 
-                                        'años' => 'Años'
-                                    ])
-                                    ->required(),
-                            ]),
-                            
+                                        Forms\Components\TextInput::make('edad_max')
+                                            ->label('Edad Máxima')
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->required(),
+                                        
+                                        Forms\Components\Select::make('unidad_tiempo')
+                                            ->label('Unidad')
+                                            ->options([
+                                                'días' => 'Días', 
+                                                'semanas' => 'Semanas', 
+                                                'meses' => 'Meses', 
+                                                'años' => 'Años'
+                                            ])
+                                            ->required(),
+                                    ]),
+                                
                             ])->columns(2),
                     ])->columns(1), // El Card tiene 1 columna principal
             ]);
@@ -95,10 +96,17 @@ protected static ?int $navigationSort = 2;
                         'Ambos' => 'success',
                     }),
 
+                Tables\Columns\TextColumn::make('estado')->label('Estado')
+                    ->formatStateUsing(fn (int $state): string => $state === 1 ? 'Activo' : 'Inactivo')
+                    ->badge()
+                    ->color(fn (int $state): string => $state === 1 ? 'success' : 'danger')
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creado')
                     ->dateTime('d/m/Y')
                     ->toggleable(isToggledHiddenByDefault: true),
+
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('unidad_tiempo')
@@ -111,7 +119,28 @@ protected static ?int $navigationSort = 2;
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-               
+                
+                // Cambiar estado con confirmación y notificación
+                Tables\Actions\Action::make('toggleEstado')
+                    ->label(fn (GrupoEtario $record) => $record->estado === 1 ? 'Dar de baja' : 'Dar de alta')
+                    ->color(fn (GrupoEtario $record) => $record->estado === 1 ? 'danger' : 'success')
+                    ->icon(fn (GrupoEtario $record) => $record->estado === 1 ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->requiresConfirmation() // <--- Pide confirmación antes de ejecutar
+                    ->modalHeading(fn (GrupoEtario $record) => $record->estado === 1 ? '¿Desactivar Grupo Etario?' : '¿Activar Grupo Etario?')
+                    ->modalDescription(fn (GrupoEtario $record) => $record->estado === 1 
+                        ? 'El grupo dejará de estar disponible para nuevos registros.' 
+                        : 'El grupo volverá a estar activo en el sistema.')
+                    ->action(function (GrupoEtario $record) {
+                        $nuevoEstado = $record->estado === 1 ? 0 : 1;
+                        $record->estado = $nuevoEstado;
+                        $record->save();
+
+                        Notification::make()
+                            ->title('Estado actualizado')
+                            ->body('El grupo etario ha sido ' . ($nuevoEstado === 1 ? 'activado' : 'dado de baja') . ' correctamente.')
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->bulkActions([
              
@@ -124,7 +153,6 @@ protected static ?int $navigationSort = 2;
             'index' => Pages\ListGrupoEtarios::route('/'),
             'create' => Pages\CreateGrupoEtario::route('/create'),
             'edit' => Pages\EditGrupoEtario::route('/{record}/edit'),
-            // 'view' => Pages\ViewGrupoEtario::route('/{record}'), // No es necesario si no se usa
         ];
     }
 }

@@ -25,7 +25,7 @@ enum RecipienteEnum: string
             self::hematologia => 'Hematología',
             self::coprologia => 'Coprología',
             self::uroanalisis => 'Uroanálisis',
-            self::cultivo_secreciones => 'Cultivo de Secreciones',
+            self::cultivo_secreciones => 'Bacteriología',
             self::extra => 'Extra',
         };
     }

@@ -859,15 +859,16 @@ class DatabaseSeeder extends Seeder
 
         //grupos etarios
         DB::table('grupos_etarios')->insert([
-            ['nombre' => 'Embarazo temprano', 'edad_min' => 0, 'edad_max' => 12, 'unidad_tiempo' => 'semanas', 'genero' => 'Femenino', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Embarazo medio', 'edad_min' => 13, 'edad_max' => 27, 'unidad_tiempo' => 'semanas', 'genero' => 'Femenino', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Embarazo tardío', 'edad_min' => 28, 'edad_max' => 42, 'unidad_tiempo' => 'semanas', 'genero' => 'Femenino', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Neonatos', 'edad_min' => 0, 'edad_max' => 28, 'unidad_tiempo' => 'días', 'genero' => 'Ambos', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Lactantes', 'edad_min' => 1, 'edad_max' => 12, 'unidad_tiempo' => 'meses', 'genero' => 'Ambos', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Niños', 'edad_min' => 1, 'edad_max' => 12, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Adolescentes', 'edad_min' => 13, 'edad_max' => 17, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Adultos', 'edad_min' => 18, 'edad_max' => 64, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Adultos mayores', 'edad_min' => 65, 'edad_max' => 120, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Embarazo temprano', 'edad_min' => 0, 'edad_max' => 12, 'unidad_tiempo' => 'semanas', 'genero' => 'Femenino',  'estado' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Embarazo medio', 'edad_min' => 13, 'edad_max' => 27, 'unidad_tiempo' => 'semanas', 'genero' => 'Femenino', 'estado' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Embarazo tardío', 'edad_min' => 28, 'edad_max' => 42, 'unidad_tiempo' => 'semanas', 'genero' => 'Femenino', 'estado' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Neonatos', 'edad_min' => 0, 'edad_max' => 28, 'unidad_tiempo' => 'días', 'genero' => 'Ambos', 'estado' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Lactantes', 'edad_min' => 1, 'edad_max' => 12, 'unidad_tiempo' => 'meses', 'genero' => 'Ambos', 'estado' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Niños', 'edad_min' => 1, 'edad_max' => 12, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'estado' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Adolescentes', 'edad_min' => 13, 'edad_max' => 17, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'estado' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Adultos', 'edad_min' => 18, 'edad_max' => 64, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'estado' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Adultos mayores', 'edad_min' => 65, 'edad_max' => 120, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'estado' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Todas las edades', 'edad_min' => 0, 'edad_max' => 120, 'unidad_tiempo' => 'años', 'genero' => 'Ambos', 'estado' => 1, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
 
