@@ -104,6 +104,17 @@
             padding: 8px 6px;
         }
 
+        /* --- ESTILO PARA SUBGRUPOS (TIPO PRUEBA) --- */
+        .group-title-row td {
+            font-weight: bold;
+            font-size: 10px;
+            background-color: #fafafa;
+            color: #444;
+            padding: 5px 6px;
+            border-bottom: 1px solid #eee;
+            font-style: italic;
+        }
+
         .result-row {
             border-bottom: 1px solid #eee;
             page-break-inside: avoid;
@@ -121,7 +132,7 @@
 
         .result-value {
             font-weight: bold;
-            padding-left: 0; /* Ajustado a 0 para alineación correcta en columna propia */
+            padding-left: 0;
         }
 
         /* Estilos para la tabla de matriz */
@@ -179,13 +190,13 @@
             content: "Página " counter(page);
         }
 
-          .observaciones-box {
+        .observaciones-box {
             background-color: #f9f9f9;
             border: 1px solid #eee;
             padding: 10px;
             font-size: 9px;
-            margin-top: 15px; /* Espacio después de la tabla de paciente */
-            margin-bottom: 20px; /* Espacio antes del primer examen */
+            margin-top: 15px;
+            margin-bottom: 20px;
             page-break-inside: avoid;
         }
         .observaciones-box strong {
@@ -194,10 +205,8 @@
             color: #333;
         }
 
-        /* --- ¡NUEVO ESTILO! --- */
         .fuera-de-rango {
             color: #D90000;
-            /* Un rojo oscuro para impresión */
             font-weight: bold;
         }
 
@@ -238,19 +247,19 @@
                 <span style="color:#444;">4ª CALLE ORIENTE #6, B° SAN FRANCISCO, SAN VICENTE.</span>
             </p>
             <p style="font-size: 9px; margin: 0; color: #333; line-height: 1.5;">
-                <span style="display: inline-block; vertical-align: middle;">
+                <span>
                     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjIgMTYuOTJ2M2EyIDIgMCAwIDEtMi4xOCAyIDE5Ljc5IDE5Ljc5IDAgMCAxLTguNjMtMy4wNyAxOS41IDE5LjUgMCAwIDEtNi02IDE5Ljc5IDE5Ljc5IDAgMCAxLTMuMDctOC42M0EyIDIgMCAwIDEgNC4xMSAySDdBMiAyIDAgMCAxIDkgMy4yNmExMi44NCAxMi44NCAwIDAgMCAuNyAyLjgxIDIgMiAwIDAgMS0uNDUgMi4xMUw4LjA5IDkuOTFhMTYgMTYgMCAwIDAgNiA2bDEuMjctMS4yN2EyIDIgMCAwIDEgMi4xMS0uNDUgMTIuODQgMTIuODQgMCAwIDAgMi44MS43QTIgMiAwIDAgMSAyMiAxNi45MnoiPjwvcGF0aD48L3N2Zz4="
                         width="8" height="8" style="vertical-align: middle; margin-right: 3px;" />
                 </span>
                 <a> </a>
-                <span style="display: inline-block; vertical-align: middle; font-weight: bold;">2606-6596</span>
-                <span style="display: inline-block; vertical-align: middle; margin-left: 8px; margin-right: 8px; color: #888;">|</span>
-                <span style="display: inline-block; vertical-align: middle;">
+                <span style="font-weight: bold;">2606-6596</span>
+                <span style="margin-left: 8px; margin-right: 8px; color: #888;">|</span>
+                <span>
                     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjEgMTEuNWE4LjM4IDguMzggMCAwIDEtLjkgMy44IDguNSA4LjUgMCAwIDEtNy42IDQuNyA4LjM4IDguMzggMCAwIDEtMy44LS45TDMgMjFsMS45LTUuN2E4LjM4IDguMzggMCAwIDEtLjktMy44IDguNSA4LjUgMCAwIDEgNC43LTcuNiA4LjM4IDguMzggMCAwIDEgMy44LS45aC41YTguNDggOC40OCAwIDAgMSA4IDh2LjV6Ij48L3BhdGg+PC9zdmc+Cg=="
                         width="8" height="8" style="vertical-align: middle; margin-right: 3px;" />
                 </span>
                  <a> </a>
-                <span style="display: inline-block; vertical-align: middle; font-weight: bold;">WhatsApp: 7595-4210</span>
+                <span style="font-weight: bold;">WhatsApp: 7595-4210</span>
             </p>
         </div>
         <div class="header-right" style="width: 30%; text-align: right;">
@@ -258,7 +267,6 @@
         </div>
     </div>
 
-    <!-- Nueva ubicación para la información del cliente -->
     <div style="margin-top: 5px; padding: 5px; font-size: 9px;">
         <table style="width: 100%; border-collapse: collapse;">
             <tr>
@@ -291,28 +299,44 @@
         @endif
     </div>
 
-
     @foreach($datos_agrupados as $tipoExamenNombre => $examenes)
         <div class="tipo-examen-header">{{ $tipoExamenNombre }}</div>
 
         @foreach($examenes as $examen)
+            @php
+                // AGRUPACIÓN POR TIPO DE PRUEBA (SIN OCULTAR COLUMNAS)
+                $pruebasCollection = collect($examen['pruebas_unitarias']);
+                
+                // Agrupar usando 'tipo_prueba'
+                $agrupadas = $pruebasCollection->groupBy(function($item) {
+                    return $item['tipo_prueba'] ?? ''; 
+                });
+
+                // Separar las sin tipo (key vacío) de las con tipo
+                $sinGrupo = $agrupadas->pull('') ?? collect();
+                
+                // Ordenar los grupos restantes alfabéticamente
+                $conGrupo = $agrupadas->sortKeys();
+            @endphp
+
             <table class="results-table">
                 <thead>
                     @if (!empty($examen['pruebas_unitarias']))
                         <tr>
-                            <th style="width: 30%;">PRUEBA</th>
-                            <th style="width: 20%;">RESULTADO</th>
-                            <th style="width: 30%;">RANGO DE REFERENCIA</th>
-                            <th style="width: 20%;">UNIDAD</th>
+                            <!-- Anchos Fijos: 40% Prueba, 25% Resultado, 35% Referencia -->
+                            <th style="width: 40%;">PRUEBA</th>
+                            <th style="width: 25%;">RESULTADO</th>
+                            <th style="width: 35%;">RANGO DE REFERENCIA</th>
                         </tr>
                     @endif
                 </thead>
                 <tbody>
                     <tr class="examen-title-row">
-                        <td colspan="4">EXAMEN: {{ $examen['nombre'] }} | CÓDIGO: {{ $examen['codigo'] ?? 'N/A' }}</td>
+                        <td colspan="3">EXAMEN: {{ $examen['nombre'] }}</td>
                     </tr>
 
-                    @foreach($examen['pruebas_unitarias'] as $pruebaData)
+                    {{-- A. Pruebas SIN GRUPO (Primero) --}}
+                    @foreach($sinGrupo as $pruebaData)
                         <tr class="result-row">
                             <td>
                                 <div class="result-prueba-name">{{ $pruebaData['nombre'] }}</div>
@@ -322,10 +346,32 @@
                                     {!! $pruebaData['resultado'] !!}
                                 </div>
                             </td>
-                            <td>{!! $pruebaData['referencia'] !!}</td>
-                            <td>{{ $pruebaData['unidades'] }}</td>
+                            <td>{!! $pruebaData['referencia'] !!} {{ $pruebaData['unidades'] }}</td>
                         </tr>
                     @endforeach
+
+                    {{-- B. GRUPOS (Tipo A, Tipo B, etc.) --}}
+                    @foreach($conGrupo as $nombreGrupo => $items)
+                        <!-- Fila separadora del grupo -->
+                        <tr class="group-title-row">
+                            <td colspan="3">{{ $nombreGrupo }}</td>
+                        </tr>
+                        
+                        @foreach($items as $pruebaData)
+                            <tr class="result-row">
+                                <td>
+                                    <div class="result-prueba-name">{{ $pruebaData['nombre'] }}</div>
+                                </td>
+                                <td>
+                                    <div class="result-value @if($pruebaData['es_fuera_de_rango']) fuera-de-rango @endif">
+                                        {!! $pruebaData['resultado'] !!}
+                                    </div>
+                                </td>
+                                <td>{!! $pruebaData['referencia'] !!} {{ $pruebaData['unidades'] }}</td>
+                            </tr>
+                        @endforeach
+                    @endforeach
+
                 </tbody>
             </table>
 
@@ -363,63 +409,33 @@
         @endforeach
     @endforeach
 
-    {{-- Fragmento de pdf/reporte_resultados.blade.php (Sección de Firmas) --}}
-
-    {{-- Contenedor de firmas alineado a la derecha --}}
     <div style="margin-top: 40px; text-align: right; width: 100%;">
-
         <div style="display: inline-block;">
-
-            {{-- Bloque de Sello de Registro (El estático del laboratorio) --}}
             <div style="display: inline-block; margin-left: 20px; vertical-align: top;">
-                @php
-                    // Usamos 130px de ancho y 80px de alto como referencia del sello estático
-                    $size = '130px'; 
-                @endphp
+                @php $size = '130px'; @endphp
                 @if (file_exists($ruta_sello_registro))
                     <img src="{{ $ruta_sello_registro }}" alt="Sello Registro" style="width: {{ $size }}; height: auto;">
                 @else
                     <div style="width: {{ $size }}; height: 80px; border: 1px dashed #ccc;">[Sello Reg. Faltante]</div>
                 @endif
             </div>
-
-            {{-- Bloque Combinado: Sello del Usuario + Firma del Usuario (Sobrepuestos) --}}
             <div style="display: inline-block; margin-left: 20px; vertical-align: top;">
                 @php
                     $pathFirmaUsuario = isset($ruta_firma_digital) ? storage_path('app/public/' . $ruta_firma_digital) : null;
                     $pathSelloUsuario = isset($ruta_sello_digital) ? storage_path('app/public/' . $ruta_sello_digital) : null;
                 @endphp
-
-                {{-- Contenedor Relativo para la Superposición (Mantiene el tamaño de referencia) --}}
                 <div style="position: relative; width: {{ $size }}; height: 80px; margin-top: 0;">
-
-                    {{-- 1. IMAGEN DE BASE (Sello del Usuario) --}}
                     @if ($pathSelloUsuario && file_exists($pathSelloUsuario))
-                        <img src="{{ $pathSelloUsuario }}" alt="Sello Usuario" style="position: absolute; 
-                                                top: 0; 
-                                                left: 0; 
-                                                width: 100%; 
-                                                height: 100%; 
-                                                object-fit: contain;">
+                        <img src="{{ $pathSelloUsuario }}" alt="Sello Usuario" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;">
                     @else
                         <div style="width: 100%; height: 100%; border: 1px dashed #ccc;">[Sello Usr Faltante]</div>
                     @endif
-
-                    {{-- 2. IMAGEN DE ARRIBA (Firma del Usuario) --}}
                     @if ($pathFirmaUsuario && file_exists($pathFirmaUsuario))
-                        <img src="{{ $pathFirmaUsuario }}" alt="Firma" style="position: absolute; 
-                                                top: 8%; 
-                                                left: 50%; 
-                                                transform: translate(-50%, -50%); /* Centrado */
-                                                max-width: 90%; 
-                                                height: auto; 
-                                                object-fit: contain;
-                                                z-index: 10;">
+                        <img src="{{ $pathFirmaUsuario }}" alt="Firma" style="position: absolute; top: 8%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; height: auto; object-fit: contain; z-index: 10;">
                     @endif
                 </div>
             </div>
         </div>
     </div>
 </body>
-
 </html>

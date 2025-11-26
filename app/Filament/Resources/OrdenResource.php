@@ -668,6 +668,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
         $orden = $record->load([
             'cliente',
             'detalleOrden.examen.tipoExamen',
+            'detalleOrden.examen.pruebas.tipoPrueba',
             'detalleOrden.examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario',
             'resultados.prueba'
         ]);
@@ -950,6 +951,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
             'unidades' => $unidades, // <-- Usa las unidades de la "foto" o las de en vivo
             'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
             'es_fuera_de_rango' => $es_fuera_de_rango, // <-- Devuelve la bandera
+            'tipo_prueba' => $prueba->tipoPrueba->nombre ?? '', 
         ];
     }
 
