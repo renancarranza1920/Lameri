@@ -23,24 +23,44 @@ class Reactivo extends Model
     protected $casts = [
         'en_uso' => 'boolean', // Usamos el nombre de columna correcto
     ];
+/**
+     * Desactiva otros reactivos que compartan pruebas con este.
+     */
+    public function resolverConflictosDeUso(): void
+    {
+        // Solo ejecutamos si este reactivo está marcado como en uso
+        if (!$this->en_uso) return;
 
+        \Illuminate\Support\Facades\DB::transaction(function () {
+            // 1. Obtener IDs de las pruebas de ESTE reactivo
+            $misPruebasIds = $this->pruebas()->pluck('pruebas.id')->toArray();
+
+            if (empty($misPruebasIds)) return;
+
+            // 2. Buscar y desactivar la competencia
+            self::where('en_uso', true)
+                ->where('id', '!=', $this->id) // No desactivarme a mí mismo
+                ->whereHas('pruebas', function ($q) use ($misPruebasIds) {
+                    $q->whereIn('pruebas.id', $misPruebasIds);
+                })
+                ->update(['en_uso' => false]);
+        });
+    }
     protected static function booted(): void
     {
         static::saving(function (Reactivo $reactivo) {
-            // Verificamos el atributo correcto
-            if ($reactivo->en_uso) {
-                // Actualizamos la columna correcta
-                self::where('prueba_id', $reactivo->prueba_id)
-                    ->where('id', '!=', $reactivo->id)
-                    ->update(['en_uso' => false]);
+            // REGLA DE ORO:
+            // Si el estado NO es 'disponible', es imposible que esté 'en_uso'.
+            if (in_array($reactivo->estado, ['agotado', 'caducado']) && $reactivo->en_uso) {
+                $reactivo->en_uso = false;
             }
         });
     }
 
     // 3. ESPECIFICAR TIPO DE RETORNO
-    public function prueba(): BelongsTo
+   public function pruebas(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsTo(Prueba::class);
+        return $this->belongsToMany(Prueba::class, 'prueba_reactivo');
     }
     
     // 3. ESPECIFICAR TIPO DE RETORNO
@@ -53,26 +73,9 @@ class Reactivo extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName('Reactivos') // Nombre del módulo
-            
-            ->setDescriptionForEvent(function(string $eventName) {
-                // Traducimos el evento
-                $eventoTraducido = match($eventName) {
-                    'created' => 'creado',
-                    'updated' => 'actualizado',
-                    'deleted' => 'eliminado',
-                    default => $eventName
-                };
-                
-                // Creamos un nombre descriptivo, ya que reactivo no tiene "nombre"
-                $pruebaNombre = $this->prueba ? $this->prueba->nombre : 'desconocida';
-                return "El reactivo (ID: {$this->id}) para la prueba '{$pruebaNombre}' ha sido {$eventoTraducido}";
-            })
-            
-            // Rastrear todos los campos (equivalente a logFillable() cuando se usa $guarded)
-            ->logUnguarded() 
-            
-            ->logOnlyDirty() 
-            ->dontSubmitEmptyLogs();
+            ->useLogName('Reactivos')
+            ->setDescriptionForEvent(fn(string $e) => "El reactivo (ID: {$this->id}) ha sido {$e}")
+            ->logUnguarded()
+            ->logOnlyDirty();
     }
 }

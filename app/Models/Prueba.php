@@ -28,6 +28,10 @@ class Prueba extends Model
     { 
         return $this->belongsTo(TipoPrueba::class); 
     }
+    public function reactivos(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Reactivo::class, 'prueba_reactivo');
+    }
 
     // 3. ESPECIFICAR TIPO DE RETORNO
     public function examen(): BelongsTo 
@@ -36,10 +40,15 @@ class Prueba extends Model
     }
 
     // 3. ESPECIFICAR TIPO DE RETORNO
-    public function reactivoEnUso(): HasOne
+ public function reactivoEnUso(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
-        // Devuelve el único reactivo para esta prueba que está marcado como "en uso"
-        return $this->hasOne(Reactivo::class)->where('en_uso', true);
+        // Usamos hasOne a través de la tabla pivote simulando una relación directa
+        // para que Eloquent devuelva un solo modelo, no una colección.
+        return $this->hasOne(Reactivo::class, 'id', 'id') // Truco de Eloquent
+            ->join('prueba_reactivo', 'reactivos.id', '=', 'prueba_reactivo.reactivo_id')
+            ->whereColumn('prueba_reactivo.prueba_id', 'pruebas.id')
+            ->where('reactivos.en_uso', true)
+            ->select('reactivos.*'); // Aseguramos traer solo datos del reactivo
     }
 
     // 3. ESPECIFICAR TIPO DE RETORNO (ya estaba)
