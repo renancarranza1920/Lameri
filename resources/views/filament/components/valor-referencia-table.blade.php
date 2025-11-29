@@ -8,6 +8,9 @@
             <table class="w-full text-left text-sm">
                 <thead>
                     <tr class="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                        {{-- NUEVA COLUMNA --}}
+                        <th class="px-4 py-3 font-medium text-gray-900 dark:text-white">Prueba</th>
+                        
                         <th class="px-4 py-3 font-medium text-gray-900 dark:text-white">Grupo Etario / Género</th>
                         <th class="px-4 py-3 font-medium text-gray-900 dark:text-white">Descriptivo</th>
                         <th class="px-4 py-3 font-medium text-gray-900 dark:text-white">Valor de Referencia</th>
@@ -17,25 +20,28 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
                     @foreach($valores as $valor)
-                        {{-- 
-                            SIN HOVER:
-                            - Se eliminaron las clases hover:bg-... y dark:hover:bg-...
-                            - dark:text-white: Asegura texto blanco en modo oscuro.
-                        --}}
                         <tr>
-                            
-                            {{-- Columna 1 --}}
+                            {{-- NUEVA CELDA --}}
+                            <td class="px-4 py-3 align-top text-gray-700 dark:text-white">
+                                @if($valor->prueba)
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                        {{ $valor->prueba->nombre }}
+                                    </span>
+                                @else
+                                    <span class="text-xs text-gray-500 italic">General</span>
+                                @endif
+                            </td>
+
+                            {{-- RESTO IGUAL --}}
                             <td class="px-4 py-3 align-top text-gray-700 dark:text-white">
                                 <div class="font-medium">{{ $valor->grupoEtario?->nombre ?? 'N/A' }}</div>
                                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ $valor->genero }}</div>
                             </td>
 
-                            {{-- Columna 2 --}}
                             <td class="px-4 py-3 align-top text-gray-700 dark:text-white">
                                 {{ $valor->descriptivo ?? 'N/A' }}
                             </td>
 
-                            {{-- Columna 3 (Valores) --}}
                             <td class="px-4 py-3 align-top font-mono text-gray-700 dark:text-white font-bold">
                                 @php
                                     $valorMin = rtrim(rtrim(number_format($valor->valor_min, 2, '.', ''), '0'), '.');
@@ -57,12 +63,10 @@
                                 @endif
                             </td>
 
-                            {{-- Columna 4 (Unidades) --}}
                             <td class="px-4 py-3 align-top text-gray-700 dark:text-white">
                                 {{ $valor->unidades }}
                             </td>
 
-                            {{-- Columna 5 (Nota) --}}
                             <td class="px-4 py-3 align-top text-sm text-gray-500 dark:text-gray-400 italic">
                                 {{ $valor->nota }}
                             </td>

@@ -32,35 +32,33 @@ public function getTabs(): array
             ->whereNotExists(function ($subQuery) {
                 $subQuery->selectRaw(1)
                          ->from('reactivos as r2')
-                         ->whereColumn('r2.nombre', 'reactivos.nombre')
-                         ->whereColumn('r2.prueba_id', 'reactivos.prueba_id')
+                         ->whereColumn('r2.nombre', 'reactivos.nombre') // Solo comparamos nombre
+                         // ->whereColumn('r2.prueba_id', 'reactivos.prueba_id') <--- ELIMINADO
                          ->where('r2.estado', 'disponible');
             })
-            // 3. ¡LA NUEVA LÓGICA! Seleccionamos solo el registro MÁS RECIENTE de su grupo
+            // 3. Seleccionamos solo el registro MÁS RECIENTE de su grupo (por nombre)
             ->whereIn('id', function ($subQuery) {
                 $subQuery->selectRaw('max(id)')
                          ->from('reactivos')
-                         ->groupBy('nombre', 'prueba_id');
+                         ->groupBy('nombre'); // <--- ELIMINADO ', prueba_id'
             });
     };
 
-    // Función para los históricos (esta no cambia)
+    // Función para los históricos
     $crearConsultaHistoricos = function (Builder $query) {
         $query
             ->whereIn('estado', ['caducado', 'agotado'])
             ->whereExists(function ($subQuery) {
                 $subQuery->selectRaw(1)
                          ->from('reactivos as r2')
-                         ->whereColumn('r2.nombre', 'reactivos.nombre')
-                         ->whereColumn('r2.prueba_id', 'reactivos.prueba_id')
+                         ->whereColumn('r2.nombre', 'reactivos.nombre') // Solo comparamos nombre
+                         // ->whereColumn('r2.prueba_id', 'reactivos.prueba_id') <--- ELIMINADO
                          ->where('r2.estado', 'disponible');
             });
     };
 
     return [
-        'todos' => Tab::make('Todos')
-            ->badge(static::getModel()::count()),
-
+        
         'disponibles' => Tab::make('Disponibles')
             ->modifyQueryUsing(fn (Builder $query) => $query->where('estado', 'disponible'))
             ->badge(static::getModel()::where('estado', 'disponible')->count())
@@ -77,4 +75,5 @@ public function getTabs(): array
             ->badgeColor('gray'),
     ];
 }
+
 }

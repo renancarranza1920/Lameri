@@ -5,7 +5,7 @@ namespace App\Listeners;
 use App\Models\Reactivo;
 use Carbon\Carbon;
 use Filament\Notifications\Notification;
-use Illuminate\Auth\Events\Login; // Se usa el evento Login
+use Illuminate\Auth\Events\Login;
 
 class CheckExpiringReagents
 {
@@ -16,14 +16,21 @@ class CheckExpiringReagents
 
     public function handle(Login $event): void
     {   
-
+        // --- CORRECCIÓN AQUÍ ---
+        // Al usar update() masivo, los eventos del modelo no se disparan.
+        // Debemos forzar 'en_uso' => false manualmente aquí.
         Reactivo::where('estado', 'disponible')
             ->where('fecha_caducidad', '<', Carbon::now())
-            ->update(['estado' => 'caducado']);
+            ->update([
+                'estado' => 'caducado',
+                'en_uso' => false // <--- AGREGADO: Apagado forzoso
+            ]);
+        // -----------------------
 
-        // Ya no se necesita la comprobación de sesión
+        // Notificaciones (Esto queda igual)
         $thresholdDate = Carbon::now()->addDays(15);
         $expiringReagents = Reactivo::query()
+            ->where('estado', 'disponible') // Sugerencia: Solo avisar de los disponibles
             ->whereNotNull('fecha_caducidad')
             ->where('fecha_caducidad', '<=', $thresholdDate)
             ->where('fecha_caducidad', '>=', Carbon::now())
@@ -32,7 +39,6 @@ class CheckExpiringReagents
         if ($expiringReagents->isNotEmpty()) {
             $reagentNames = $expiringReagents->pluck('nombre')->implode(', ');
             
-            // Se usa ->send() para mostrar la notificación en pantalla
             Notification::make()
                 ->title('Reactivos Próximos a Caducar')
                 ->warning()

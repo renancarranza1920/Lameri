@@ -29,7 +29,10 @@ class ValorReferencia extends Model
     {
         return $this->belongsTo(Reactivo::class);
     }
-
+    public function prueba(): BelongsTo
+    {
+        return $this->belongsTo(Prueba::class);
+    }
     // 3. ESPECIFICAR EL TIPO DE RETORNO (ya estaba)
     public function grupoEtario(): BelongsTo
     {
@@ -61,4 +64,6 @@ class ValorReferencia extends Model
             ->logOnlyDirty() 
             ->dontSubmitEmptyLogs();
     }
+
+
 }
