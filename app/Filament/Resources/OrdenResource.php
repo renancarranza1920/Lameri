@@ -76,7 +76,7 @@ class OrdenResource extends Resource
             ]);
     }
 
- public static function getClienteStep(): array
+    public static function getClienteStep(): array
     {
         return [
             Forms\Components\Select::make('cliente_id')
@@ -95,7 +95,7 @@ class OrdenResource extends Resource
                 ->preload()
                 ->searchable(['NumeroExp', 'nombre', 'apellido'])
                 ->getOptionLabelFromRecordUsing(fn($record) => "{$record->NumeroExp} - {$record->nombre} {$record->apellido}")
-                
+
                 // --- INICIO LÓGICA EMBARAZO ---
                 ->live() // 1. Escuchar cambios en tiempo real
                 ->afterStateUpdated(function ($state, Set $set) {
@@ -126,10 +126,10 @@ class OrdenResource extends Resource
                 ->required(),
 
             // --- CAMPOS PARA EMBARAZO ---
-            
+
             // Variable temporal para controlar la visibilidad (no se guarda en BD)
             Forms\Components\Hidden::make('genero_temp')
-                ->dehydrated(false), 
+                ->dehydrated(false),
 
             Forms\Components\TextInput::make('semanas_gestacion')
                 ->label('Semanas de Gestación')
@@ -139,9 +139,9 @@ class OrdenResource extends Resource
                 ->placeholder('Ej: 12')
                 ->helperText('Ingresa las semanas solo si aplica (embarazo).')
                 // Solo visible si el cliente es mujer
-                ->visible(fn (Get $get) => $get('genero_temp') === 'Femenino')
+                ->visible(fn(Get $get) => $get('genero_temp') === 'Femenino')
                 ->columnSpanFull(),
-            
+
             // -----------------------------
 
             Forms\Components\Textarea::make('observaciones')
@@ -240,7 +240,7 @@ class OrdenResource extends Resource
                                             Select::make('examen_id')
                                                 ->label('Buscar Examen')
                                                 ->options(\App\Models\Examen::where('estado', 1)
-                                                ->pluck('nombre', 'id')->toArray())
+                                                    ->pluck('nombre', 'id')->toArray())
                                                 ->searchable()
                                                 ->preload()
                                                 ->reactive()
@@ -308,9 +308,9 @@ class OrdenResource extends Resource
                 ]),
 
 
-Forms\Components\Hidden::make('subtotal')->default(0)->reactive(),
-Forms\Components\Hidden::make('descuento')->default(0)->reactive(),
-Forms\Components\Hidden::make('codigo_aplicado'),
+            Forms\Components\Hidden::make('subtotal')->default(0)->reactive(),
+            Forms\Components\Hidden::make('descuento')->default(0)->reactive(),
+            Forms\Components\Hidden::make('codigo_aplicado'),
 
 
 
@@ -334,11 +334,11 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                             ->icon('heroicon-o-check-circle')
                             ->color('success')
                             ->label('Aplicar')
-                          ->action(function ($livewire) {
-                                    $livewire->aplicarCodigo();
-                                })
-                                // Usamos $livewire para acceder a la propiedad pública
-                                ->visible(fn ($livewire) => is_null($livewire->codigoAplicado)), 
+                            ->action(function ($livewire) {
+                                $livewire->aplicarCodigo();
+                            })
+                            // Usamos $livewire para acceder a la propiedad pública
+                            ->visible(fn($livewire) => is_null($livewire->codigoAplicado)),
 
                     ),
                 // Placeholder para mostrar si el cupón está aplicado o el descuento
@@ -376,7 +376,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     Stack::make([
                         TextColumn::make('id')
                             ->label('Orden #')
-                            ->formatStateUsing(fn ($state) => "Orden #{$state}") // Formato visual "Orden #123"
+                            ->formatStateUsing(fn($state) => "Orden #{$state}") // Formato visual "Orden #123"
                             ->weight('bold')
                             ->color('primary')
                             ->searchable() // <--- ¡ESTO PERMITE BUSCAR POR ID!
@@ -433,7 +433,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                             ->when($data['fecha_desde'], fn(Builder $query, $date) => $query->whereDate('fecha', '>=', $date))
                             ->when($data['fecha_hasta'], fn(Builder $query, $date) => $query->whereDate('fecha', '<=', $date));
                     }),
-                
+
                 Filter::make('fecha_unica')
                     ->label('Filtrar por Fecha')
                     ->form([
@@ -450,9 +450,9 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                             );
                     })
             ])
-           ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContentCollapsible)
-        
-        ->filtersFormColumns(2)
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContentCollapsible)
+
+            ->filtersFormColumns(2)
             ->actions([
                 Tables\Actions\Action::make('gestionarMuestras')
                     ->label('Gestionar Muestras')
@@ -461,7 +461,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->iconButton()
                     ->color('info')
                     ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente'])
-                    && auth()->user()->can('procesar_muestras_orden'))
+                        && auth()->user()->can('procesar_muestras_orden'))
                     ->modalHeading('Registrar Muestras Recibidas')
                     ->modalSubmitActionLabel('Guardar Estado')
                     ->form(function (Orden $record) {
@@ -555,7 +555,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->iconButton()
                     ->color('primary')
                     ->visible(fn(Orden $record): bool => $record->estado === 'en proceso'
-                    && auth()->user()->can('ingresar_resultados_orden'))
+                        && auth()->user()->can('ingresar_resultados_orden'))
                     ->url(fn(Orden $record): string => static::getUrl('ingresar-resultados', ['record' => $record])),
 
                 Tables\Actions\Action::make('imprimirEtiquetas')
@@ -565,7 +565,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->color('gray')
                     // Visible si la orden no está finalizada o cancelada
                     ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente'])
-                    && auth()->user()->can('imprimir_etiquetas_orden'))
+                        && auth()->user()->can('imprimir_etiquetas_orden'))
                     ->url(fn(Orden $record): string => DetalleOrdenKanban::getUrl(['ordenId' => $record->id])),
 
                 Tables\Actions\Action::make('ver')
@@ -593,13 +593,13 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->iconButton()
                     ->color('gray')
                     ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado'])
-                    && auth()->user()->can('ver_pruebas_orden'))
+                        && auth()->user()->can('ver_pruebas_orden'))
                     ->modalHeading('Pruebas a Realizar')
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Cerrar')
                     ->form(function (Orden $record) {
                         // 1. Cargamos resultados para no hacer consultas en el loop
-                        $record->load('resultados'); 
+                        $record->load('resultados');
 
                         $detalles = $record->detalleOrden()->with('examen.pruebas')->get();
                         $examenes = $detalles->map(fn($detalle) => $detalle->examen)->filter()->unique('id');
@@ -656,24 +656,76 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                         Notification::make()->title('Orden Finalizada con Éxito')->success()->send();
                     }),
 
-                Tables\Actions\Action::make('generarReporte')
+               Tables\Actions\Action::make('generarReporte')
     ->tooltip('Generar Reporte PDF')
     ->icon('heroicon-o-printer')
     ->iconButton()
     ->color('gray')
     ->visible(fn(Orden $record): bool => $record->estado === 'finalizado' &&
-                        auth()->user()->can('generar_reporte_orden'))
+        auth()->user()->can('generar_reporte_orden'))
     ->action(function (Orden $record) {
         // 1. Cargar relaciones necesarias
+        // CORRECCIÓN CLAVE: Cambiamos 'reactivoEnUso' por 'reactivosActivos'
         $orden = $record->load([
             'cliente',
             'detalleOrden.examen.tipoExamen',
             'detalleOrden.examen.pruebas.tipoPrueba',
-            'detalleOrden.examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario',
+            'detalleOrden.examen.pruebas.reactivosActivos.valoresReferencia.grupoEtario',
             'resultados.prueba'
         ]);
 
-        // 2. Agrupar por tipo de examen (Hematología, Química, etc.)
+        // 2. Función Helper interna para procesar cada prueba (Unitaria)
+        $procesarPrueba = function ($prueba, $orden, $detalleId) {
+            // Buscamos el resultado en memoria (ya cargado)
+            $resultado = $orden->resultados->first(function ($res) use ($prueba, $detalleId) {
+                return $res->detalle_orden_id == $detalleId && $res->prueba_id == $prueba->id;
+            });
+
+            // Si hay resultado guardado, usamos sus snapshots (LO MÁS SEGURO)
+            if ($resultado) {
+                return [
+                    'nombre' => $resultado->prueba_nombre_snapshot ?? $prueba->nombre,
+                    'resultado' => $resultado->resultado,
+                    'referencia' => $resultado->valor_referencia_snapshot ?? 'N/A',
+                    'unidades' => $resultado->unidades_snapshot ?? '',
+                    'fecha_resultado' => $resultado->updated_at->format('d/m/Y'),
+                    'es_fuera_de_rango' => (bool) $resultado->fuera_de_rango,
+                ];
+            }
+
+            // FALLBACK: Si no hay resultado (raro en finalizado), intentamos calcular referencia en vivo
+            $referencia = 'N/A';
+            $unidades = '';
+            
+            // Lógica para obtener reactivo (Soporta Objeto JSON o Modelo Eloquent)
+            $reactivo = null;
+            if ($prueba instanceof \App\Models\Prueba) {
+                // Usamos el accessor mágico o la relación cargada
+                $reactivo = $prueba->reactivosActivos->first();
+            } elseif (isset($prueba->reactivo)) {
+                // Si viene del snapshot JSON
+                $reactivo = (object) $prueba->reactivo;
+            }
+
+            if ($reactivo && isset($reactivo->valores_referencia)) {
+                // Aquí podrías recalcular la referencia si fuera estrictamente necesario
+                // Pero para un reporte final, normalmente se muestra vacío si no hay resultado.
+                $unidades = is_array($reactivo->valores_referencia) 
+                    ? ($reactivo->valores_referencia[0]['unidades'] ?? '') 
+                    : ($reactivo->valores_referencia->first()->unidades ?? '');
+            }
+
+            return [
+                'nombre' => $prueba->nombre,
+                'resultado' => 'Pendiente', // O vacío
+                'referencia' => $referencia,
+                'unidades' => $unidades,
+                'fecha_resultado' => $orden->fecha->format('d/m/Y'),
+                'es_fuera_de_rango' => false,
+            ];
+        };
+
+        // 3. Agrupar por tipo de examen
         $detallesAgrupados = $orden->detalleOrden
             ->whereNotNull('examen_id')
             ->groupBy('examen.tipoExamen.nombre');
@@ -684,12 +736,8 @@ Forms\Components\Hidden::make('codigo_aplicado'),
             $examenes_data = [];
 
             foreach ($detalles as $detalle) {
-                
-                // --- LÓGICA DIFERENCIADA: EXTERNO vs INTERNO ---
-                
+                // CASO A: EXAMEN EXTERNO
                 if ($detalle->examen->es_externo) {
-                    // CASO A: EXAMEN EXTERNO (REFERIDO)
-                    // Buscamos directamente en la tabla 'resultados' los datos guardados manualmente (snapshots)
                     $resultadosExternos = $orden->resultados
                         ->where('detalle_orden_id', $detalle->id)
                         ->where('es_externo', true);
@@ -701,33 +749,38 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                             'referencia' => $res->valor_referencia_snapshot ?? 'N/A',
                             'unidades' => $res->unidades_snapshot ?? '',
                             'fecha_resultado' => $res->updated_at->format('d/m/Y'),
-                            'es_fuera_de_rango' => false, // No calculamos rangos en externos
+                            'es_fuera_de_rango' => false,
                         ];
                     })->all();
 
-                    // Agregamos al reporte como un examen simple (sin matrices)
                     $examenes_data[] = [
-                        'nombre' => $detalle->examen->nombre ,
+                        'nombre' => $detalle->examen->nombre,
                         'codigo' => $detalle->examen->id,
                         'pruebas_unitarias' => $dataUnitarias,
-                        'matrices' => [], // Los externos no suelen usar matrices complejas
+                        'matrices' => [],
                     ];
-
-                } else {
-                    // CASO B: EXAMEN INTERNO (CATÁLOGO)
-                    // Usamos la definición de 'pruebas' y calculamos rangos con la función auxiliar
-                    $todasLasPruebas = $detalle->examen->pruebas->where('es_externo', false);
+                } 
+                // CASO B: EXAMEN INTERNO
+                else {
+                    // LÓGICA HÍBRIDA (SNAPSHOT vs BD) para determinar qué pruebas mostrar
+                    if (!empty($detalle->pruebas_snapshot)) {
+                        // Usamos el snapshot para saber qué pruebas tenía la orden originalmente
+                        $todasLasPruebas = collect($detalle->pruebas_snapshot)->map(fn($item) => json_decode(json_encode($item)));
+                    } else {
+                        // Fallback a BD viva
+                        $todasLasPruebas = $detalle->examen->pruebas->where('es_externo', false);
+                    }
 
                     $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
                     $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
 
-                    // Procesar unitarias internas
-                    $dataUnitarias = $pruebasUnitarias->map(function ($prueba) use ($orden, $detalle) {
-                        return self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
+                    // Procesar Unitarias
+                    $dataUnitarias = $pruebasUnitarias->map(function ($prueba) use ($procesarPrueba, $orden, $detalle) {
+                        return $procesarPrueba($prueba, $orden, $detalle->id);
                     })->all();
 
-                    // Procesar matrices internas
-                    $dataMatrices = $pruebasConjuntas->map(function (Collection $pruebasDelConjunto) use ($orden, $detalle) {
+                    // Procesar Matrices
+                    $dataMatrices = $pruebasConjuntas->map(function ($pruebasDelConjunto) use ($procesarPrueba, $orden, $detalle) {
                         $filas = [];
                         $columnas = [];
                         $dataMatrix = [];
@@ -737,7 +790,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                                 [$nombreFila, $nombreColumna] = $partes;
                                 $filas[] = $nombreFila;
                                 $columnas[] = $nombreColumna;
-                                $dataMatrix[$nombreFila][$nombreColumna] = self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
+                                $dataMatrix[$nombreFila][$nombreColumna] = $procesarPrueba($prueba, $orden, $detalle->id);
                             }
                         }
                         return [
@@ -748,7 +801,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     })->all();
 
                     $examenes_data[] = [
-                        'nombre' => $detalle->examen->nombre,
+                        'nombre' => $detalle->nombre_examen, // Usar nombre del detalle (snapshot)
                         'codigo' => $detalle->examen->id,
                         'pruebas_unitarias' => $dataUnitarias,
                         'matrices' => $dataMatrices,
@@ -758,35 +811,34 @@ Forms\Components\Hidden::make('codigo_aplicado'),
             $datos_agrupados[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
         }
 
-        // 3. Datos de Firma y Sello
+        // 4. Datos de Firma y Sello
         $usuarioQueFirma = auth()->user();
         $rutaFirma = $usuarioQueFirma?->firma_path ?? null;
         $rutaSello = $usuarioQueFirma?->sello_path ?? null;
 
-        // 4. Preparar PDF
+        // 5. Generar PDF
         $pdf_data = [
             'orden' => $orden,
             'datos_agrupados' => $datos_agrupados,
             'ruta_firma_digital' => $rutaFirma,
             'ruta_sello_digital' => $rutaSello,
-            'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado Desconocido',
+            'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado',
             'ruta_sello_registro' => public_path('storage/sello.png'),
         ];
 
-        $pdf = Pdf::loadView('pdf.reporte_resultados', $pdf_data);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.reporte_resultados', $pdf_data);
 
         return response()->streamDownload(
             fn() => print ($pdf->output()),
             "Resultados-{$orden->cliente->nombre}-{$orden->id}.pdf"
         );
-    }),
-                Tables\Actions\Action::make('cancelarOrden')
+    }),Tables\Actions\Action::make('cancelarOrden')
                     ->tooltip('Cancelar Orden')
                     ->icon('heroicon-o-x-circle')
                     ->iconButton()
                     ->color('danger')
                     ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso', 'pausada'])
-                    &&
+                        &&
                         auth()->user()->can('cancelar_orden'))
                     ->requiresConfirmation()
                     ->action(function (Orden $record) {
@@ -831,7 +883,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                 // Ej: "Adultos" (ID: 8) + "Masculino"
 
                 // AGREGAR ESTO TEMPORALMENTE PARA PROBAR
-               
+
                 $valorRef = $todosLosValores
                     ->where('grupo_etario_id', $grupoEtarioCliente->id)
                     ->where('genero', $generoCliente)
@@ -951,7 +1003,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
             'unidades' => $unidades, // <-- Usa las unidades de la "foto" o las de en vivo
             'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
             'es_fuera_de_rango' => $es_fuera_de_rango, // <-- Devuelve la bandera
-            'tipo_prueba' => $prueba->tipoPrueba->nombre ?? '', 
+            'tipo_prueba' => $prueba->tipoPrueba->nombre ?? '',
         ];
     }
 
