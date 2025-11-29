@@ -40,15 +40,11 @@ class Prueba extends Model
     }
 
     // 3. ESPECIFICAR TIPO DE RETORNO
- public function reactivoEnUso(): \Illuminate\Database\Eloquent\Relations\HasOne
+ // 1. Relación Real (Nativa): Trae todos los reactivos activos (aunque debería ser solo 1)
+    public function reactivosActivos(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        // Usamos hasOne a través de la tabla pivote simulando una relación directa
-        // para que Eloquent devuelva un solo modelo, no una colección.
-        return $this->hasOne(Reactivo::class, 'id', 'id') // Truco de Eloquent
-            ->join('prueba_reactivo', 'reactivos.id', '=', 'prueba_reactivo.reactivo_id')
-            ->whereColumn('prueba_reactivo.prueba_id', 'pruebas.id')
-            ->where('reactivos.en_uso', true)
-            ->select('reactivos.*'); // Aseguramos traer solo datos del reactivo
+        return $this->belongsToMany(Reactivo::class, 'prueba_reactivo')
+                    ->where('reactivos.en_uso', true);
     }
 
     // 3. ESPECIFICAR TIPO DE RETORNO (ya estaba)
@@ -56,7 +52,10 @@ class Prueba extends Model
     { 
         return $this->hasMany(Resultado::class); 
     }
-
+        public function getReactivoEnUsoAttribute()
+    {
+        return $this->reactivosActivos->first();
+    }
     // 4. AÑADIR EL MÉTODO DE CONFIGURACIÓN DE LA BITÁCORA
     public function getActivitylogOptions(): LogOptions
     {
