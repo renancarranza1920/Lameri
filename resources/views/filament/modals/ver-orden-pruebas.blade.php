@@ -1,48 +1,74 @@
 {{-- resources/views/filament/modals/ver-orden-pruebas.blade.php --}}
 
-@props(['examenes'])
+@props(['examenes', 'orden']) {{-- Recibimos la orden aquí --}}
 
-<style>
-    .examen-block { margin-bottom: 1.5rem; }
-    .examen-header { font-size: 1.125rem; font-weight: bold; color: #1E73BE; margin-bottom: 0.5rem; }
-    .pruebas-table { width: 100%; border-collapse: collapse; }
-    .pruebas-table th, .pruebas-table td { border: 1px solid #e5e7eb; padding: 0.75rem; text-align: left; font-size: 0.875rem; }
-    .pruebas-table th { background-color: #f9fafb; }
-    .no-records { padding: 1rem; text-align: center; color: #6b7280; }
-</style>
-
-<div class="space-y-4">
+<div class="space-y-6">
     @if($examenes && $examenes->count() > 0)
         @foreach ($examenes as $examen)
-            <div class="examen-block">
-                <h3 class="examen-header">Examen: {{ $examen->nombre }}</h3>
+            <div class="space-y-2">
+                <h3 class="text-lg font-bold text-[#1E73BE] dark:text-blue-400">
+                    Examen: {{ $examen->nombre }}
+                </h3>
                 
                 @if($examen->pruebas && $examen->pruebas->count() > 0)
-                    <div class="rounded-lg border border-gray-200 overflow-hidden">
-                        <table class="pruebas-table">
+                    <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <table class="w-full text-sm text-left border-collapse">
                             <thead>
-                                <tr>
-                                    <th>Prueba a Realizar</th>
+                                <tr class="bg-gray-50 dark:bg-gray-800">
+                                    <th class="p-3 font-medium border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white">
+                                        Prueba a Realizar
+                                    </th>
+                                    {{-- Nueva columna de Estado --}}
+                                    <th class="p-3 font-medium border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-center w-24">
+                                        Estado
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($examen->pruebas as $prueba)
-                                    <tr>
-                                        <td>{{ $prueba->nombre }}</td>
+                                    {{-- LÓGICA DE ESTADO --}}
+                                    @php
+                                        // Buscamos si existe un resultado para esta prueba en esta orden
+                                        $resultadoExiste = $orden->resultados
+                                            ->where('prueba_id', $prueba->id)
+                                            // Opcional: filtramos por detalle si es necesario, 
+                                            // pero para visualización general esto basta
+                                            ->first();
+                                        
+                                        // Determinamos si está completado (tiene valor)
+                                        $estaCompleto = $resultadoExiste && $resultadoExiste->resultado;
+                                    @endphp
+
+                                    <tr class="bg-white dark:bg-transparent">
+                                        <td class="p-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-white">
+                                            {{ $prueba->nombre }}
+                                        </td>
+                                        {{-- Columna de Icono --}}
+                                        <td class="p-3 border border-gray-200 dark:border-gray-700 text-center">
+                                            @if($estaCompleto)
+                                                <div class="flex justify-center" title="Completado">
+                                                    <x-heroicon-s-check-circle class="h-6 w-6 text-green-500"/>
+                                                </div>
+                                            @else
+                                                <div class="flex justify-center" title="Pendiente">
+                                                    <x-heroicon-o-clock class="h-6 w-6 text-gray-400"/>
+                                                </div>
+                                            @endif
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
                 @else
-                    <div class="no-records border rounded-lg">
+                    <div class="p-4 text-center text-gray-500 border border-gray-200 rounded-lg dark:border-gray-700 dark:text-gray-400">
                         Este examen no tiene pruebas definidas.
                     </div>
                 @endif
             </div>
         @endforeach
     @else
-        <div class="no-records">
+        <div class="p-4 text-center text-gray-500 dark:text-gray-400">
             No hay exámenes con pruebas en esta orden.
         </div>
     @endif

@@ -9,5 +9,5 @@ class GrupoEtario extends Model
 {
     use HasFactory;
     protected $table = 'grupos_etarios';
-    protected $fillable = ['nombre', 'edad_min', 'edad_max', 'unidad_tiempo', 'genero'];
+    protected $fillable = ['nombre', 'edad_min', 'edad_max', 'unidad_tiempo', 'genero', 'estado'];
 }

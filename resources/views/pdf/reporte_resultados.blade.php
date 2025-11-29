@@ -104,6 +104,17 @@
             padding: 8px 6px;
         }
 
+        /* --- ESTILO PARA SUBGRUPOS (TIPO PRUEBA) --- */
+        .group-title-row td {
+            font-weight: bold;
+            font-size: 10px;
+            background-color: #fafafa;
+            color: #444;
+            padding: 5px 6px;
+            border-bottom: 1px solid #eee;
+            font-style: italic;
+        }
+
         .result-row {
             border-bottom: 1px solid #eee;
             page-break-inside: avoid;
@@ -121,10 +132,9 @@
 
         .result-value {
             font-weight: bold;
-            padding-left: 10px;
+            padding-left: 0;
         }
 
-        /* Estilos para la tabla de matriz */
         .matrix-table {
             width: 100%;
             border-collapse: collapse;
@@ -179,13 +189,13 @@
             content: "Página " counter(page);
         }
 
-          .observaciones-box {
+        .observaciones-box {
             background-color: #f9f9f9;
             border: 1px solid #eee;
             padding: 10px;
             font-size: 9px;
-            margin-top: 15px; /* Espacio después de la tabla de paciente */
-            margin-bottom: 20px; /* Espacio antes del primer examen */
+            margin-top: 15px;
+            margin-bottom: 20px;
             page-break-inside: avoid;
         }
         .observaciones-box strong {
@@ -194,10 +204,8 @@
             color: #333;
         }
 
-        /* --- ¡NUEVO ESTILO! --- */
         .fuera-de-rango {
             color: #D90000;
-            /* Un rojo oscuro para impresión */
             font-weight: bold;
         }
 
@@ -230,120 +238,159 @@
     </footer>
 
     <div class="header">
-        <div class="header-left">
-            <img src="{{ public_path('storage/logo.png') }}" alt="Logo"
-                style="max-width: 90px; vertical-align: middle;">
-
+        <div class="header-left" style="width: 70%; vertical-align: top;">
             <div style="font-weight: bold; font-size: 13px; color: #003366; margin-top: 3px;">
                 LABORATORIO CLÍNICO MERINO
             </div>
-
             <p style="font-size: 9px; margin: 2px 0;">
                 <span style="color:#444;">4ª CALLE ORIENTE #6, B° SAN FRANCISCO, SAN VICENTE.</span>
             </p>
-
             <p style="font-size: 9px; margin: 0; color: #333; line-height: 1.5;">
-
-                <!-- Grupo de Teléfono -->
-                <span style="display: inline-block; vertical-align: middle;">
-                    <!-- CAMBIO: width y height de 10 a 8 -->
+                <span>
                     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjIgMTYuOTJ2M2EyIDIgMCAwIDEtMi4xOCAyIDE5Ljc5IDE5Ljc5IDAgMCAxLTguNjMtMy4wNyAxOS41IDE5LjUgMCAwIDEtNi02IDE5Ljc5IDE5Ljc5IDAgMCAxLTMuMDctOC42M0EyIDIgMCAwIDEgNC4xMSAySDdBMiAyIDAgMCAxIDkgMy4yNmExMi44NCAxMi44NCAwIDAgMCAuNyAyLjgxIDIgMiAwIDAgMS0uNDUgMi4xMUw4LjA5IDkuOTFhMTYgMTYgMCAwIDAgNiA2bDEuMjctMS4yN2EyIDIgMCAwIDEgMi4xMS0uNDUgMTIuODQgMTIuODQgMCAwIDAgMi44MS43QTIgMiAwIDAgMSAyMiAxNi45MnoiPjwvcGF0aD48L3N2Zz4="
                         width="8" height="8" style="vertical-align: middle; margin-right: 3px;" />
                 </span>
-                <span style="display: inline-block; vertical-align: middle; font-weight: bold;">
-                    2606-6596
-                </span>
-
-                <!-- Separador -->
-                <span
-                    style="display: inline-block; vertical-align: middle; margin-left: 8px; margin-right: 8px; color: #888;">
-                    |
-                </span>
-
-                <!-- Grupo de WhatsApp (con icono SVG corregido) -->
-                <span style="display: inline-block; vertical-align: middle;">
-                    <!-- CAMBIO: width y height de 10 a 8 -->
+                <a> </a>
+                <span style="font-weight: bold;">2606-6596</span>
+                <span style="margin-left: 8px; margin-right: 8px; color: #888;">|</span>
+                <span>
                     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjEgMTEuNWE4LjM4IDguMzggMCAwIDEtLjkgMy44IDguNSA4LjUgMCAwIDEtNy42IDQuNyA4LjM4IDguMzggMCAwIDEtMy44LS45TDMgMjFsMS45LTUuN2E4LjM4IDguMzggMCAwIDEtLjktMy44IDguNSA4LjUgMCAwIDEgNC43LTcuNiA4LjM4IDguMzggMCAwIDEgMy44LS45aC41YTguNDggOC40OCAwIDAgMSA4IDh2LjV6Ij48L3BhdGg+PC9zdmc+Cg=="
                         width="8" height="8" style="vertical-align: middle; margin-right: 3px;" />
                 </span>
-                <span style="display: inline-block; vertical-align: middle; font-weight: bold;">
-                    WhatsApp: 7595-4210
-                </span>
+                 <a> </a>
+                <span style="font-weight: bold;">WhatsApp: 7595-4210</span>
             </p>
         </div>
-
-        <div class="header-right">
-            <div class="patient-info">
-                <table>
-                    <tr>
-                        <td width="35%"><strong>PACIENTE:</strong></td>
-                        <td width="65%">{{ $orden->cliente->nombre }} {{ $orden->cliente->apellido }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>EDAD:</strong></td>
-                        <td>{{ \Carbon\Carbon::parse($orden->cliente->fecha_nacimiento)->age }} AÑOS</td>
-                    </tr>
-                    <tr>
-                        <td><strong>GÉNERO:</strong></td>
-                        <td>{{ $orden->cliente->genero ?? 'No especificado' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>NRO. ORDEN:</strong></td>
-                        <td>{{ $orden->id }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>FECHA DE REPORTE:</strong></td>
-                        <td>{{ now()->format('d/m/Y') }}</td>
-                    </tr>
-                </table>
-                <!-- --- ¡NUEVA SECCIÓN DE OBSERVACIONES! --- -->
-    @if (!empty($orden->observaciones))
-        <div class="observaciones-box">
-            <strong>Observaciones de la Orden:</strong>
-            {{-- Usamos nl2br(e(...)) para respetar los saltos de línea y evitar ataques XSS --}}
-            <p style="margin: 0; padding: 0;">{!! nl2br(e($orden->observaciones)) !!}</p>
-        </div>
-    @endif
-    <!-- --- FIN DE OBSERVACIONES --- -->
-            </div>
+        <div class="header-right" style="width: 30%; text-align: right;">
+            <img src="{{ public_path('storage/logo.png') }}" alt="Logo" style="max-width: 90px; vertical-align: middle;">
         </div>
     </div>
 
+    <div style="margin-top: 5px; padding: 5px; font-size: 9px;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="width: 35%; font-weight: bold; color: #1E73BE; padding: 2px;">Nombre del Paciente:</td>
+                <td style="width: 65%; border-bottom: 1px solid #ccc; padding: 2px;">{{ $orden->cliente->nombre }} {{ $orden->cliente->apellido }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; color: #1E73BE; padding: 2px;">Edad:</td>
+                <td style="border-bottom: 1px solid #ccc; padding: 2px;">{{ \Carbon\Carbon::parse($orden->cliente->fecha_nacimiento)->age }} años</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; color: #1E73BE; padding: 2px;">Género:</td>
+                <td style="border-bottom: 1px solid #ccc; padding: 2px;">{{ $orden->cliente->genero ?? 'No especificado' }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; color: #1E73BE; padding: 2px;">Número de Orden:</td>
+                <td style="border-bottom: 1px solid #ccc; padding: 2px;">{{ $orden->id }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; color: #1E73BE; padding: 2px;">Fecha de Reporte:</td>
+                <td style="border-bottom: 1px solid #ccc; padding: 2px;">{{ now()->format('d/m/Y') }}</td>
+            </tr>
+        </table>
+
+        @if (!empty($orden->observaciones))
+            <div class="observaciones-box" style="margin-top: 10px;">
+                <strong style="color: #1E73BE;">Observaciones:</strong>
+                <p style="margin: 0; padding: 0; color: #333;">{!! nl2br(e($orden->observaciones)) !!}</p>
+            </div>
+        @endif
+    </div>
 
     @foreach($datos_agrupados as $tipoExamenNombre => $examenes)
         <div class="tipo-examen-header">{{ $tipoExamenNombre }}</div>
 
         @foreach($examenes as $examen)
+            @php
+                // 1. LÓGICA INTELIGENTE: ¿Mostrar Columna Referencia?
+                // Escaneamos todas las pruebas de este examen.
+                $tieneReferencias = false;
+                if (!empty($examen['pruebas_unitarias'])) {
+                    foreach($examen['pruebas_unitarias'] as $p) {
+                        // Si encontramos AL MENOS UNA referencia válida o una unidad, activamos la columna para todo el examen.
+                        // Importante: Filtramos 'N/A' porque tu backend lo pone por defecto si no hay dato.
+                        $refLimpia = trim(strip_tags($p['referencia'] ?? ''));
+                        $uniLimpia = trim($p['unidades'] ?? '');
+                        
+                        if ( ($refLimpia !== '' && $refLimpia !== 'N/A') || $uniLimpia !== '') {
+                            $tieneReferencias = true;
+                            break; // Ya encontramos una, no necesitamos seguir buscando
+                        }
+                    }
+                }
+
+                // 2. AGRUPACIÓN POR TIPO DE PRUEBA
+                $pruebasCollection = collect($examen['pruebas_unitarias']);
+                
+                $agrupadas = $pruebasCollection->groupBy(function($item) {
+                    return $item['tipo_prueba'] ?? ''; 
+                });
+
+                $sinGrupo = $agrupadas->pull('') ?? collect();
+                $conGrupo = $agrupadas->sortKeys();
+            @endphp
+
             <table class="results-table">
                 <thead>
                     @if (!empty($examen['pruebas_unitarias']))
                         <tr>
-                            <th style="width: 35%;">RESULTADO</th>
-                            <th style="width: 35%;">RANGO DE REFERENCIA</th>
-                            <th style="width: 15%;">UNIDAD</th>
-                            <th style="width: 15%;">FECHA RESULTADO</th>
+                            <!-- Ajuste dinámico de anchos -->
+                            <th style="width: {{ $tieneReferencias ? '40%' : '60%' }};">PRUEBA</th>
+                            <th style="width: {{ $tieneReferencias ? '25%' : '40%' }};">RESULTADO</th>
+                            
+                            @if($tieneReferencias)
+                                <th style="width: 35%;">RANGO DE REFERENCIA</th>
+                            @endif
                         </tr>
                     @endif
                 </thead>
                 <tbody>
                     <tr class="examen-title-row">
-                        <td colspan="4">EXAMEN: {{ $examen['nombre'] }} | CÓDIGO: {{ $examen['codigo'] ?? 'N/A' }}</td>
+                        <td colspan="{{ $tieneReferencias ? 3 : 2 }}">EXAMEN: {{ $examen['nombre'] }}</td>
                     </tr>
 
-                    @foreach($examen['pruebas_unitarias'] as $pruebaData)
+                    {{-- A. PRUEBAS SIN GRUPO (Primero) --}}
+                    @foreach($sinGrupo as $pruebaData)
                         <tr class="result-row">
                             <td>
                                 <div class="result-prueba-name">{{ $pruebaData['nombre'] }}</div>
-                                <!-- --- ¡CAMBIO AQUÍ! --- -->
+                            </td>
+                            <td>
                                 <div class="result-value @if($pruebaData['es_fuera_de_rango']) fuera-de-rango @endif">
                                     {!! $pruebaData['resultado'] !!}
                                 </div>
                             </td>
-                            <td>{!! $pruebaData['referencia'] !!}</td>
-                            <td>{{ $pruebaData['unidades'] }}</td>
-                            <td>{{ $pruebaData['fecha_resultado'] }}</td>
+                            @if($tieneReferencias)
+                                <td>{!! $pruebaData['referencia'] !!} {{ $pruebaData['unidades'] }}</td>
+                            @endif
                         </tr>
                     @endforeach
+
+                    {{-- B. GRUPOS (Tipo A, Tipo B, etc.) --}}
+                    @foreach($conGrupo as $nombreGrupo => $items)
+                        <!-- Fila separadora del grupo -->
+                        <tr class="group-title-row">
+                            <td colspan="{{ $tieneReferencias ? 3 : 2 }}">{{ $nombreGrupo }}</td>
+                        </tr>
+                        
+                        @foreach($items as $pruebaData)
+                            <tr class="result-row">
+                                <td>
+                                    <div class="result-prueba-name">{{ $pruebaData['nombre'] }}</div>
+                                </td>
+                                <td>
+                                    <div class="result-value @if($pruebaData['es_fuera_de_rango']) fuera-de-rango @endif">
+                                        {!! $pruebaData['resultado'] !!}
+                                    </div>
+                                </td>
+                                @if($tieneReferencias)
+                                    <td>{!! $pruebaData['referencia'] !!} {{ $pruebaData['unidades'] }}</td>
+                                @endif
+                            </tr>
+                        @endforeach
+                    @endforeach
+
                 </tbody>
             </table>
 
@@ -367,7 +414,6 @@
                                             $celda = $matriz['data'][$fila][$columna] ?? null;
                                         @endphp
 
-                                        <!-- --- ¡CAMBIO AQUÍ! --- -->
                                         <td class="@if($celda && $celda['es_fuera_de_rango']) fuera-de-rango @endif">
                                             {{ $celda['resultado'] ?? 'N/A' }}
                                         </td>
@@ -382,63 +428,33 @@
         @endforeach
     @endforeach
 
-    {{-- Fragmento de pdf/reporte_resultados.blade.php (Sección de Firmas) --}}
-
-    {{-- Contenedor de firmas alineado a la derecha --}}
     <div style="margin-top: 40px; text-align: right; width: 100%;">
-
         <div style="display: inline-block;">
-
-            {{-- Bloque de Sello de Registro (El estático del laboratorio) --}}
             <div style="display: inline-block; margin-left: 20px; vertical-align: top;">
-                @php
-                    // Usamos 130px de ancho y 80px de alto como referencia del sello estático
-                    $size = '130px'; 
-                @endphp
+                @php $size = '130px'; @endphp
                 @if (file_exists($ruta_sello_registro))
                     <img src="{{ $ruta_sello_registro }}" alt="Sello Registro" style="width: {{ $size }}; height: auto;">
                 @else
                     <div style="width: {{ $size }}; height: 80px; border: 1px dashed #ccc;">[Sello Reg. Faltante]</div>
                 @endif
             </div>
-
-            {{-- Bloque Combinado: Sello del Usuario + Firma del Usuario (Sobrepuestos) --}}
             <div style="display: inline-block; margin-left: 20px; vertical-align: top;">
                 @php
                     $pathFirmaUsuario = isset($ruta_firma_digital) ? storage_path('app/public/' . $ruta_firma_digital) : null;
                     $pathSelloUsuario = isset($ruta_sello_digital) ? storage_path('app/public/' . $ruta_sello_digital) : null;
                 @endphp
-
-                {{-- Contenedor Relativo para la Superposición (Mantiene el tamaño de referencia) --}}
                 <div style="position: relative; width: {{ $size }}; height: 80px; margin-top: 0;">
-
-                    {{-- 1. IMAGEN DE BASE (Sello del Usuario) --}}
                     @if ($pathSelloUsuario && file_exists($pathSelloUsuario))
-                        <img src="{{ $pathSelloUsuario }}" alt="Sello Usuario" style="position: absolute; 
-                                        top: 0; 
-                                        left: 0; 
-                                        width: 100%; 
-                                        height: 100%; 
-                                        object-fit: contain;">
+                        <img src="{{ $pathSelloUsuario }}" alt="Sello Usuario" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;">
                     @else
                         <div style="width: 100%; height: 100%; border: 1px dashed #ccc;">[Sello Usr Faltante]</div>
                     @endif
-
-                    {{-- 2. IMAGEN DE ARRIBA (Firma del Usuario) --}}
                     @if ($pathFirmaUsuario && file_exists($pathFirmaUsuario))
-                        <img src="{{ $pathFirmaUsuario }}" alt="Firma" style="position: absolute; 
-                                        top: 8%; 
-                                        left: 50%; 
-                                        transform: translate(-50%, -50%); /* Centrado */
-                                        max-width: 90%; 
-                                        height: auto; 
-                                        object-fit: contain;
-                                        z-index: 10;">
+                        <img src="{{ $pathFirmaUsuario }}" alt="Firma" style="position: absolute; top: 8%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; height: auto; object-fit: contain; z-index: 10;">
                     @endif
                 </div>
             </div>
         </div>
     </div>
 </body>
-
 </html>

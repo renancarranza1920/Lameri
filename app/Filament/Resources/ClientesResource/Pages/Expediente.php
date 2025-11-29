@@ -34,6 +34,7 @@ class Expediente extends Page implements HasTable
 
     public function mount($record): void
     {
+        abort_unless(auth()->user()->can('ver_expediente_clientes'), 403);
         //dd($this->record);
         //$this->record = Cliente::findOrFail($record);
 
@@ -109,6 +110,7 @@ class Expediente extends Page implements HasTable
                     ->label('Ver Detalles')
                     ->icon('heroicon-o-eye')
                     ->iconButton()
+                    ->visible(fn () => auth()->user()->can('ver_detalle_orden'))
                     ->color('gray')
                     ->modalHeading(fn(Orden $record) => 'Detalles de Orden #' . $record->id)
                     ->modalWidth('4xl')
@@ -125,7 +127,8 @@ class Expediente extends Page implements HasTable
                     ->icon('heroicon-o-printer')
                     ->iconButton()
                     ->color('gray')
-                    ->visible(fn(Orden $record): bool => $record->estado === 'finalizado')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'finalizado' &&
+                        auth()->user()->can('generar_reporte_orden'))
                     ->modalWidth('7xl')
                     ->modalHeading(fn(Orden $record) => 'Reporte de Resultados: #' . $record->id)
                     ->modalSubmitAction(false)
@@ -136,6 +139,7 @@ class Expediente extends Page implements HasTable
         $orden = $record->load([
             'cliente',
             'detalleOrden.examen.tipoExamen',
+            'detalleOrden.examen.pruebas.tipoPrueba',
             'detalleOrden.examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario',
             'resultados.prueba'
         ]);
@@ -401,6 +405,7 @@ class Expediente extends Page implements HasTable
             'unidades' => $unidades, // <-- Usa las unidades de la "foto" o las de en vivo
             'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
             'es_fuera_de_rango' => $es_fuera_de_rango, // <-- Devuelve la bandera
+            'tipo_prueba' => $prueba->tipoPrueba->nombre ?? '',
         ];
     }
 protected function getHeaderActions(): array
@@ -410,12 +415,14 @@ protected function getHeaderActions(): array
             // Esta es la acción de PÁGINA (Header)
             \Filament\Actions\Action::make('regresar_buscar') 
                 ->label('Buscar Otro Paciente')
+                ->visible(fn() => auth()->user()->can('acceder_buscador_expedientes'))
                 ->url(\App\Filament\Pages\BuscarExpediente::getUrl())
                 ->icon('heroicon-o-magnifying-glass')
                 ->color('gray'),
 
             \Filament\Actions\Action::make('regresar a clientes') 
                 ->label('Lista de Clientes')
+                ->visible(fn() => auth()->user()->can('view_any_clientes'))
                 ->url($this->getResource()::getUrl('index'))
                 ->icon('heroicon-o-users')
                 ->color('gray'),

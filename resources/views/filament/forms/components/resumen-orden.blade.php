@@ -21,8 +21,8 @@
         @if ($cliente)
        
             <div class="mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Cliente</h3>
-                <div class="text-sm text-gray-700 dark:text-gray-300">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-400 mb-2">Cliente</h3>
+                <div class="text-sm text-gray-600 dark:text-gray-400">
                     <p><strong>Expediente:</strong> {{ $cliente->NumeroExp }}</p>
                     <p><strong>Nombre:</strong> {{ $cliente->nombre }} {{ $cliente->apellido }}</p>
                 </div>
@@ -48,7 +48,12 @@
                 @if (!empty($perfilesSeleccionados))
                     @foreach ($perfilesSeleccionados as $item)
                         @php
-                            $perfil = \App\Models\Perfil::with('examenes')->find($item['perfil_id']);
+                            // --- AQUÍ ESTÁ EL CAMBIO PARA LO VISUAL ---
+                            // Filtramos la relación 'examenes' para traer solo los activos (estado = 1)
+                            $perfil = \App\Models\Perfil::with(['examenes' => function ($query) {
+                                $query->where('estado', 1);
+                            }])->find($item['perfil_id']);
+
                             if (!$perfil) continue;
 
                             $precioPerfil = floatval($item['precio_hidden'] ?? $perfil->precio);
@@ -62,8 +67,9 @@
                             </td>
                         </tr>
 
+                        {{-- Ahora este loop solo mostrará los exámenes activos --}}
                         @foreach ($perfil->examenes as $examen)
-                            <tr class="text-sm text-gray-600 dark:text-gray-400">
+                            <tr class="text-sm text-gray-600 dark:text-gray-600">
                                 <td class="pt-0 pb-2 pl-6 pr-4">- {{ $examen->nombre }}</td>
                                 <td></td>
                             </tr>
@@ -108,18 +114,18 @@
 
         <!-- TOTALES -->
         @if ($subtotal > 0)
-            <div class="mt-6 pt-4 border-t-2 border-gray-300 dark:border-gray-600">
+            <div class="mt-6 pt-4 border-t-2 border-gray-300 dark:border-gray-400">
 
                 <!-- SUBTOTAL -->
                 <div class="flex justify-between text-base mb-2">
-                    <span class="text-gray-700 dark:text-gray-300">Subtotal:</span>
+                    <span class="text-gray-700 dark:text-gray-400">Subtotal:</span>
                     <span class="font-mono">${{ number_format($subtotal, 2) }}</span>
                 </div>
 
                 <!-- DESCUENTO -->
                 @if ($codigoAplicado)
                     <div class="flex justify-between text-base mb-2">
-                        <span class="text-gray-700 dark:text-gray-300">
+                        <span class="text-gray-700 dark:text-gray-400">
                             Descuento ({{ $codigoAplicado['codigo'] }}):
                         </span>
                         <span class="font-mono text-red-600">
@@ -141,7 +147,7 @@
 
         <!-- NOTA -->
         <div class="mt-8 p-3 text-center bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-            <p class="text-xs text-gray-500 dark:text-gray-400">
+            <p class="text-xs text-gray-500 dark:text-gray-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 mr-1"
                      viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd"

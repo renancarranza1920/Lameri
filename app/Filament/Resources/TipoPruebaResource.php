@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TipoPruebaResource\Pages;
 use App\Models\TipoPrueba;
 use Filament\Forms;
+use Filament\Forms\Components\Card;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -26,10 +27,12 @@ class TipoPruebaResource extends Resource
     {
         return $form
             ->schema([
+                Card::make()->schema([
                 Forms\Components\TextInput::make('nombre')
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255),
+                ])
             ]);
     }
 
@@ -43,9 +46,7 @@ class TipoPruebaResource extends Resource
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                
             ]);
     }
     

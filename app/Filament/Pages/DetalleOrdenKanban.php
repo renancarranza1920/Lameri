@@ -68,6 +68,11 @@ class DetalleOrdenKanban extends KanbanBoard
 
     public function onStatusChanged(int|string $recordId, string $status, array $fromOrderedIds, array $toOrderedIds): void
     {
+        // 🔒 VALIDACIÓN
+        if (!auth()->user()->can('mover_etiquetas_kanban')) {
+            Notification::make()->title('No tienes permiso para mover etiquetas.')->danger()->send();
+            return; // Se detiene y no guarda el cambio
+        }
         $detalle = DetalleOrden::find($recordId);
         $detalle->update(['status' => $status]);
         DetalleOrden::setNewOrder($toOrderedIds);
@@ -115,6 +120,7 @@ class DetalleOrdenKanban extends KanbanBoard
             Action::make('Generar ZPL')
                 ->label('Generar Etiquetas ZPL')
                 ->icon('heroicon-o-printer')
+                ->visible(fn() => auth()->user()->can('imprimir_etiquetas_kanban')) // 🔒 VALIDACIÓN VISUAL
                 ->color('warning')
                 ->action(fn() => $this->printAll()),
                 Action::make('Volver a Ordenes')
@@ -127,6 +133,10 @@ class DetalleOrdenKanban extends KanbanBoard
 
     public function printGroup(string $status): void
     {
+        if (!auth()->user()->can('imprimir_etiquetas_kanban')) {
+            Notification::make()->title('Acceso denegado')->body('No tienes permiso para imprimir etiquetas.')->danger()->send();
+            return;
+        }
         if (!$this->ordenId) {
             Notification::make()->title('Orden no encontrada.')->danger()->send();
             return;
@@ -162,6 +172,10 @@ class DetalleOrdenKanban extends KanbanBoard
 
     public function printAll(): void
     {
+        if (!auth()->user()->can('imprimir_etiquetas_kanban')) {
+            Notification::make()->title('Acceso denegado')->body('No tienes permiso para imprimir etiquetas.')->danger()->send();
+            return;
+        }
         if (!$this->ordenId) return;
 
         $detalles = DetalleOrden::with('orden.cliente')
@@ -201,6 +215,10 @@ class DetalleOrdenKanban extends KanbanBoard
 
     public function printSingle(int $recordId): void
     {
+        if (!auth()->user()->can('imprimir_etiquetas_kanban')) {
+            Notification::make()->title('Acceso denegado')->body('No tienes permiso para imprimir etiquetas.')->danger()->send();
+            return;
+        }
         $detalle = DetalleOrden::with('orden.cliente')->find($recordId);
 
         if (!$detalle) {

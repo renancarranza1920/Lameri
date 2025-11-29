@@ -6,6 +6,7 @@ use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Card;
 use Filament\Resources\Resource;
@@ -20,6 +21,7 @@ class UserResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $navigationGroup = 'Administración';
+    protected static ?string $navigationLabel = 'Usuarios';
 protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -28,6 +30,8 @@ protected static ?int $navigationSort = 1;
             ->schema([
                 Card::make()
                     ->schema([
+                        Section::make('Información del Usuario')
+                            ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Nombre Completo')
                             ->required()
@@ -87,6 +91,7 @@ protected static ?int $navigationSort = 1;
                             ->visibility('public')
                             ->columnSpan(1),
                     ])
+                    ]),
             ]);
     }
 

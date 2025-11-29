@@ -44,9 +44,24 @@
         @if(count($resultados) > 0)
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 @foreach($resultados as $cliente)
-                    <a 
-                        href="{{ \App\Filament\Resources\ClientesResource::getUrl('expediente', ['record' => $cliente->id]) }}"
-                        class="group relative flex flex-col p-5 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-primary-500 dark:bg-gray-900 dark:border-gray-800 dark:hover:border-primary-500 transition-all duration-200"
+                @php
+                        // Verificamos si tiene permiso para entrar a la carpeta
+                        $puedeVerExpediente = auth()->user()->can('ver_expediente_clientes');
+                    @endphp
+                   {{-- 
+                        Si tiene permiso, es un enlace (a). 
+                        Si no, es un simple div (no clickeable) con opacidad reducida.
+                    --}}
+                    <{{ $puedeVerExpediente ? 'a' : 'a' }} 
+                        @if($puedeVerExpediente)
+                            href="{{ \App\Filament\Resources\ClientesResource::getUrl('expediente', ['record' => $cliente->id]) }}"
+                        @endif
+                        class="group relative flex flex-col p-5 bg-white border border-gray-200 rounded-xl shadow-sm transition-all duration-200 
+                        {{ $puedeVerExpediente 
+                            ? 'hover:shadow-md hover:border-primary-500 cursor-pointer' 
+                            : 'opacity-75 cursor-not-allowed bg-gray-50' 
+                        }} 
+                        dark:bg-gray-900 dark:border-gray-800"
                     >
                         {{-- Cabecera Card: Icono y Estado --}}
                         <div class="flex justify-between items-start mb-4">

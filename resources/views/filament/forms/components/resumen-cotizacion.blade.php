@@ -11,8 +11,8 @@
         </div>
         @if ($nombre_cliente)
             <div class="mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Cliente</h3>
-                <div class="text-sm text-gray-700 dark:text-gray-300">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-400 mb-2">Cliente</h3>
+                <div class="text-sm text-gray-600 dark:text-gray-400">
                     <p><strong>Nombre:</strong> {{ $nombre_cliente }}</p>
                 </div>
             </div>
@@ -25,7 +25,11 @@
                 @if (!empty($perfilesSeleccionados))
                     @foreach ($perfilesSeleccionados as $item)
                         @php
-                            $perfil = \App\Models\Perfil::with('examenes')->find($item['perfil_id']);
+                            // --- CAMBIO AQUÍ: Filtramos solo exámenes activos ---
+                            $perfil = \App\Models\Perfil::with(['examenes' => function ($query) {
+                                $query->where('estado', 1);
+                            }])->find($item['perfil_id']);
+                            
                             if (!$perfil) continue;
                             $precioPerfil = floatval($item['precio_hidden'] ?? $perfil->precio);
                             $total += $precioPerfil;
@@ -41,6 +45,7 @@
                 @if (!empty($examenesSeleccionados))
                     @foreach ($examenesSeleccionados as $item)
                         @php
+                            // Opcional: También podrías filtrar aquí si quisieras ocultar exámenes sueltos inactivos
                             $examen = \App\Models\Examen::find($item['examen_id']);
                             if (!$examen) continue;
                             $precioExamen = floatval($item['precio_hidden'] ?? $examen->precio);

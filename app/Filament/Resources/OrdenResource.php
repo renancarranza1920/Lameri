@@ -239,7 +239,8 @@ class OrdenResource extends Resource
                                         ->schema([
                                             Select::make('examen_id')
                                                 ->label('Buscar Examen')
-                                                ->options(\App\Models\Examen::pluck('nombre', 'id')->toArray())
+                                                ->options(\App\Models\Examen::where('estado', 1)
+                                                ->pluck('nombre', 'id')->toArray())
                                                 ->searchable()
                                                 ->preload()
                                                 ->reactive()
@@ -459,7 +460,8 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->icon('heroicon-o-beaker')
                     ->iconButton()
                     ->color('info')
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente']))
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente'])
+                    && auth()->user()->can('procesar_muestras_orden'))
                     ->modalHeading('Registrar Muestras Recibidas')
                     ->modalSubmitActionLabel('Guardar Estado')
                     ->form(function (Orden $record) {
@@ -549,10 +551,11 @@ Forms\Components\Hidden::make('codigo_aplicado'),
 
                 Tables\Actions\Action::make('ingresarResultados')
                     ->tooltip('Ingresar Resultados')
-                    ->icon('heroicon-o-pencil-square')
+                    ->icon('heroicon-o-document-plus')
                     ->iconButton()
                     ->color('primary')
-                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso') // <-- ¡LÓGICA CLAVE!
+                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso'
+                    && auth()->user()->can('ingresar_resultados_orden'))
                     ->url(fn(Orden $record): string => static::getUrl('ingresar-resultados', ['record' => $record])),
 
                 Tables\Actions\Action::make('imprimirEtiquetas')
@@ -561,7 +564,8 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->iconButton()
                     ->color('gray')
                     // Visible si la orden no está finalizada o cancelada
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente']))
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente'])
+                    && auth()->user()->can('imprimir_etiquetas_orden'))
                     ->url(fn(Orden $record): string => DetalleOrdenKanban::getUrl(['ordenId' => $record->id])),
 
                 Tables\Actions\Action::make('ver')
@@ -588,22 +592,33 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->icon('heroicon-o-clipboard-document-check')
                     ->iconButton()
                     ->color('gray')
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado']))
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado'])
+                    && auth()->user()->can('ver_pruebas_orden'))
                     ->modalHeading('Pruebas a Realizar')
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Cerrar')
                     ->form(function (Orden $record) {
+                        // 1. Cargamos resultados para no hacer consultas en el loop
+                        $record->load('resultados'); 
+
                         $detalles = $record->detalleOrden()->with('examen.pruebas')->get();
                         $examenes = $detalles->map(fn($detalle) => $detalle->examen)->filter()->unique('id');
-                        return [Forms\Components\View::make('filament.modals.ver-orden-pruebas')->viewData(['examenes' => $examenes])];
-                    }),
 
+                        return [
+                            Forms\Components\View::make('filament.modals.ver-orden-pruebas')
+                                ->viewData([
+                                    'examenes' => $examenes,
+                                    'orden' => $record, // <--- ¡ESTO ES LO NUEVO! Pasamos la orden completa
+                                ])
+                        ];
+                    }),
                 Tables\Actions\Action::make('pausarOrden')
                     ->tooltip('Pausar Orden')
                     ->icon('heroicon-o-pause-circle')
                     ->iconButton()
                     ->color('warning')
-                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso' &&
+                        auth()->user()->can('pausar_orden'))
                     ->requiresConfirmation()
                     ->form([Textarea::make('motivo_pausa')->label('Motivo de la Pausa')->required()])
                     ->action(function (Orden $record, array $data) {
@@ -618,7 +633,8 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->icon('heroicon-o-play-circle')
                     ->iconButton()
                     ->color('success')
-                    ->visible(fn(Orden $record): bool => $record->estado === 'pausada')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'pausada' &&
+                        auth()->user()->can('reanudar_orden'))
                     ->requiresConfirmation()
                     ->action(function (Orden $record) {
                         $record->estado = 'en proceso';
@@ -632,7 +648,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->icon('heroicon-o-check-circle')
                     ->iconButton()
                     ->color('success')
-                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'en proceso' && auth()->user()->can('finalizar_orden'))
                     ->requiresConfirmation()
                     ->action(function (Orden $record) {
                         $record->estado = 'finalizado';
@@ -645,12 +661,14 @@ Forms\Components\Hidden::make('codigo_aplicado'),
     ->icon('heroicon-o-printer')
     ->iconButton()
     ->color('gray')
-    ->visible(fn(Orden $record): bool => $record->estado === 'finalizado')
+    ->visible(fn(Orden $record): bool => $record->estado === 'finalizado' &&
+                        auth()->user()->can('generar_reporte_orden'))
     ->action(function (Orden $record) {
         // 1. Cargar relaciones necesarias
         $orden = $record->load([
             'cliente',
             'detalleOrden.examen.tipoExamen',
+            'detalleOrden.examen.pruebas.tipoPrueba',
             'detalleOrden.examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario',
             'resultados.prueba'
         ]);
@@ -767,7 +785,9 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->icon('heroicon-o-x-circle')
                     ->iconButton()
                     ->color('danger')
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso', 'pausada']))
+                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso', 'pausada'])
+                    &&
+                        auth()->user()->can('cancelar_orden'))
                     ->requiresConfirmation()
                     ->action(function (Orden $record) {
                         $record->estado = 'cancelado';
@@ -931,6 +951,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
             'unidades' => $unidades, // <-- Usa las unidades de la "foto" o las de en vivo
             'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
             'es_fuera_de_rango' => $es_fuera_de_rango, // <-- Devuelve la bandera
+            'tipo_prueba' => $prueba->tipoPrueba->nombre ?? '', 
         ];
     }
 

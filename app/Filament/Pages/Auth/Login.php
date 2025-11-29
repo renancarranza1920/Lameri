@@ -19,6 +19,7 @@ use Filament\Pages\SimplePage;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Validation\ValidationException;
 use Filament\Forms\Get; // Añadido para la validación condicional
+use Filament\Forms\Set; // Añadido: para limpiar el campo opuesto cuando cambia
 
 class Login extends SimplePage
 {
@@ -76,6 +77,41 @@ class Login extends SimplePage
         ]);
     }
 
+    /**
+     * Fallback notification to show when rate limiter blocks requests.
+     *
+     * Algunos paquetes de rate limiting no inyectan este helper en la
+     * página de Login; añadimos una implementación aquí para evitar el
+     * error "method does not exist" y proporcionar una notificación útil.
+     *
+     * @param  \DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException  $exception
+     * @return \Filament\Notifications\Notification|null
+     */
+    protected function getRateLimitedNotification(TooManyRequestsException $exception): ?Notification
+    {
+        $seconds = null;
+
+        if (property_exists($exception, 'secondsUntilAvailable')) {
+            $seconds = $exception->secondsUntilAvailable;
+        } elseif (method_exists($exception, 'availableAt')) {
+            try {
+                $availableAt = $exception->availableAt();
+                if ($availableAt instanceof \DateTimeInterface) {
+                    $seconds = max(0, $availableAt->getTimestamp() - time());
+                }
+            } catch (\Throwable $e) {
+                $seconds = null;
+            }
+        }
+
+        $body = $seconds ? "Demasiados intentos. Intenta de nuevo en {$seconds} segundos." : 'Demasiados intentos. Intenta de nuevo más tarde.';
+
+        return Notification::make()
+            ->title('Demasiados intentos')
+            ->danger()
+            ->body($body);
+    }
+
     public function form(Form $form): Form
     {
         return $form;
@@ -121,8 +157,11 @@ class Login extends SimplePage
         return TextInput::make('email')
             ->label('Correo Electrónico')
             ->email()
+            ->live()
             // Hacemos que sea requerido SÓLO si el campo de username está vacío
-            ->required(fn (Get $get) => !filled($get('username'))) 
+            ->required(fn (Get $get) => !filled($get('username')))
+            // Al actualizar el email, borramos el username para evitar valores duplicados en el state
+            ->afterStateUpdated(fn (Set $set) => $set('username', null))
             ->extraInputAttributes(['tabindex' => 1]);
     }
     
@@ -130,8 +169,11 @@ class Login extends SimplePage
     {
         return TextInput::make('username')
             ->label('Nombre de usuario')
+            ->live()
             // Hacemos que sea requerido SÓLO si el campo de email está vacío
-            ->required(fn (Get $get) => !filled($get('email'))) 
+            ->required(fn (Get $get) => !filled($get('email')))
+            // Al actualizar el username, borramos el email para evitar valores duplicados en el state
+            ->afterStateUpdated(fn (Set $set) => $set('email', null))
             ->extraInputAttributes(['tabindex' => 1]);
     }
 

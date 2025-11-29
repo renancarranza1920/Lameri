@@ -50,6 +50,7 @@ class PruebaResource extends Resource
                                         Forms\Components\Select::make('tipo_prueba_id')
                                             ->label('Tipo de Prueba')
                                             ->relationship('tipoPrueba', 'nombre')
+                                            ->createOptionAction(fn($action) => $action->visible(true))
                                             //crear modal para agregar nuevo tipo de prueba
                                             ->createOptionForm([
                                                 Forms\Components\TextInput::make('nombre')
@@ -144,15 +145,19 @@ class PruebaResource extends Resource
             ->headerActions([ // <-- AÑADIMOS UN BOTÓN EN LA CABECERA
                 Tables\Actions\Action::make('pruebas_conjuntas')
                     ->label('Ver Pruebas en Matriz')
+                    ->visible(fn () => auth()->user()->can('ver_pruebas_conjuntas')) // 🔒 VALIDACIÓN
                     ->icon('heroicon-o-table-cells')
                     ->color('gray')
                     // Esto nos llevará a la nueva página que creamos
                     ->url(ListPruebasConjuntas::getUrl()),
+
+                    Tables\Actions\Action::make('gestionar_tipos')
+        ->label('Tipos de Prueba')
+        ->url(TipoPruebaResource::getUrl('index')) // <--- Te lleva a la tabla oculta
+        ->color('gray'),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                
             ]);
     }
     

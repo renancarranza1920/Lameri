@@ -29,6 +29,7 @@ class ListPruebasConjuntas extends Page implements HasForms, HasActions
 
     public function mount(): void
     {
+        abort_unless(auth()->user()->can('ver_pruebas_conjuntas'), 403);
         $this->reconstruirMatrices();
     }
 

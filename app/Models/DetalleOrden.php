@@ -20,6 +20,7 @@ class DetalleOrden extends Model implements Sortable
         'precio_examen',
         'precio_perfil',
         'status',
+        'pruebas_snapshot',
     ];
 
     public function orden()
@@ -33,6 +34,7 @@ class DetalleOrden extends Model implements Sortable
      */
     protected $casts = [
         'muestras_recibidas' => 'array',
+        'pruebas_snapshot' => 'array',
     ];
     public function examen()
     {
