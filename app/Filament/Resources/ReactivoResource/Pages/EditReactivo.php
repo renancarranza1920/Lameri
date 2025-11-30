@@ -14,11 +14,19 @@ class EditReactivo extends EditRecord
     {
         return $this->getResource()::getUrl('index');
     }
-    protected function afterSave(): void
+   protected function afterSave(): void
     {
-        // Lo mismo para cuando editas
+        // Misma lógica: Solo alertar si hubo víctimas
         if ($this->record->en_uso) {
-            $this->record->resolverConflictosDeUso();
+            $afectados = $this->record->resolverConflictosDeUso();
+
+            if ($afectados > 0) {
+                \Filament\Notifications\Notification::make()
+                    ->title('Conflictos resueltos')
+                    ->body("Se han desactivado {$afectados} reactivo(s) por conflicto de pruebas.")
+                    ->warning()
+                    ->send();
+            }
         }
     }
 }

@@ -43,18 +43,23 @@ class ReactivoResource extends Resource
                             ->schema([
                                 // --- CAMBIO 1: Relación Múltiple ---
                                 Select::make('pruebas')
-                                    ->relationship('pruebas', 'nombre')
-                                    ->multiple() // <--- Permite seleccionar varias
-                                    ->preload()
-                                    ->searchable()
-                                    ->required()
-                                    ->label('Pruebas Asignadas'),
+    ->relationship(
+        'pruebas', 
+        'nombre', 
+        // Aquí aplicamos el filtro: Solo pruebas donde tipo_conjunto es NULL
+        fn ($query) => $query->whereNull('tipo_conjunto')
+    )
+    ->multiple()
+    ->preload()
+    ->searchable()
+    ->required()
+    ->label('Pruebas Asignadas'),
                                 // ----------------------------------
 
                                 TextInput::make('nombre')->required()->maxLength(255),
                                 TextInput::make('lote'),
 
-                                Forms\Components\DatePicker::make('fecha_caducidad'),
+                                Forms\Components\DatePicker::make('fecha_caducidad')->minDate(now()->toDateString()),
 
                                 Forms\Components\Toggle::make('en_uso')
                                     ->default(false)
@@ -74,13 +79,9 @@ class ReactivoResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')->searchable()->sortable(),
-
-                // --- CAMBIO 2: Mostrar múltiples pruebas ---
                 Tables\Columns\TextColumn::make('pruebas.nombre')
-                    ->badge() // Se ve mejor como etiquetas
+                    ->badge()
                     ->searchable(),
-                // ------------------------------------------
-
                 Tables\Columns\BadgeColumn::make('estado')
                     ->colors([
                         'success' => 'disponible',
@@ -90,120 +91,22 @@ class ReactivoResource extends Resource
                 Tables\Columns\TextColumn::make('lote')->searchable()->sortable(),
                 Tables\Columns\IconColumn::make('en_uso')->label('En Uso')->boolean(),
             ])
-            ->filters([
-                //
-            ])
             ->actions([
-                Tables\Actions\EditAction::make()->visible($esAccionable),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn(Reactivo $record): bool => $record->estado === 'disponible'), // Solo visible si está disponible
+
                 Action::make('setActive')
                     ->label('Poner en Uso')
-                    ->visible(fn() => auth()->user()->can('activar_reactivos'))
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                   ->visible(fn(Reactivo $record): bool => 
+                    ->visible(fn(Reactivo $record): bool => 
                         auth()->user()->can('activar_reactivos') && 
                         !$record->en_uso && 
-                        $record->estado === 'disponible' // <--- Candado extra
-                    ) ->requiresConfirmation()
-                    ->modalHeading('Activar Reactivo y Resolver Conflictos')
+                        $record->estado === 'disponible'
+                    ),
 
-                    // ... dentro de Action::make('setActive') ...
-
-                    ->modalDescription(function (Reactivo $record) {
-                        // 1. Lógica de cálculo (Igual que antes)
-                        $nuevasPruebasIds = $record->pruebas()->pluck('pruebas.id')->toArray();
-                        $conflictos = Reactivo::with('pruebas')
-                            ->where('en_uso', true)
-                            ->where('id', '!=', $record->id)
-                            ->whereHas('pruebas', function ($q) use ($nuevasPruebasIds) {
-                                $q->whereIn('pruebas.id', $nuevasPruebasIds);
-                            })
-                            ->get();
-
-                        if ($conflictos->isEmpty()) {
-                            return 'No hay conflictos. Este reactivo se activará correctamente.';
-                        }
-
-                        $pruebasHuerfanas = [];
-                        $nombresConflictos = [];
-
-                        foreach ($conflictos as $viejo) {
-                            $nombresConflictos[] = $viejo->nombre;
-                            foreach ($viejo->pruebas as $pruebaVieja) {
-                                if (!in_array($pruebaVieja->id, $nuevasPruebasIds)) {
-                                    $pruebasHuerfanas[] = "{$pruebaVieja->nombre} <span class='text-gray-500 text-xs'>(del {$viejo->nombre})</span>";
-                                }
-                            }
-                        }
-
-                        // 2. CONSTRUCCIÓN DEL HTML BONITO
-                        $html = '<div class="space-y-4 text-sm">';
-
-                        // A) Aviso de desactivación (Amarillo/Naranja)
-                        $html .= '<div class="p-3 bg-orange-50 border-l-4 border-orange-500 rounded-r-md">';
-                        $html .= '<p class="text-orange-900 font-medium">Se desactivarán los siguientes reactivos:</p>';
-                        $html .= '<ul class="mt-1 list-disc list-inside text-orange-800">';
-                        foreach (array_unique($nombresConflictos) as $nombre) {
-                            $html .= "<li>{$nombre}</li>";
-                        }
-                        $html .= '</ul></div>';
-
-                        // B) Advertencia Crítica (Rojo) - Solo si hay huérfanos
-                        if (!empty($pruebasHuerfanas)) {
-                            $html .= '<div class="p-3 bg-red-50 border-l-4 border-red-500 rounded-r-md">';
-                            $html .= '<div class="flex items-center gap-2 text-red-800 font-bold mb-1">';
-                            $html .= '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>';
-                            $html .= 'ADVERTENCIA CRÍTICA';
-                            $html .= '</div>';
-
-                            $html .= '<p class="text-red-700 mb-2">El nuevo reactivo <u>NO cubre</u> todas las pruebas. Las siguientes quedarán <strong>SIN REACTIVO ASIGNADO</strong>:</p>';
-
-                            $html .= '<ul class="list-disc list-inside text-red-900 font-medium bg-red-100/50 p-2 rounded">';
-                            foreach (array_unique($pruebasHuerfanas) as $huerfana) {
-                                $html .= "<li>{$huerfana}</li>";
-                            }
-                            $html .= '</ul>';
-                            $html .= '</div>';
-                        } else {
-                            // Mensaje verde si todo está seguro
-                            $html .= '<div class="text-green-600 flex items-center gap-2 font-medium">';
-                            $html .= '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>';
-                            $html .= 'Cobertura completa: Todas las pruebas necesarias están cubiertas.';
-                            $html .= '</div>';
-                        }
-
-                        $html .= '</div>';
-
-                        return new \Illuminate\Support\HtmlString($html);
-                    })
-
-                    ->action(function (Reactivo $record): void {
-                        \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
-                            $misPruebasIds = $record->pruebas()->pluck('pruebas.id')->toArray();
-
-                            // Desactivar competencia
-                            Reactivo::where('en_uso', true)
-                                ->where('id', '!=', $record->id)
-                                ->whereHas('pruebas', function ($q) use ($misPruebasIds) {
-                                $q->whereIn('pruebas.id', $misPruebasIds);
-                            })
-                                ->update(['en_uso' => false]);
-
-                            // Activar nuevo
-                            $record->update(['en_uso' => true]);
-                        });
-
-                        Notification::make()
-                            ->title('Reactivo activado')
-                            ->body('Configuración de uso actualizada.')
-                            ->success()
-                            ->send();
-                    }),
                 Action::make('gestionarValores')
                     ->label('Valores de Referencia')
                     ->icon('heroicon-o-clipboard-document-list')
                     ->color('gray')
-                    
                     ->modalWidth('4xl')
                     ->modalSubmitActionLabel('Guardar')
                     ->fillForm(fn(Reactivo $record) => [
@@ -403,7 +306,10 @@ class ReactivoResource extends Resource
                     ->label('Reabastecer')
                     ->icon('heroicon-o-arrow-path-rounded-square')
                     ->color('primary')
-                    ->visible(fn(Reactivo $record) => $record->estado !== 'disponible' && auth()->user()->can('reabastecer_reactivos'))
+                    ->visible(fn(Reactivo $record): bool => 
+                        $record->estado !== 'disponible' && 
+                        auth()->user()->can('reabastecer_reactivos')
+                    )
                     ->modalHeading('Reabastecer Reactivo')
                     ->modalDescription('Esto creará un nuevo lote basado en este, copiando sus pruebas asignadas y valores de referencia.')
                     ->form([
@@ -449,10 +355,12 @@ class ReactivoResource extends Resource
                 // --- ¡NUEVO BOTÓN PARA MARCAR AGOTADO! ---
                 Action::make('marcarAgotado')
                     ->label('Marcar Agotado')
-                    ->visible($esAccionable)
                     ->icon('heroicon-o-archive-box-x-mark')
                     ->color('danger')
-                    ->visible(fn(Reactivo $record) => $record->estado === 'disponible' && auth()->user()->can('agotar_reactivos'))
+                    ->visible(fn(Reactivo $record): bool => 
+                        $record->estado === 'disponible' && 
+                        auth()->user()->can('agotar_reactivos')
+                    )
                     ->requiresConfirmation()
                     ->modalHeading('Marcar Reactivo como Agotado')
                     ->modalDescription('Esta acción es irreversible y desactivará el uso de este reactivo. ¿Estás seguro?')

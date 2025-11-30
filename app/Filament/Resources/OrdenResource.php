@@ -569,24 +569,72 @@ class OrdenResource extends Resource
                         && auth()->user()->can('imprimir_etiquetas_orden'))
                     ->url(fn(Orden $record): string => DetalleOrdenKanban::getUrl(['ordenId' => $record->id])),
 
-                Tables\Actions\Action::make('ver')
-                    ->tooltip('Ver Detalles')
-                    ->icon('heroicon-o-eye')
-                    ->iconButton()
-                    ->color('gray')
-                    ->modalContent(function (Orden $record) {
-                        // Corregido para evitar error de memoria
-                        $record->load([
-                            'cliente',
-                            'detalleOrden.examen.muestras',
-                            'detalleOrden.perfil',
-                            'resultados.prueba',
-                            'tomaMuestraUser'
-                        ]);
-                        return view('filament.modals.ver-orden', ['record' => $record]);
-                    })
-                    ->modalSubmitAction(false)
-                    ->modalCancelAction(false),
+               Tables\Actions\Action::make('ver')
+    ->tooltip('Ver Detalles')
+    ->icon('heroicon-o-eye')
+    ->iconButton()
+    ->color('gray')
+    ->modalContent(function (Orden $record) {
+        // 1. Cargar relaciones base
+        $record->load([
+            'cliente',
+            'tomaMuestraUser',
+            'resultados', // Cargamos resultados para verificar el estado
+            // Cargamos relaciones de respaldo por si es una orden vieja sin snapshot
+            'detalleOrden.examen.pruebas.reactivosActivos', 
+            'detalleOrden.perfil'
+        ]);
+
+        // 2. PROCESAR LA DATA (Lógica idéntica a IngresarResultados)
+        // Generamos una estructura limpia para la vista que ya tenga las pruebas correctas
+        $listaDePruebasVisual = $record->detalleOrden->map(function ($detalle) use ($record) {
+            
+            // A. Determinar la fuente de las pruebas (Snapshot vs BD)
+            $pruebas = collect([]);
+            
+            if (!empty($detalle->pruebas_snapshot)) {
+                // CASO 1: Usar Snapshot (JSON)
+                $pruebas = collect($detalle->pruebas_snapshot)->map(fn($item) => (object) $item);
+            } elseif ($detalle->examen) {
+                // CASO 2: Fallback a BD viva (Ordenes viejas)
+                $pruebas = $detalle->examen->pruebas;
+            }
+
+            // Si no hay pruebas (ej: examen externo sin configurar), retornamos null para no mostrarlo en la lista de estado
+            if ($pruebas->isEmpty()) return null;
+
+            // B. Mapear cada prueba con su estado de resultado
+            $pruebasProcesadas = $pruebas->map(function ($prueba) use ($record, $detalle) {
+                // Buscamos si ya tiene resultado
+                $tieneResultado = $record->resultados
+                    ->where('detalle_orden_id', $detalle->id)
+                    ->where('prueba_id', $prueba->id)
+                    ->whereNotNull('resultado')
+                    ->where('resultado', '!=', '')
+                    ->isNotEmpty();
+
+                return [
+                    'id' => $prueba->id,
+                    'nombre' => $prueba->nombre,
+                    'completado' => $tieneResultado,
+                ];
+            });
+
+            return [
+                'nombre_examen' => $detalle->nombre_examen ?? ($detalle->examen->nombre ?? 'Examen'),
+                'es_externo' => $detalle->examen->es_externo ?? false,
+                'pruebas' => $pruebasProcesadas,
+            ];
+        })->filter(); // Eliminar nulos
+
+        // 3. Retornar la vista pasando la nueva variable procesada
+        return view('filament.modals.ver-orden', [
+            'record' => $record,
+            'lista_pruebas_visual' => $listaDePruebasVisual // <--- VARIABLE NUEVA
+        ]);
+    })
+    ->modalSubmitAction(false)
+    ->modalCancelAction(false),
 
                 Tables\Actions\Action::make('verPruebas')
                     ->tooltip('Ver Pruebas Realizadas')

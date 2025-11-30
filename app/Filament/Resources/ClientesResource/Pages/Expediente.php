@@ -21,6 +21,7 @@ use Filament\Forms\Components\ViewField;
 use Barryvdh\DomPDF\Facade\Pdf;       
 use Illuminate\Support\Collection;
 use Filament\Forms\Get;
+use Storage;
 
 
 class Expediente extends Page implements HasTable
@@ -121,137 +122,21 @@ class Expediente extends Page implements HasTable
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Cerrar'),
 
-                Action::make('generarReporte')
-                    ->tooltip('Ver Resultados')
-                    ->label('Ver Resultados')
-                    ->icon('heroicon-o-printer')
+                   Action::make('descargarReporte')
+                    ->tooltip('Descargar Reporte Guardado')
+                    ->icon('heroicon-o-arrow-down-tray') // Icono de descarga
                     ->iconButton()
-                    ->color('gray')
-                    ->visible(fn(Orden $record): bool => $record->estado === 'finalizado' &&
-                        auth()->user()->can('generar_reporte_orden'))
-                    ->modalWidth('7xl')
-                    ->modalHeading(fn(Orden $record) => 'Reporte de Resultados: #' . $record->id)
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Cerrar')
-                    ->modalContent(function (Orden $record) {
-
-     // 1. Cargar relaciones necesarias
-        $orden = $record->load([
-            'cliente',
-            'detalleOrden.examen.tipoExamen',
-            'detalleOrden.examen.pruebas.tipoPrueba',
-            'detalleOrden.examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario',
-            'resultados.prueba'
-        ]);
-
-        // 2. Agrupar por tipo de examen (Hematología, Química, etc.)
-        $detallesAgrupados = $orden->detalleOrden
-            ->whereNotNull('examen_id')
-            ->groupBy('examen.tipoExamen.nombre');
-
-        $datos_agrupados = [];
-
-        foreach ($detallesAgrupados as $tipoExamenNombre => $detalles) {
-            $examenes_data = [];
-
-            foreach ($detalles as $detalle) {
-                
-                // --- LÓGICA DIFERENCIADA: EXTERNO vs INTERNO ---
-                
-                if ($detalle->examen->es_externo) {
-                    // CASO A: EXAMEN EXTERNO (REFERIDO)
-                    // Buscamos directamente en la tabla 'resultados' los datos guardados manualmente (snapshots)
-                    $resultadosExternos = $orden->resultados
-                        ->where('detalle_orden_id', $detalle->id)
-                        ->where('es_externo', true);
-
-                    $dataUnitarias = $resultadosExternos->map(function ($res) {
-                        return [
-                            'nombre' => $res->prueba_nombre_snapshot ?? 'Prueba Externa',
-                            'resultado' => $res->resultado,
-                            'referencia' => $res->valor_referencia_snapshot ?? 'N/A',
-                            'unidades' => $res->unidades_snapshot ?? '',
-                            'fecha_resultado' => $res->updated_at->format('d/m/Y'),
-                            'es_fuera_de_rango' => false, // No calculamos rangos en externos
-                        ];
-                    })->all();
-
-                    // Agregamos al reporte como un examen simple (sin matrices)
-                    $examenes_data[] = [
-                        'nombre' => $detalle->examen->nombre ,
-                        'codigo' => $detalle->examen->id,
-                        'pruebas_unitarias' => $dataUnitarias,
-                        'matrices' => [], // Los externos no suelen usar matrices complejas
-                    ];
-
-                } else {
-                    // CASO B: EXAMEN INTERNO (CATÁLOGO)
-                    // Usamos la definición de 'pruebas' y calculamos rangos con la función auxiliar
-                    $todasLasPruebas = $detalle->examen->pruebas->where('es_externo', false);
-
-                    $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
-                    $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
-
-                    // Procesar unitarias internas
-                    $dataUnitarias = $pruebasUnitarias->map(function ($prueba) use ($orden, $detalle) {
-                        return self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
-                    })->all();
-
-                    // Procesar matrices internas
-                    $dataMatrices = $pruebasConjuntas->map(function (Collection $pruebasDelConjunto) use ($orden, $detalle) {
-                        $filas = [];
-                        $columnas = [];
-                        $dataMatrix = [];
-                        foreach ($pruebasDelConjunto as $prueba) {
-                            $partes = explode(', ', $prueba->nombre);
-                            if (count($partes) >= 2) {
-                                [$nombreFila, $nombreColumna] = $partes;
-                                $filas[] = $nombreFila;
-                                $columnas[] = $nombreColumna;
-                                $dataMatrix[$nombreFila][$nombreColumna] = self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
-                            }
-                        }
-                        return [
-                            'filas' => array_values(array_unique($filas)),
-                            'columnas' => array_values(array_unique($columnas)),
-                            'data' => $dataMatrix,
-                        ];
-                    })->all();
-
-                    $examenes_data[] = [
-                        'nombre' => $detalle->examen->nombre,
-                        'codigo' => $detalle->examen->id,
-                        'pruebas_unitarias' => $dataUnitarias,
-                        'matrices' => $dataMatrices,
-                    ];
-                }
-            }
-            $datos_agrupados[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
-        }
-
-        // 3. Datos de Firma y Sello
-        $usuarioQueFirma = auth()->user();
-        $rutaFirma = $usuarioQueFirma?->firma_path ?? null;
-        $rutaSello = $usuarioQueFirma?->sello_path ?? null;
-
-        // 4. Preparar PDF
-        $pdf_data = [
-            'orden' => $orden,
-            'datos_agrupados' => $datos_agrupados,
-            'ruta_firma_digital' => $rutaFirma,
-            'ruta_sello_digital' => $rutaSello,
-            'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado Desconocido',
-            'ruta_sello_registro' => public_path('storage/sello.png'),
-        ];
-
-        $pdf = Pdf::loadView('pdf.reporte_resultados', $pdf_data);
-
-                        $pdfContent = base64_encode($pdf->output());
-
-                        return view('filament.modals.pdf-viewer', [
-                            'pdfContent' => $pdfContent,
-                        ]);
+                    ->color('success') // Verde para diferenciar
+                    // Solo visible si el archivo EXISTE en el disco
+                    ->visible(function (Orden $record) {
+                        $filePath = "reportes/reporte_orden_{$record->id}.pdf";
+                        return Storage::disk('public')->exists($filePath) && $record->estado === 'finalizado';
                     })
+                    ->action(function (Orden $record) {
+                        $filePath = "reportes/reporte_orden_{$record->id}.pdf";
+                        $fullPath = storage_path("app/public/{$filePath}");
+                        return response()->download($fullPath);
+                    }),
             ]);
     }
 
