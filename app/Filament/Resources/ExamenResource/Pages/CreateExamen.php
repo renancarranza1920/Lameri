@@ -18,4 +18,10 @@ class CreateExamen extends CreateRecord
             $this->record->pruebas()->create(['nombre' => $nombrePrueba]);
         }
     }
+
+    //redireccionar a la lista de examenes despues de crear uno nuevo
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');   
+    }
 }
