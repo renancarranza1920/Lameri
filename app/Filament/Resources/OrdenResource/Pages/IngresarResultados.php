@@ -43,28 +43,62 @@ class IngresarResultados extends Page implements HasForms
         ])->statePath('data');
     }
 
-    public function isOrderComplete(): bool
-    {
-        $totalPruebasInternas = $this->record->detalleOrden
-            ->whereNotNull('examen_id')
-            ->filter(function ($detalle) {
-                return $detalle->examen && !$detalle->examen->es_externo;
-            })
-            ->flatMap(fn($detalle) => $detalle->examen->pruebas)
-            ->count();
+    // En app/Filament/Resources/OrdenResource/Pages/IngresarResultados.php
 
-        $resultadosInternosIngresados = $this->record->resultados()
-            ->where('es_externo', false)
+public function isOrderComplete(): bool
+{
+    // 1. Traemos los detalles para iterar uno por uno
+    $detalles = $this->record->detalleOrden()
+        ->whereNotNull('examen_id')
+        // Cargamos la relación para no hacer mil consultas
+        ->with(['examen', 'orden.resultados']) 
+        ->get();
+
+    $totalRequeridas = 0;
+    $totalCompletadas = 0;
+
+    foreach ($detalles as $detalle) {
+        // Saltamos los externos porque esos se manejan diferente
+        if ($detalle->examen && $detalle->examen->es_externo) continue;
+
+        // A. DETERMINAR QUÉ PRUEBAS PIDE EL SNAPSHOT ACTUAL
+        $idsRequeridos = [];
+        
+        if (!empty($detalle->pruebas_snapshot)) {
+            // Si hay foto, sacamos los IDs de la foto
+            $idsRequeridos = collect($detalle->pruebas_snapshot)->pluck('id')->toArray();
+        } elseif ($detalle->examen) {
+            // Si es vieja, sacamos los IDs activos de la BD
+            $idsRequeridos = $detalle->examen->pruebas
+                ->where('estado', 'activo') // Tu filtro personalizado
+                ->pluck('id')
+                ->toArray();
+        }
+
+        if (empty($idsRequeridos)) continue;
+
+        // Sumamos al contador global de lo que se necesita
+        $totalRequeridas += count($idsRequeridos);
+
+        // B. CONTAR RESULTADOS VÁLIDOS (LA CORRECCIÓN MÁGICA)
+        // Usamos la colección de resultados en memoria ($this->record->resultados)
+        // y filtramos para contar SOLO los que coinciden con los IDs requeridos.
+        $completadasEnEsteDetalle = $this->record->resultados
+            ->where('detalle_orden_id', $detalle->id)
+            ->whereIn('prueba_id', $idsRequeridos) // <--- ¡AQUÍ ESTÁ EL TRUCO! Ignoramos los huérfanos
             ->whereNotNull('resultado')
             ->where('resultado', '!=', '')
             ->count();
 
-        if ($totalPruebasInternas === 0) {
-            return true;
-        }
-
-        return $totalPruebasInternas === $resultadosInternosIngresados;
+        $totalCompletadas += $completadasEnEsteDetalle;
     }
+
+    // Si por alguna razón no se requieren pruebas, asumimos completo
+    if ($totalRequeridas === 0) return true;
+
+    // Ahora sí: 1 requerido === 1 completado válido (aunque sobren huérfanos)
+    return $totalRequeridas === $totalCompletadas;
+}
 
     protected function prepareInitialData(): array
     {
@@ -86,7 +120,7 @@ class IngresarResultados extends Page implements HasForms
                 });
             } elseif ($detalle->examen) {
                 // FALLBACK: Si no hay snapshot, usamos los datos en vivo cargados arriba
-                $todasLasPruebas = $detalle->examen->pruebas;
+                $todasLasPruebas = $detalle->examen->pruebas->where('estado', 'activo');
             } else {
                 continue;
             }
@@ -310,7 +344,7 @@ class IngresarResultados extends Page implements HasForms
 
                             if ($examenFresco) {
                                 // 2. Generamos el NUEVO SNAPSHOT
-                                $nuevoSnapshot = $examenFresco->pruebas->map(function ($prueba) {
+                                $nuevoSnapshot = $examenFresco->pruebas->where('estado', 'activo')->map(function ($prueba) {
                                     $data = [
                                         'id' => $prueba->id,
                                         'nombre' => $prueba->nombre,
