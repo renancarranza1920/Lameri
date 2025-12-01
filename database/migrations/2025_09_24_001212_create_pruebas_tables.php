@@ -26,6 +26,7 @@ return new class extends Migration
               ->nullable() // Permite que pruebas existentes no fallen
               ->constrained('examens') // Apunta a la tabla 'examens'
               ->cascadeOnDelete(); // Si se borra el examen, se borran sus pruebas
+            $table->enum('estado', ['activo', 'inactivo'])->default('activo');
 
             // Columna para la relación. Puede ser nula, como pediste.
             $table->foreignId('tipo_prueba_id')->nullable()->constrained('tipos_pruebas')->onDelete('set null');
