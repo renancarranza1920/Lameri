@@ -636,31 +636,7 @@ class OrdenResource extends Resource
     ->modalSubmitAction(false)
     ->modalCancelAction(false),
 
-                Tables\Actions\Action::make('verPruebas')
-                    ->tooltip('Ver Pruebas Realizadas')
-                    ->icon('heroicon-o-clipboard-document-check')
-                    ->iconButton()
-                    ->color('gray')
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado'])
-                        && auth()->user()->can('ver_pruebas_orden'))
-                    ->modalHeading('Pruebas a Realizar')
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Cerrar')
-                    ->form(function (Orden $record) {
-                        // 1. Cargamos resultados para no hacer consultas en el loop
-                        $record->load('resultados');
-
-                        $detalles = $record->detalleOrden()->with('examen.pruebas')->get();
-                        $examenes = $detalles->map(fn($detalle) => $detalle->examen)->filter()->unique('id');
-
-                        return [
-                            Forms\Components\View::make('filament.modals.ver-orden-pruebas')
-                                ->viewData([
-                                    'examenes' => $examenes,
-                                    'orden' => $record, // <--- ¡ESTO ES LO NUEVO! Pasamos la orden completa
-                                ])
-                        ];
-                    }),
+                
                 Tables\Actions\Action::make('pausarOrden')
                     ->tooltip('Pausar Orden')
                     ->icon('heroicon-o-pause-circle')
@@ -936,7 +912,7 @@ class OrdenResource extends Resource
                     // --- VISIBILIDAD BLINDADA ---
                     ->visible(
                         fn(Orden $record): bool =>
-                        $record->estado === 'finalizado' && // 1. Solo si está finalizada
+                        ($record->estado === 'finalizado' || $record->estado === 'cancelado') && // 1. Solo si está finalizada o cancelada
                         auth()->user()->can('restaurar_orden') // 2. Solo si tiene el permiso especial
                     )
 

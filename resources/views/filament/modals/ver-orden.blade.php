@@ -53,7 +53,7 @@
         </div>
     </div>
 
-    {{-- TABLA MEJORADA CON ICONOS Y DIFERENCIACIÓN --}}
+    {{-- TABLA MEJORADA: DISEÑO VISUAL DIFERENCIADO --}}
     <div>
         <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Detalles de la Orden</h3>
         <div class="border rounded-lg overflow-hidden dark:border-gray-700 shadow-sm">
@@ -74,17 +74,16 @@
                         @if ($perfilId)
                             @php $primerItem = $items->first(); @endphp
 
-                            {{-- Cabecera del Perfil (Destacada) --}}
-                            <tr class="bg-gray-50 dark:bg-gray-800">
+                            {{-- Cabecera del Perfil (Con fondo y etiqueta) --}}
+                            <tr class="bg-gray-50 dark:bg-gray-800/50">
                                 <td class="p-3">
                                     <div class="flex items-center gap-2">
-                                        <x-heroicon-o-rectangle-stack class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                                        <x-heroicon-o-rectangle-stack class="w-5 h-5 text-primary-600 dark:text-primary-400"/>
                                         <div>
                                             <span class="font-bold text-gray-900 dark:text-white text-base block">
                                                 {{ $primerItem->nombre_perfil ?? 'Perfil' }}
                                             </span>
-                                            <span
-                                                class="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded border border-primary-100 dark:border-primary-800">
+                                            <span class="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded border border-primary-100 dark:border-primary-800">
                                                 PERFIL
                                             </span>
                                         </div>
@@ -95,36 +94,23 @@
                                 </td>
                             </tr>
 
-                            {{-- Ítems del Perfil (Indentados) --}}
+                            {{-- Ítems del Perfil (Indentados y más pequeños) --}}
                             @foreach ($items as $detalle)
-                                <tr class="bg-white dark:bg-gray-800">
+                                <tr class="bg-white dark:bg-gray-900">
                                     <td class="py-2 pl-10 pr-3 border-l-4 border-gray-50 dark:border-gray-800">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-600 dark:text-gray-400 text-sm flex items-center gap-2">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></span>
                                                 {{ $detalle->nombre_examen }}
                                             </span>
-                                            @php
-                                                $statusMap = [
-                                                    'quimica_sanguinea' => 'Química Sanguínea',
-                                                    'hematologia' => 'Hematología',
-                                                    'coagulacion' => 'Coagulación',
-                                                    'coprologia' => 'Coprología',
-                                                    'uroanalisis' => 'Uroanálisis',
-                                                    'bacteriologia' => 'Bacteriología',
-                                                ];
-                                            @endphp
-
                                             @if($detalle->status)
-                                                <span
-                                                    class="text-[10px] text-gray-400 bg-gray-50 dark:bg-gray-800 px-1 rounded border dark:border-gray-700">
-                                                    {{ $statusMap[$detalle->status] ?? $detalle->status }}
+                                                <span class="text-[10px] text-gray-400 bg-gray-50 dark:bg-gray-800 px-1 rounded border dark:border-gray-700">
+                                                    {{ $detalle->status }}
                                                 </span>
                                             @endif
-
                                         </div>
                                     </td>
-                                    <td></td> {{-- Vacío --}}
+                                    <td></td> {{-- Columna vacía --}}
                                 </tr>
                             @endforeach
                         @endif
@@ -133,36 +119,23 @@
                     {{-- EXÁMENES INDIVIDUALES --}}
                     @if ($agrupadoPorPerfil->has(null) || $agrupadoPorPerfil->has(''))
                         @foreach ($agrupadoPorPerfil[null] ?? [] as $detalle)
-                            <tr class="dark:bg-gray-800 transition-colors">
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                                 <td class="p-3 pl-4">
                                     <div class="flex items-center gap-3">
-                                        <x-heroicon-o-beaker class="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                                        <x-heroicon-o-beaker class="w-5 h-5 text-gray-400 dark:text-gray-500"/>
                                         <div>
                                             <span class="font-semibold text-gray-700 dark:text-gray-200 text-sm block">
                                                 {{ $detalle->nombre_examen }}
                                             </span>
-                                            @php
-                                                $statusMap = [
-                                                    'quimica_sanguinea' => 'Química Sanguínea',
-                                                    'hematologia' => 'Hematología',
-                                                    'coagulacion' => 'Coagulación',
-                                                    'coprologia' => 'Coprología',
-                                                    'uroanalisis' => 'Uroanálisis',
-                                                    'bacteriologia' => 'Bacteriología',
-                                                ];
-                                            @endphp
-
                                             @if($detalle->status)
-                                                <span
-                                                    class="text-[10px] text-gray-400 bg-gray-50 dark:bg-gray-800 px-1 rounded border dark:border-gray-700">
-                                                    {{ $statusMap[$detalle->status] ?? $detalle->status }}
+                                                <span class="text-[10px] text-gray-400 bg-gray-50 dark:bg-gray-800 px-1 rounded border dark:border-gray-700">
+                                                    {{ $detalle->status }}
                                                 </span>
                                             @endif
-
                                         </div>
                                     </div>
                                 </td>
-                                <td class="p-3 text-right font-mono text-gray-700 dark:text-white font-medium">
+                                <td class="p-3 text-right font-mono text-gray-700 dark:text-gray-300 font-medium">
                                     ${{ number_format($detalle->precio_examen, 2) }}
                                 </td>
                             </tr>
@@ -172,6 +145,7 @@
             </table>
         </div>
     </div>
+    {{-- FIN TABLA MEJORADA --}}
 
     <section>
         <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Gestión de Muestras</h3>
@@ -193,29 +167,26 @@
     </section>
 
     <hr class="my-4 dark:border-gray-700">
+    
+    {{-- AQUÍ MOSTRAMOS EL ESTADO REAL DE LAS PRUEBAS (SNAPSHOT O VIVO) --}}
+    {{-- Usamos la variable $lista_pruebas_visual que pasamos desde el Action --}}
     <div>
         <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Estado de las Pruebas</h3>
         <div class="space-y-4">
-            @foreach($record->detalleOrden->whereNotNull('examen_id') as $detalle)
-                @if($detalle->examen && $detalle->examen->pruebas->isNotEmpty() && !$detalle->examen->es_externo)
+             @foreach($lista_pruebas_visual as $item)
+                 {{-- Solo mostramos si tiene pruebas y no es externo --}}
+                 @if(count($item['pruebas']) > 0 && !$item['es_externo'])
                     <div class="p-3 border rounded-lg dark:border-gray-700">
-                        <p class="font-semibold text-gray-800 dark:text-gray-200">{{ $detalle->examen->nombre }}</p>
+                        <p class="font-semibold text-gray-800 dark:text-gray-200">{{ $item['nombre_examen'] }}</p>
                         <ul class="mt-2 space-y-1 pl-4">
-                            @foreach($detalle->examen->pruebas as $prueba)
+                            @foreach($item['pruebas'] as $prueba)
                                 <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                                    @php
-                                        $resultadoExiste = $record->resultados
-                                            ->where('detalle_orden_id', $detalle->id)
-                                            ->where('prueba_id', $prueba->id)
-                                            ->first();
-                                    @endphp
-
-                                    @if($resultadoExiste && $resultadoExiste->resultado)
+                                    @if($prueba['completado'])
                                         <x-heroicon-s-check-circle class="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                                        <span>{{ $prueba->nombre }}</span>
+                                        <span>{{ $prueba['nombre'] }}</span>
                                     @else
                                         <x-heroicon-o-clock class="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
-                                        <span>{{ $prueba->nombre }}</span>
+                                        <span>{{ $prueba['nombre'] }}</span>
                                     @endif
                                 </li>
                             @endforeach

@@ -76,6 +76,10 @@ class ReactivoResource extends Resource
     public static function table(Table $table): Table
     {
         $esAccionable = fn(Reactivo $record): bool => $record->estado === 'disponible';
+$activeTab = request()->query('table');
+
+
+
 
         return $table
             ->columns([
@@ -102,7 +106,7 @@ class ReactivoResource extends Resource
                         fn(Reactivo $record): bool =>
                         auth()->user()->can('activar_reactivos') &&
                         !$record->en_uso &&
-                        $record->estado === 'disponible'
+                        $record->estado === 'disponible' &&   $activeTab !== 'historicos'
                     ),
 
                 Action::make('gestionarValores')
@@ -311,7 +315,7 @@ class ReactivoResource extends Resource
                     ->visible(
                         fn(Reactivo $record): bool =>
                         $record->estado !== 'disponible' &&
-                        auth()->user()->can('reabastecer_reactivos')
+                        auth()->user()->can('reabastecer_reactivos') && $activeTab !== 'historicos'
                     )
                     ->modalHeading('Reabastecer Reactivo')
                     ->modalDescription('Esto creará un nuevo lote basado en este, copiando sus pruebas asignadas y valores de referencia.')

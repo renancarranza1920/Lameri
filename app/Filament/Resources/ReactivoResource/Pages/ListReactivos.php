@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder; // <-- ¡Importante!
 class ListReactivos extends ListRecords
 {
     protected static string $resource = ReactivoResource::class;
+   public ?string $activeTab = 'disponibles';
 
     protected function getHeaderActions(): array
     {
@@ -18,6 +19,19 @@ class ListReactivos extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+
+public function getTableQueryStringIdentifier(): ?string
+{
+    return $this->activeTab;
+}
+public function getActiveTab(): ?string
+{
+    return $this->activeTab;
+}
+
+
+
 
 
 
