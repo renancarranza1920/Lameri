@@ -207,7 +207,7 @@ class CreateOrden extends CreateRecord
 
                 if (!$examenModel) return null;
 
-                return $examenModel->pruebas->map(function($prueba) {
+                return $examenModel->pruebas->where('estado', 'activo')->map(function($prueba) {
                     $data = [
                         'id' => $prueba->id,
                         'nombre' => $prueba->nombre,

@@ -47,12 +47,13 @@ class ReactivoResource extends Resource
         'pruebas', 
         'nombre', 
         // Aquí aplicamos el filtro: Solo pruebas donde tipo_conjunto es NULL
-        fn ($query) => $query->whereNull('tipo_conjunto')
+        fn ($query) => $query->whereNull('tipo_conjunto')->where('estado', 'activo')
     )
     ->multiple()
     ->preload()
     ->searchable()
     ->required()
+
     ->label('Pruebas Asignadas'),
                                 // ----------------------------------
 
@@ -186,22 +187,23 @@ class ReactivoResource extends Resource
                                                                     ->schema([
 
                                                                         // --- CORRECCIÓN DEL SELECTOR DE PRUEBA ---
-                                                                        Forms\Components\Select::make('prueba_id')
-                                                                            ->label('Aplica a la Prueba')
-                                                                            ->placeholder('General (Aplica a todas)')
-                                                                            // Usamos $record (Reactivo) capturado del scope superior
-                                                                            ->options(function () use ($record) {
-                                                                                if ($record && $record->exists) {
-                                                                                    return $record->pruebas->pluck('nombre', 'id');
-                                                                                }
+                                                           Forms\Components\Select::make('prueba_id')
+    ->label('Aplica a la Prueba')
+    ->placeholder('General (Aplica a todas)')
+    ->options(function () use ($record) {
+        if ($record && $record->exists) {
+            return $record->pruebas()
+                ->where('estado', 'activo')
+                ->pluck('nombre', 'id');
+        }
 
-                                                                                // Si aún no existe (ej: creando un reactivo), mostrar TODAS las pruebas
-                                                                                return \App\Models\Prueba::pluck('nombre', 'id');
-                                                                            })
+        return \App\Models\Prueba::where('estado', 'activo')
+            ->pluck('nombre', 'id');
+    })
+    ->searchable()
+    ->preload()
+    ->columnSpan(1),
 
-                                                                            ->searchable()
-                                                                            ->preload()
-                                                                            ->columnSpan(1),
                                                                         // -----------------------------------------
             
                                                                         Forms\Components\Select::make('grupo_etario_id')

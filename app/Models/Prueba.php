@@ -21,7 +21,7 @@ class Prueba extends Model
     // 2. USAR LOS TRAITS
     use HasFactory, LogsActivity;
     
-    protected $fillable = ['nombre', 'tipo_prueba_id', 'examen_id', 'tipo_conjunto'];
+    protected $fillable = ['nombre', 'tipo_prueba_id', 'examen_id', 'tipo_conjunto','estado'];
 
     // 3. ESPECIFICAR TIPO DE RETORNO
     public function tipoPrueba(): BelongsTo 
