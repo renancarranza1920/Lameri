@@ -183,120 +183,153 @@ public function isOrderComplete(): bool
     }
 
     protected function getPruebaData($prueba, int $detalleId): array
-    {
-        $resultadoExistente = $this->record->resultados()
-            ->where('prueba_id', $prueba->id)
-            ->where('detalle_orden_id', $detalleId)
-            ->first();
+{
+    // 1. Buscamos si ya hay un resultado guardado
+    $resultadoExistente = $this->record->resultados()
+        ->where('prueba_id', $prueba->id)
+        ->where('detalle_orden_id', $detalleId)
+        ->first();
 
-        $referencia = 'N/A';
-        $unidades = '';
-        $todosLosValores = collect([]);
+    $referencia = ''; 
+    $unidades = '';
+    $esAlerta = false; 
+    $mensajeAlerta = '';
 
-        // CASO A: Es un SNAPSHOT (Objeto del JSON)
-        if (isset($prueba->reactivo) && isset($prueba->reactivo->valores_referencia)) {
-            $todosLosValores = collect($prueba->reactivo->valores_referencia);
-            $unidades = $todosLosValores->first()->unidades ?? '';
+    // 2. Obtener la lista de todos los valores de referencia posibles
+    $todosLosValores = collect([]);
+
+    if (isset($prueba->reactivo) && isset($prueba->reactivo->valores_referencia)) {
+        // Viene del Snapshot (JSON)
+        $todosLosValores = collect($prueba->reactivo->valores_referencia);
+        $unidades = $todosLosValores->first()->unidades ?? ''; 
+    } elseif ($prueba instanceof \App\Models\Prueba) {
+        // Viene de la BD (Orden vieja o sin snapshot)
+        $reactivo = $prueba->reactivosActivos->first();
+        if ($reactivo) {
+            $todosLosValores = $reactivo->valoresReferencia;
         }
-        // CASO B: Es un MODELO (BD Viva)
-        // CORRECCIÓN AQUÍ: Usamos reactivosActivos->first() en lugar de reactivoEnUso
-        elseif ($prueba instanceof \App\Models\Prueba) {
-            // Obtenemos el primer reactivo activo de la colección (que ya debería estar cargada)
-            $reactivo = $prueba->reactivosActivos->first();
-            
-            if ($reactivo) {
-                $todosLosValores = $reactivo->valoresReferencia;
-            }
-        }
-
-        // Cálculo de Valores (Igual que antes)
-        if ($todosLosValores->isNotEmpty()) {
-            $cliente = $this->record->cliente;
-            $generoCliente = $cliente->genero;
-            $valorRef = null;
-
-            if (isset($this->record->semanas_gestacion) && $this->record->semanas_gestacion) {
-                $grupoEmbarazo = GrupoEtario::where('unidad_tiempo', 'semanas')
-                    ->where('edad_min', '<=', $this->record->semanas_gestacion)
-                    ->where('edad_max', '>=', $this->record->semanas_gestacion)
-                    ->first();
-
-                if ($grupoEmbarazo) {
-                    // Acceso agnóstico (array u objeto)
-                    $valorRef = $todosLosValores->first(function($val) use ($grupoEmbarazo) {
-                        $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
-                        return $gid == $grupoEmbarazo->id;
-                    });
-                }
-            }
-
-            if (!$valorRef) {
-                $grupoEtarioCliente = $cliente->getGrupoEtario();
-                if ($grupoEtarioCliente) {
-                    $valorRef = $todosLosValores->first(function($val) use ($grupoEtarioCliente, $generoCliente) {
-                        $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
-                        $gen = is_array($val) ? ($val['genero'] ?? null) : $val->genero;
-                        return $gid == $grupoEtarioCliente->id && $gen == $generoCliente;
-                    });
-
-                    if (!$valorRef) {
-                        $valorRef = $todosLosValores->first(function($val) use ($grupoEtarioCliente) {
-                            $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
-                            $gen = is_array($val) ? ($val['genero'] ?? null) : $val->genero;
-                            return $gid == $grupoEtarioCliente->id && $gen == 'Ambos';
-                        });
-                    }
-                }
-            }
-
-            if (!$valorRef) $valorRef = $todosLosValores->first(function($val) use ($generoCliente) {
-                $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
-                $gen = is_array($val) ? ($val['genero'] ?? null) : $val->genero;
-                return is_null($gid) && $gen == $generoCliente;
-            });
-            
-            if (!$valorRef) $valorRef = $todosLosValores->first(function($val) {
-                $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
-                $gen = is_array($val) ? ($val['genero'] ?? null) : $val->genero;
-                return is_null($gid) && $gen == 'Ambos';
-            });
-
-            if (!$valorRef) $valorRef = $todosLosValores->first();
-
-            if ($valorRef) {
-                $vMin = is_array($valorRef) ? $valorRef['valor_min'] : $valorRef->valor_min;
-                $vMax = is_array($valorRef) ? $valorRef['valor_max'] : $valorRef->valor_max;
-                $vOp = is_array($valorRef) ? $valorRef['operador'] : $valorRef->operador;
-                $vDesc = is_array($valorRef) ? ($valorRef['descriptivo'] ?? null) : ($valorRef->descriptivo ?? null);
-                $vUni = is_array($valorRef) ? ($valorRef['unidades'] ?? '') : ($valorRef->unidades ?? '');
-
-                $valorMin = rtrim(rtrim(number_format((float)$vMin, 2, '.', ''), '0'), '.');
-                $valorMax = rtrim(rtrim(number_format((float)$vMax, 2, '.', ''), '0'), '.');
-
-                $referencia = match ($vOp) {
-                    'rango' => "$valorMin - $valorMax",
-                    '<=' => "≤ $valorMax",
-                    '<' => "< $valorMax",
-                    '>=' => "≥ $valorMin",
-                    '>' => "> $valorMin",
-                    '=' => "= $valorMin",
-                    default => $vDesc ?? "$valorMin - $valorMax",
-                };
-
-                if (empty($unidades)) $unidades = $vUni;
-            }
-        }
-
-        return [
-            'prueba_id' => $prueba->id,
-            'prueba_nombre' => $prueba->nombre,
-            'resultado_id' => $resultadoExistente?->id,
-            'resultado' => $resultadoExistente?->resultado,
-            'valor_referencia' => $referencia,
-            'unidades' => $unidades,
-        ];
     }
 
+    // 3. Lógica de Selección Prioritaria (El corazón del cambio)
+    if ($todosLosValores->isNotEmpty()) {
+        $cliente = $this->record->cliente;
+        $generoCliente = $cliente->genero; // 'Masculino' o 'Femenino'
+        $valorRef = null;
+
+        // --- PRE-FILTRO: Caso Especial Embarazo (Prioridad Absoluta) ---
+        if (isset($this->record->semanas_gestacion) && $this->record->semanas_gestacion) {
+             $grupoEmbarazo = \App\Models\GrupoEtario::where('unidad_tiempo', 'semanas')
+                ->where('edad_min', '<=', $this->record->semanas_gestacion)
+                ->where('edad_max', '>=', $this->record->semanas_gestacion)
+                ->first();
+
+            if ($grupoEmbarazo) {
+                $valorRef = $todosLosValores->first(function($val) use ($grupoEmbarazo) {
+                    $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
+                    return $gid == $grupoEmbarazo->id;
+                });
+            }
+        }
+
+        // Si no es embarazo, seguimos la lógica estándar 1-2-3-4
+        if (!$valorRef) {
+            
+            // Paso A: Obtener el Grupo Etario Específico (Ej: Adultos)
+            $grupoEtarioCliente = $cliente->getGrupoEtario(); 
+
+            // Paso B: Obtener el Grupo "Todas las edades" (Ej: 0-120 años)
+            $grupoTodasEdades = \App\Models\GrupoEtario::where('nombre', 'Todas las edades')
+                ->orWhere(function($query) {
+                    $query->where('edad_min', 0)->where('edad_max', '>=', 120);
+                })->first();
+
+            // --- INTENTO 1: Grupo Específico + Género Exacto ---
+            if ($grupoEtarioCliente) {
+                $valorRef = $todosLosValores->first(function($val) use ($grupoEtarioCliente, $generoCliente) {
+                    $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
+                    $gen = is_array($val) ? ($val['genero'] ?? null) : $val->genero;
+                    return $gid == $grupoEtarioCliente->id && $gen == $generoCliente;
+                });
+            }
+
+            // --- INTENTO 2: Grupo Específico + "Ambos" ---
+            if (!$valorRef && $grupoEtarioCliente) {
+                $valorRef = $todosLosValores->first(function($val) use ($grupoEtarioCliente) {
+                    $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
+                    $gen = is_array($val) ? ($val['genero'] ?? null) : $val->genero;
+                    return $gid == $grupoEtarioCliente->id && $gen == 'Ambos';
+                });
+            }
+
+            // --- INTENTO 3: Grupo "Todas las edades" + Género Exacto ---
+            if (!$valorRef && $grupoTodasEdades) {
+                $valorRef = $todosLosValores->first(function($val) use ($grupoTodasEdades, $generoCliente) {
+                    $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
+                    $gen = is_array($val) ? ($val['genero'] ?? null) : $val->genero;
+                    return $gid == $grupoTodasEdades->id && $gen == $generoCliente;
+                });
+            }
+
+            // --- INTENTO 4: Grupo "Todas las edades" + "Ambos" ---
+            if (!$valorRef && $grupoTodasEdades) {
+                $valorRef = $todosLosValores->first(function($val) use ($grupoTodasEdades) {
+                    $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
+                    $gen = is_array($val) ? ($val['genero'] ?? null) : $val->genero;
+                    return $gid == $grupoTodasEdades->id && $gen == 'Ambos';
+                });
+            }
+        }
+
+        // 4. Resultado del Proceso
+        if ($valorRef) {
+            // --- ÉXITO: Formateamos el valor encontrado ---
+            $vMin = is_array($valorRef) ? $valorRef['valor_min'] : $valorRef->valor_min;
+            $vMax = is_array($valorRef) ? $valorRef['valor_max'] : $valorRef->valor_max;
+            $vOp = is_array($valorRef) ? $valorRef['operador'] : $valorRef->operador;
+            $vDesc = is_array($valorRef) ? ($valorRef['descriptivo'] ?? null) : ($valorRef->descriptivo ?? null);
+            $vUni = is_array($valorRef) ? ($valorRef['unidades'] ?? '') : ($valorRef->unidades ?? '');
+
+            $valorMin = rtrim(rtrim(number_format((float)$vMin, 2, '.', ''), '0'), '.');
+            $valorMax = rtrim(rtrim(number_format((float)$vMax, 2, '.', ''), '0'), '.');
+
+            $referencia = match ($vOp) {
+                'rango' => "$valorMin - $valorMax",
+                '<=' => "≤ $valorMax",
+                '<' => "< $valorMax",
+                '>=' => "≥ $valorMin",
+                '>' => "> $valorMin",
+                '=' => "= $valorMin",
+                default => $vDesc ?? "$valorMin - $valorMax",
+            };
+
+            if (empty($unidades)) $unidades = $vUni;
+            
+        } else {
+            // --- FALLO: Activamos la Alerta ---
+            $esAlerta = true;
+            $referencia = "N/A"; 
+            
+            $grupoNombre = $cliente->getGrupoEtario()?->nombre ?? 'Edad sin clasificar';
+            $mensajeAlerta = "Falta conf. para: {$grupoNombre} ({$generoCliente})";
+        }
+
+    } else {
+         // No hay valores configurados en el reactivo siquiera
+         $esAlerta = false; 
+         $referencia = '';
+    }
+
+    return [
+        'prueba_id' => $prueba->id,
+        'prueba_nombre' => $prueba->nombre,
+        'resultado_id' => $resultadoExistente?->id,
+        'resultado' => $resultadoExistente?->resultado,
+        'valor_referencia' => $referencia,
+        'unidades' => $unidades,
+        'es_alerta' => $esAlerta,
+        'mensaje_alerta' => $mensajeAlerta
+    ];
+}
     public function addExternalRow($detalleId)
     {
         $this->data['resultados_examenes'][$detalleId]['externos'][] = [

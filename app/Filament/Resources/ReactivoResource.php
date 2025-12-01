@@ -43,18 +43,18 @@ class ReactivoResource extends Resource
                             ->schema([
                                 // --- CAMBIO 1: Relación Múltiple ---
                                 Select::make('pruebas')
-    ->relationship(
-        'pruebas', 
-        'nombre', 
-        // Aquí aplicamos el filtro: Solo pruebas donde tipo_conjunto es NULL
-        fn ($query) => $query->whereNull('tipo_conjunto')->where('estado', 'activo')
-    )
-    ->multiple()
-    ->preload()
-    ->searchable()
-    ->required()
-
-    ->label('Pruebas Asignadas'),
+                                    ->relationship(
+                                        'pruebas',
+                                        'nombre',
+                                        // Aquí aplicamos el filtro: Solo pruebas donde tipo_conjunto es NULL
+                                        fn($query) => $query->whereNull('tipo_conjunto')
+                                         ->where('estado', 'activo')
+                                    )
+                                    ->multiple()
+                                    ->preload()
+                                    ->searchable()
+                                    ->required()
+                                    ->label('Pruebas Asignadas'),
                                 // ----------------------------------
 
                                 TextInput::make('nombre')->required()->maxLength(255),
@@ -98,9 +98,10 @@ class ReactivoResource extends Resource
 
                 Action::make('setActive')
                     ->label('Poner en Uso')
-                    ->visible(fn(Reactivo $record): bool => 
-                        auth()->user()->can('activar_reactivos') && 
-                        !$record->en_uso && 
+                    ->visible(
+                        fn(Reactivo $record): bool =>
+                        auth()->user()->can('activar_reactivos') &&
+                        !$record->en_uso &&
                         $record->estado === 'disponible'
                     ),
 
@@ -187,23 +188,22 @@ class ReactivoResource extends Resource
                                                                     ->schema([
 
                                                                         // --- CORRECCIÓN DEL SELECTOR DE PRUEBA ---
-                                                           Forms\Components\Select::make('prueba_id')
-    ->label('Aplica a la Prueba')
-    ->placeholder('General (Aplica a todas)')
-    ->options(function () use ($record) {
-        if ($record && $record->exists) {
-            return $record->pruebas()
-                ->where('estado', 'activo')
-                ->pluck('nombre', 'id');
-        }
+                                                                        Forms\Components\Select::make('prueba_id')
+                                                                            ->label('Aplica a la Prueba')
+                                                                            ->placeholder('General (Aplica a todas)')
+                                                                            // Usamos $record (Reactivo) capturado del scope superior
+                                                                            ->options(function () use ($record) {
+                                                                                if ($record && $record->exists) {
+                                                                                    return $record->pruebas->pluck('nombre', 'id');
+                                                                                }
 
-        return \App\Models\Prueba::where('estado', 'activo')
-            ->pluck('nombre', 'id');
-    })
-    ->searchable()
-    ->preload()
-    ->columnSpan(1),
+                                                                                // Si aún no existe (ej: creando un reactivo), mostrar TODAS las pruebas
+                                                                                return \App\Models\Prueba::pluck('nombre', 'id');
+                                                                            })
 
+                                                                            ->searchable()
+                                                                            ->preload()
+                                                                            ->columnSpan(1),
                                                                         // -----------------------------------------
             
                                                                         Forms\Components\Select::make('grupo_etario_id')
@@ -308,8 +308,9 @@ class ReactivoResource extends Resource
                     ->label('Reabastecer')
                     ->icon('heroicon-o-arrow-path-rounded-square')
                     ->color('primary')
-                    ->visible(fn(Reactivo $record): bool => 
-                        $record->estado !== 'disponible' && 
+                    ->visible(
+                        fn(Reactivo $record): bool =>
+                        $record->estado !== 'disponible' &&
                         auth()->user()->can('reabastecer_reactivos')
                     )
                     ->modalHeading('Reabastecer Reactivo')
@@ -359,8 +360,9 @@ class ReactivoResource extends Resource
                     ->label('Marcar Agotado')
                     ->icon('heroicon-o-archive-box-x-mark')
                     ->color('danger')
-                    ->visible(fn(Reactivo $record): bool => 
-                        $record->estado === 'disponible' && 
+                    ->visible(
+                        fn(Reactivo $record): bool =>
+                        $record->estado === 'disponible' &&
                         auth()->user()->can('agotar_reactivos')
                     )
                     ->requiresConfirmation()

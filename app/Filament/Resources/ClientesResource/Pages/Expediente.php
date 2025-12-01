@@ -140,159 +140,118 @@ class Expediente extends Page implements HasTable
             ]);
     }
 
-  public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
-    {
-        $resultado = $orden->resultados->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
+  // En app/Filament/Resources/ClientesResource/Pages/Expediente.php
 
-        $nombre_prueba = $prueba->nombre; // Nombre por defecto
-        $referencia_formateada = 'N/A';
-        $unidades = '';
-        $es_fuera_de_rango = false;
-        $valor_resultado_num = null;
+public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
+{
+    $resultado = $orden->resultados->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
 
-        if ($resultado && is_numeric($resultado->resultado)) {
-            $valor_resultado_num = (float) $resultado->resultado;
+    $nombre_prueba = $prueba->nombre; 
+    $referencia_formateada = 'N/A'; // Por defecto
+    $unidades = '';                 // Por defecto
+    $es_fuera_de_rango = false;
+    $valor_resultado_num = null;
+
+    if ($resultado && is_numeric($resultado->resultado)) {
+        $valor_resultado_num = (float) $resultado->resultado;
+    }
+
+    $todosLosValores = collect([]);
+    if ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
+        $todosLosValores = $prueba->reactivoEnUso->valoresReferencia;
+    }
+
+    // --- LÓGICA VIVA ---
+    if ($todosLosValores->isNotEmpty()) {
+        $cliente = $orden->cliente;
+        $generoCliente = $cliente->genero; 
+        $valorRef = null;
+
+        // A. Embarazo
+        if (isset($orden->semanas_gestacion) && $orden->semanas_gestacion) {
+                $grupoEmbarazo = \App\Models\GrupoEtario::where('unidad_tiempo', 'semanas')
+                ->where('edad_min', '<=', $orden->semanas_gestacion)
+                ->where('edad_max', '>=', $orden->semanas_gestacion)
+                ->first();
+
+            if ($grupoEmbarazo) {
+                $valorRef = $todosLosValores->first(fn($val) => ($val->grupo_etario_id == $grupoEmbarazo->id));
+            }
         }
 
-        // --- INICIO DE LA LÓGICA DE REFERENCIA CORREGIDA ---
-        if ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-
-            // 1. OBTENER DATOS DEL PACIENTE
-            $cliente = $orden->cliente;
-            $generoCliente = $cliente->genero; // "Masculino" o "Femenino"
-            $grupoEtarioCliente = $cliente->getGrupoEtario(); // Objeto GrupoEtario o null
-
-            $valorRef = null;
-            $todosLosValores = $prueba->reactivoEnUso->valoresReferencia;
+        // B. Grupos
+        if (!$valorRef) {
+            $grupoEtarioCliente = $cliente->getGrupoEtario(); 
+            $grupoTodasEdades = \App\Models\GrupoEtario::where('nombre', 'Todas las edades')
+                ->orWhere(fn($q) => $q->where('edad_min', 0)->where('edad_max', '>=', 120))
+                ->first();
 
             if ($grupoEtarioCliente) {
-                // 2. INTENTO DE BÚSQUEDA 1: Grupo Etario + Género Específico
-                // Ej: "Adultos" (ID: 8) + "Masculino"
-
-                // AGREGAR ESTO TEMPORALMENTE PARA PROBAR
-               
-                $valorRef = $todosLosValores
-                    ->where('grupo_etario_id', $grupoEtarioCliente->id)
-                    ->where('genero', $generoCliente)
-                    ->first();
-
-                // 3. INTENTO DE BÚSQUEDA 2 (FALLBACK): Grupo Etario + "Ambos"
-                // Ej: "Adultos" (ID: 8) + "Ambos"
-                if (!$valorRef) {
-                    $valorRef = $todosLosValores
-                        ->where('grupo_etario_id', $grupoEtarioCliente->id)
-                        ->where('genero', 'Ambos')
-                        ->first();
-                }
+                $valorRef = $todosLosValores->first(fn($val) => $val->grupo_etario_id == $grupoEtarioCliente->id && $val->genero == $generoCliente);
             }
-
-            // 4. INTENTO DE BÚSQUEDA 3 (FALLBACK): Sin Grupo Etario + Género Específico
-            // (Para valores que no dependen de la edad, solo del género)
-            if (!$valorRef) {
-                $valorRef = $todosLosValores
-                    ->whereNull('grupo_etario_id')
-                    ->where('genero', $generoCliente)
-                    ->first();
+            if (!$valorRef && $grupoEtarioCliente) {
+                $valorRef = $todosLosValores->first(fn($val) => $val->grupo_etario_id == $grupoEtarioCliente->id && $val->genero == 'Ambos');
             }
-
-            // 5. INTENTO DE BÚSQUEDA 4 (FALLBACK): Sin Grupo Etario + "Ambos"
-            // (El valor más genérico, ej: 0-100 U/L para todos)
-            if (!$valorRef) {
-                $valorRef = $todosLosValores
-                    ->whereNull('grupo_etario_id')
-                    ->where('genero', 'Ambos')
-                    ->first();
+            if (!$valorRef && $grupoTodasEdades) {
+                $valorRef = $todosLosValores->first(fn($val) => $val->grupo_etario_id == $grupoTodasEdades->id && $val->genero == $generoCliente);
             }
-
-            // 6. ÚLTIMO RECURSO: Si todo falla, toma el primero (evita crasheo)
-            if (!$valorRef) {
-                $valorRef = $todosLosValores->first();
-            }
-
-            // --- FIN DE LA LÓGICA DE BÚSQUEDA ---
-
-            // Ahora $valorRef es el correcto (o el mejor disponible)
-            if ($resultado && !empty($resultado->prueba_nombre_snapshot)) {
-
-                $nombre_prueba = $resultado->prueba_nombre_snapshot;
-                $referencia_formateada = $resultado->valor_referencia_snapshot ?? 'N/A';
-                $unidades = $resultado->unidades_snapshot ?? '';
-
-                // Intentar extraer valores numéricos del snapshot para la comparación
-                // Esto asume un formato simple como "1.0 - 5.0"
-                if (preg_match('/([\d\.]+)\s*-\s*([\d\.]+)/', $referencia_formateada, $matches)) {
-                    $valorMin = (float) $matches[1];
-                    $valorMax = (float) $matches[2];
-                    if (!is_null($valor_resultado_num)) {
-                        if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) {
-                            $es_fuera_de_rango = true;
-                        }
-                    }
-                }
-                // (Puedes añadir más 'preg_match' para operadores como '<', '≥', etc.)
-
-            }
-            // CASO 2: Es una orden antigua sin "foto", usamos los datos en vivo
-            elseif ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-
-                $valorMin = (float) $valorRef->valor_min;
-                $valorMax = (float) $valorRef->valor_max;
-                $unidades = $valorRef->unidades ?? '';
-
-                // Formatear el texto de referencia
-                $rangoTexto = match ($valorRef->operador) {
-                    'rango' => "{$valorMin} - {$valorMax}",
-                    '<=' => "≤ {$valorMax}",
-                    '<' => "< {$valorMax}",
-                    '>=' => "≥ {$valorMin}",
-                    '>' => "> {$valorMin}",
-                    '=' => "= {$valorMin}",
-                    default => $valorRef->descriptivo ?? '',
-                };
-                $referencia_formateada = $rangoTexto;
-
-                // --- NUEVA LÓGICA DE COMPARACIÓN ---
-                if (!is_null($valor_resultado_num)) {
-                    switch ($valorRef->operador) {
-                        case 'rango':
-                            if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax)
-                                $es_fuera_de_rango = true;
-                            break;
-                        case '<=':
-                            if ($valor_resultado_num > $valorMax)
-                                $es_fuera_de_rango = true;
-                            break;
-                        case '<':
-                            if ($valor_resultado_num >= $valorMax)
-                                $es_fuera_de_rango = true;
-                            break;
-                        case '>=':
-                            if ($valor_resultado_num < $valorMin)
-                                $es_fuera_de_rango = true;
-                            break;
-                        case '>':
-                            if ($valor_resultado_num <= $valorMin)
-                                $es_fuera_de_rango = true;
-                            break;
-                        case '=':
-                            if ($valor_resultado_num != $valorMin)
-                                $es_fuera_de_rango = true;
-                            break;
-                    }
-                }
+            if (!$valorRef && $grupoTodasEdades) {
+                $valorRef = $todosLosValores->first(fn($val) => $val->grupo_etario_id == $grupoTodasEdades->id && $val->genero == 'Ambos');
             }
         }
 
-        return [
-            'nombre' => $nombre_prueba, // <-- Usa el nombre de la "foto" o el nombre en vivo
-            'resultado' => $resultado->resultado ?? 'PENDIENTE',
-            'referencia' => $referencia_formateada, // <-- Usa la referencia de la "foto" o la de en vivo
-            'unidades' => $unidades, // <-- Usa las unidades de la "foto" o las de en vivo
-            'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
-            'es_fuera_de_rango' => $es_fuera_de_rango, // <-- Devuelve la bandera
-            'tipo_prueba' => $prueba->tipoPrueba->nombre ?? '',
-        ];
+        if ($valorRef) {
+            $valorMin = (float) $valorRef->valor_min;
+            $valorMax = (float) $valorRef->valor_max;
+            $unidades = $valorRef->unidades ?? '';
+
+            $referencia_formateada = match ($valorRef->operador) {
+                'rango' => "$valorMin - $valorMax",
+                '<=' => "≤ $valorMax",
+                '<' => "< $valorMax",
+                '>=' => "≥ $valorMin",
+                '>' => "> $valorMin",
+                '=' => "= $valorMin",
+                default => $valorRef->descriptivo ?? '',
+            };
+            
+            // Fuera de rango
+            if (!is_null($valor_resultado_num)) {
+                switch ($valorRef->operador) {
+                    case 'rango': if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) $es_fuera_de_rango = true; break;
+                    case '<=': if ($valor_resultado_num > $valorMax) $es_fuera_de_rango = true; break;
+                    case '<': if ($valor_resultado_num >= $valorMax) $es_fuera_de_rango = true; break;
+                    case '>=': if ($valor_resultado_num < $valorMin) $es_fuera_de_rango = true; break;
+                    case '>': if ($valor_resultado_num <= $valorMin) $es_fuera_de_rango = true; break;
+                    case '=': if ($valor_resultado_num != $valorMin) $es_fuera_de_rango = true; break;
+                }
+            }
+        }
     }
+
+    // --- SNAPSHOT ---
+    if ($resultado && !empty($resultado->prueba_nombre_snapshot)) {
+        $nombre_prueba = $resultado->prueba_nombre_snapshot;
+        $referencia_formateada = $resultado->valor_referencia_snapshot ?? 'N/A';
+        $unidades = $resultado->unidades_snapshot ?? '';
+    }
+
+    // --- LIMPIEZA FINAL (ANTI "SIN RANGO") ---
+    if ($referencia_formateada === 'SIN RANGO' || empty($referencia_formateada)) {
+        $referencia_formateada = 'N/A';
+        $unidades = '';
+    }
+
+    return [
+        'nombre' => $nombre_prueba,
+        'resultado' => $resultado->resultado ?? 'PENDIENTE',
+        'referencia' => $referencia_formateada,
+        'unidades' => $unidades,
+        'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
+        'es_fuera_de_rango' => $es_fuera_de_rango,
+        'tipo_prueba' => $prueba->tipoPrueba->nombre ?? '',
+    ];
+}
 protected function getHeaderActions(): array
     {
         return [
