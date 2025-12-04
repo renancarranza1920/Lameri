@@ -43,8 +43,14 @@ class ReactivoResource extends Resource
                             ->schema([
                                 // --- CAMBIO 1: Relación Múltiple ---
                                 Select::make('pruebas')
-                                    ->relationship('pruebas', 'nombre')
-                                    ->multiple() // <--- Permite seleccionar varias
+                                    ->relationship(
+                                        'pruebas',
+                                        'nombre',
+                                        // Aquí aplicamos el filtro: Solo pruebas donde tipo_conjunto es NULL
+                                        fn($query) => $query->whereNull('tipo_conjunto')
+                                         ->where('estado', 'activo')
+                                    )
+                                    ->multiple()
                                     ->preload()
                                     ->searchable()
                                     ->required()
@@ -54,7 +60,7 @@ class ReactivoResource extends Resource
                                 TextInput::make('nombre')->required()->maxLength(255),
                                 TextInput::make('lote'),
 
-                                Forms\Components\DatePicker::make('fecha_caducidad'),
+                                Forms\Components\DatePicker::make('fecha_caducidad')->minDate(now()->toDateString()),
 
                                 Forms\Components\Toggle::make('en_uso')
                                     ->default(false)
@@ -70,17 +76,17 @@ class ReactivoResource extends Resource
     public static function table(Table $table): Table
     {
         $esAccionable = fn(Reactivo $record): bool => $record->estado === 'disponible';
+$activeTab = request()->query('table');
+
+
+
 
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')->searchable()->sortable(),
-
-                // --- CAMBIO 2: Mostrar múltiples pruebas ---
                 Tables\Columns\TextColumn::make('pruebas.nombre')
-                    ->badge() // Se ve mejor como etiquetas
+                    ->badge()
                     ->searchable(),
-                // ------------------------------------------
-
                 Tables\Columns\BadgeColumn::make('estado')
                     ->colors([
                         'success' => 'disponible',
@@ -90,12 +96,11 @@ class ReactivoResource extends Resource
                 Tables\Columns\TextColumn::make('lote')->searchable()->sortable(),
                 Tables\Columns\IconColumn::make('en_uso')->label('En Uso')->boolean(),
             ])
-            ->filters([
-                //
-            ])
             ->actions([
-                Tables\Actions\EditAction::make()->visible($esAccionable),
-                Action::make('setActive')
+                Tables\Actions\EditAction::make()
+                    ->visible(fn(Reactivo $record): bool => $record->estado === 'disponible'), // Solo visible si está disponible
+
+              Action::make('setActive')
                     ->label('Poner en Uso')
                     ->visible(fn() => auth()->user()->can('activar_reactivos'))
                     ->icon('heroicon-o-check-circle')
@@ -199,11 +204,11 @@ class ReactivoResource extends Resource
                             ->success()
                             ->send();
                     }),
+
                 Action::make('gestionarValores')
                     ->label('Valores de Referencia')
                     ->icon('heroicon-o-clipboard-document-list')
                     ->color('gray')
-                    
                     ->modalWidth('4xl')
                     ->modalSubmitActionLabel('Guardar')
                     ->fillForm(fn(Reactivo $record) => [
@@ -391,7 +396,7 @@ class ReactivoResource extends Resource
                                                     ->defaultItems(0)
                                                     ->deleteAction(fn($action) => $action->requiresConfirmation()),
                                             ]),
-                                    ]),
+                                    ])->visible( !$record->es_historico),
                             ])
                         ];
                     })
@@ -399,11 +404,15 @@ class ReactivoResource extends Resource
                         // Guardado automático
                     }),
 
-                Action::make('restock')
+               Action::make('restock')
                     ->label('Reabastecer')
                     ->icon('heroicon-o-arrow-path-rounded-square')
                     ->color('primary')
-                    ->visible(fn(Reactivo $record) => $record->estado !== 'disponible' && auth()->user()->can('reabastecer_reactivos'))
+                    ->visible(fn(Reactivo $record) => 
+        in_array($record->estado, ['agotado', 'caducado']) && 
+        !$record->es_historico && // <--- NUEVA CONDICIÓN
+        auth()->user()->can('reabastecer_reactivos')
+    )
                     ->modalHeading('Reabastecer Reactivo')
                     ->modalDescription('Esto creará un nuevo lote basado en este, copiando sus pruebas asignadas y valores de referencia.')
                     ->form([
@@ -439,20 +448,19 @@ class ReactivoResource extends Resource
                             $newValor->reactivo_id = $newReagent->id;
                             $newValor->save();
                         }
-
-                        Notification::make()
-                            ->title('¡Reactivo reabastecido!')
-                            ->body("Nuevo lote creado: {$newReagent->lote}. Las pruebas han sido vinculadas.")
-                            ->success()
-                            ->send();
+                        $record->update(['es_historico' => true]);
+                      Notification::make()->title('Reabastecido y archivado')->success()->send();
                     }),
                 // --- ¡NUEVO BOTÓN PARA MARCAR AGOTADO! ---
                 Action::make('marcarAgotado')
                     ->label('Marcar Agotado')
-                    ->visible($esAccionable)
                     ->icon('heroicon-o-archive-box-x-mark')
                     ->color('danger')
-                    ->visible(fn(Reactivo $record) => $record->estado === 'disponible' && auth()->user()->can('agotar_reactivos'))
+                    ->visible(
+                        fn(Reactivo $record): bool =>
+                        $record->estado === 'disponible' &&
+                        auth()->user()->can('agotar_reactivos')
+                    )
                     ->requiresConfirmation()
                     ->modalHeading('Marcar Reactivo como Agotado')
                     ->modalDescription('Esta acción es irreversible y desactivará el uso de este reactivo. ¿Estás seguro?')

@@ -26,24 +26,25 @@ class Reactivo extends Model
 /**
      * Desactiva otros reactivos que compartan pruebas con este.
      */
-    public function resolverConflictosDeUso(): void
+  public function resolverConflictosDeUso(): int // <--- CAMBIO IMPORTANTE: int
     {
         // Solo ejecutamos si este reactivo está marcado como en uso
-        if (!$this->en_uso) return;
+        if (!$this->en_uso) return 0;
 
-        \Illuminate\Support\Facades\DB::transaction(function () {
-            // 1. Obtener IDs de las pruebas de ESTE reactivo
-            $misPruebasIds = $this->pruebas()->pluck('pruebas.id')->toArray();
+        // 1. Obtener IDs de las pruebas de ESTE reactivo
+        $misPruebasIds = $this->pruebas()->pluck('pruebas.id')->toArray();
 
-            if (empty($misPruebasIds)) return;
+        if (empty($misPruebasIds)) return 0;
 
-            // 2. Buscar y desactivar la competencia
-            self::where('en_uso', true)
+        // 2. Usamos transaction y retornamos el resultado del update
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($misPruebasIds) {
+            
+            return self::where('en_uso', true)
                 ->where('id', '!=', $this->id) // No desactivarme a mí mismo
                 ->whereHas('pruebas', function ($q) use ($misPruebasIds) {
                     $q->whereIn('pruebas.id', $misPruebasIds);
                 })
-                ->update(['en_uso' => false]);
+                ->update(['en_uso' => false]); // <--- Esto devuelve el número de filas afectadas
         });
     }
     protected static function booted(): void

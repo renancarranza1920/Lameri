@@ -197,32 +197,32 @@ class CreateOrden extends CreateRecord
             $examenes = $state['examenes_seleccionados'] ?? [];
             
             // --- FUNCIÓN HELPER PARA GENERAR EL SNAPSHOT PROFUNDO ---
+             // --- FUNCIÓN HELPER PARA GENERAR EL SNAPSHOT PROFUNDO ---
             $generarSnapshot = function($examenId) {
+                
+                // CAMBIO AQUÍ: Cambiamos 'reactivoEnUso' por 'reactivosActivos'
                 $examenModel = Examen::with([
-                    'pruebas.reactivoEnUso.valoresReferencia' // Carga profunda
+                    'pruebas.reactivosActivos.valoresReferencia' 
                 ])->find($examenId);
 
                 if (!$examenModel) return null;
 
-                return $examenModel->pruebas->map(function($prueba) {
-                    // Datos básicos de la prueba
+                return $examenModel->pruebas->where('estado', 'activo')->map(function($prueba) {
                     $data = [
                         'id' => $prueba->id,
                         'nombre' => $prueba->nombre,
                         'tipo_conjunto' => $prueba->tipo_conjunto,
                         'tipo_prueba_id' => $prueba->tipo_prueba_id,
-                        'reactivo' => null, // Por defecto null
+                        'reactivo' => null, 
                     ];
 
-                    // Si tiene reactivo en uso, guardamos sus datos y sus valores
+                    // AQUÍ NO CAMBIAS NADA.
+                    // Gracias al "Atajo Mágico" (Accessor) del Paso 1,
+                    // puedes seguir usando ->reactivoEnUso aquí sin problemas.
                     if ($prueba->reactivoEnUso) {
-                        // FILTRADO INTELIGENTE (Tu nueva lógica):
-                        // Guardamos todos los valores que coincidan con la prueba_id 
-                        // O que sean genéricos (prueba_id null) si así lo decides.
+                        
                         $valoresRef = $prueba->reactivoEnUso->valoresReferencia
                             ->filter(function($val) use ($prueba) {
-                                // Si tu sistema ya guarda prueba_id, filtramos por él.
-                                // Si es null, asumimos que es un valor global para ese reactivo.
                                 return $val->prueba_id === $prueba->id || is_null($val->prueba_id);
                             })
                             ->map(function($val) {

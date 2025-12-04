@@ -943,6 +943,7 @@ class DatabaseSeeder extends Seeder
             'reanudar_orden',            // Para "Reanudar"
             'finalizar_orden',           // Para "Finalizar"
             'generar_reporte_orden',     // Para "Generar Reporte PDF"
+            'restaurar_orden',          // Para "Restaurar"
             'cancelar_orden',            // Para "Cancelar"
         ];
 

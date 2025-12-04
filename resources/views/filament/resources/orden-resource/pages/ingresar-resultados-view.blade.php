@@ -75,7 +75,34 @@
                                                         <x-filament::input type="text" wire:model.defer="data.resultados_examenes.{{ $detalleId }}.pruebas_unitarias.{{ $index }}.resultado"/>
                                                     </x-filament::input.wrapper>
                                                 </td>
-                                                <td class="px-3 py-2">{{ $prueba['valor_referencia'] }}</td>
+                                                <td class="px-3 py-2 align-top"> {{-- align-top ayuda si el texto es largo --}}
+    @if($prueba['es_alerta'] ?? false)
+        
+        {{-- CONTENEDOR DE ALERTA AMARILLA --}}
+        <div class="flex flex-col">
+            
+            {{-- Encabezado: Icono + "SIN RANGO" --}}
+            <div class="flex items-center text-yellow-600 dark:text-yellow-500 mb-1">
+                <x-heroicon-s-exclamation-triangle class="w-5 h-5 mr-1 flex-shrink-0"/>
+                <span class="font-bold text-xs uppercase">
+                    {{ $prueba['valor_referencia'] }}
+                </span>
+            </div>
+
+            {{-- Mensaje detallado que pidió el usuario --}}
+            <div class="text-[11px] leading-tight text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 p-1.5 rounded border border-yellow-200 dark:border-yellow-800">
+                {{ $prueba['mensaje_alerta'] }}
+            </div>
+            
+        </div>
+
+    @else
+        {{-- CASO NORMAL O N/A --}}
+        <span class="text-gray-700 dark:text-gray-300">
+            {{ $prueba['valor_referencia'] }}
+        </span>
+    @endif
+</td>
                                                 <td class="px-3 py-2">{{ $prueba['unidades'] }}</td>
                                                 <td class="px-3 py-2 text-right">
                                                     @if($prueba['resultado_id'])

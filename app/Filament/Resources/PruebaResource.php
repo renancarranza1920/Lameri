@@ -14,10 +14,11 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Placeholder; 
 use Filament\Forms\Get;
 use Illuminate\Support\HtmlString;
-use Filament\Forms\Components\Fieldset; // <-- AÑADIR ESTE IMPORT
-use Filament\Forms\Components\Grid;     // <-- AÑADIR ESTE IMPORT
+use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Notifications\Notification; // <--- IMPORTANTE: Agregamos esto
 
 class PruebaResource extends Resource
 {
@@ -44,14 +45,13 @@ class PruebaResource extends Resource
                                         Forms\Components\Select::make('examen_id')
                                             ->label('Examen al que Pertenece')
                                             ->relationship('examen', 'nombre')
-                                            ->requiredWith('nombre') // Esto está perfecto
+                                            ->requiredWith('nombre') 
                                             ->searchable()->preload(),
 
                                         Forms\Components\Select::make('tipo_prueba_id')
                                             ->label('Tipo de Prueba')
                                             ->relationship('tipoPrueba', 'nombre')
                                             ->createOptionAction(fn($action) => $action->visible(true))
-                                            //crear modal para agregar nuevo tipo de prueba
                                             ->createOptionForm([
                                                 Forms\Components\TextInput::make('nombre')
                                                     ->label('Nombre del Tipo de Prueba')
@@ -70,8 +70,6 @@ class PruebaResource extends Resource
                                             Forms\Components\Select::make('examen_id_conjunto')
                                                 ->label('Examen para la Matriz')
                                                 ->relationship('examen', 'nombre')
-                                                // --- ¡CAMBIO CLAVE DE VALIDACIÓN! ---
-                                                // Requerido solo si se llenan las filas O las columnas
                                                 ->requiredWith('filas,columnas')
                                                 ->searchable()->preload(),
                                             
@@ -80,17 +78,15 @@ class PruebaResource extends Resource
                                                     TextInput::make('filas')
                                                         ->label('Número de Filas')
                                                         ->numeric()->minValue(1)
-                                                        // --- ¡CAMBIOS CLAVE! ---
-                                                        ->nullable() // Permitir que esté vacío
-                                                        ->requiredWith('examen_id_conjunto,columnas') // Requerido si llenas los otros
+                                                        ->nullable()
+                                                        ->requiredWith('examen_id_conjunto,columnas')
                                                         ->live(onBlur: true),
                                                     
                                                     TextInput::make('columnas')
                                                         ->label('Número de Columnas')
                                                         ->numeric()->minValue(1)
-                                                        // --- ¡CAMBIOS CLAVE! ---
-                                                        ->nullable() // Permitir que esté vacío
-                                                        ->requiredWith('examen_id_conjunto,filas') // Requerido si llenas los otros
+                                                        ->nullable()
+                                                        ->requiredWith('examen_id_conjunto,filas')
                                                         ->live(onBlur: true),
                                                 ]),
                                         ];
@@ -133,31 +129,65 @@ class PruebaResource extends Resource
                 Tables\Columns\TextColumn::make('tipoPrueba.nombre')
                     ->label('Tipo de Prueba')
                     ->badge()->searchable()->sortable(),
-                // Agregamos la columna para ver el grupo, oculta por defecto
                 Tables\Columns\TextColumn::make('tipo_conjunto')
                     ->label('Grupo Conjunto')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable(),
+                
+                // Mantenemos tu configuración de columna de estado
+                Tables\Columns\TextColumn::make('estado')
+                    ->label('Estado')
+                    ->badge()
+                    ->colors([
+                        'success' => 'activo',
+                        'danger' => 'inactivo',
+                    ])
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)) // Capitalizar primera letra
+                    ->sortable(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                
+                // 👇 LÓGICA COMPLETA DE ALTA/BAJA
+                Tables\Actions\Action::make('cambiar_estado')
+                    ->label(fn (Prueba $record) => $record->estado === 'activo' ? 'Dar de baja' : 'Dar de alta')
+                    ->icon(fn (Prueba $record) => $record->estado === 'activo' ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->color(fn (Prueba $record) => $record->estado === 'activo' ? 'danger' : 'success')
+                    ->tooltip(fn (Prueba $record) => $record->estado === 'activo' ? 'Desactivar Prueba' : 'Activar Prueba')
+                    
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (Prueba $record) => $record->estado === 'activo' ? '¿Desactivar Prueba?' : '¿Activar Prueba?')
+                    ->modalDescription('¿Estás seguro de que deseas cambiar el estado de este registro?')
+                    
+                    ->action(function (Prueba $record) {
+                        // Cambiamos el estado (asumiendo que en DB es string 'activo'/'inactivo')
+                        $record->estado = $record->estado === 'activo' ? 'inactivo' : 'activo';
+                        $record->save();
+                        
+                        Notification::make()
+                            ->title($record->estado === 'activo' ? 'Prueba activada' : 'Prueba desactivada')
+                            ->success()
+                            ->send();
+                    })
+                    ->iconButton(),
             ])
-            ->headerActions([ // <-- AÑADIMOS UN BOTÓN EN LA CABECERA
+            ->headerActions([
                 Tables\Actions\Action::make('pruebas_conjuntas')
                     ->label('Ver Pruebas en Matriz')
-                    ->visible(fn () => auth()->user()->can('ver_pruebas_conjuntas')) // 🔒 VALIDACIÓN
+                    ->visible(fn () => auth()->user()->can('view_any_prueba')) 
                     ->icon('heroicon-o-table-cells')
                     ->color('gray')
-                    // Esto nos llevará a la nueva página que creamos
                     ->url(ListPruebasConjuntas::getUrl()),
 
-                    Tables\Actions\Action::make('gestionar_tipos')
-        ->label('Tipos de Prueba')
-        ->url(TipoPruebaResource::getUrl('index')) // <--- Te lleva a la tabla oculta
-        ->color('gray'),
+                Tables\Actions\Action::make('gestionar_tipos')
+                    ->label('Tipos de Prueba')
+                    ->url(TipoPruebaResource::getUrl('index'))
+                    ->color('gray'),
             ])
             ->bulkActions([
-                
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
     }
     
