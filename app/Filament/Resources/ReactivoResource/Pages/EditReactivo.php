@@ -14,4 +14,11 @@ class EditReactivo extends EditRecord
     {
         return $this->getResource()::getUrl('index');
     }
+    protected function afterSave(): void
+    {
+        // Lo mismo para cuando editas
+        if ($this->record->en_uso) {
+            $this->record->resolverConflictosDeUso();
+        }
+    }
 }
