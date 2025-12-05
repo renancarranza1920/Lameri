@@ -50,11 +50,18 @@ protected static ?int $navigationSort = 3;
                     ->badge()
                     ->searchable()
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('description')
                     ->label('Acción Realizada')
                     ->searchable()
-                    ,
+                    ->limit(50) // <--- Muestra solo 50 caracteres y agrega "..." al final
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        // Opcional: Muestra el texto completo al pasar el mouse por encima
+                        $state = $column->getState();
+                        if (strlen($state) <= 50) {
+                            return null;
+                        }
+                        return $state;
+                    }),
                 Tables\Columns\TextColumn::make('causer.name')
                     ->label('Usuario')
                     ->searchable()
