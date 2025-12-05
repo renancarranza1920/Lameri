@@ -2,87 +2,64 @@
 
 namespace App\Http\Controllers;
 
-
 use App\Models\DetalleOrden;
 use App\Services\ZebraLabelService;
-use Filament\Notifications\Notification;
-
+use Illuminate\Http\Request;
 
 class ZplController extends Controller
 {
-    private $printerName = '\\\\localhost\\ZebraZD230'; // Nombre del recurso compartido
-
-    private function sendToPrinter($zpl)
-    {
-        // Crear archivo temporal con el contenido ZPL
-        $tempFile = tempnam(sys_get_temp_dir(), 'zpl');
-        file_put_contents($tempFile, $zpl);
-
-        // Ejecutar el comando de impresión
-        exec("print /D:{$this->printerName} " . escapeshellarg($tempFile), $output, $resultCode);
-
-        // Eliminar el archivo temporal
-        @unlink($tempFile);
-
-        if ($resultCode !== 0) {
-            throw new \Exception("No se pudo imprimir el archivo en la impresora {$this->printerName}");
-        }
-    }
+    // Eliminamos la función sendToPrinter y $printerName, ya no sirven en la nube.
 
     public function single($id)
     {
-        $detalle = DetalleOrden::with('orden.cliente')->findOrFail($id);
+        $detalle = DetalleOrden::with('orden.cliente', 'examen.tipoExamen')->findOrFail($id);
 
         $service = new ZebraLabelService();
         $zpl = $service->generarZpl($detalle);
 
-        try {
-            $this->sendToPrinter($zpl);
-            Notification::make()
-                ->title('Etiqueta enviada a la impresora')
-                ->success()
-                ->send();
-            return null;
-        } catch (\Exception $e) {
-            Notification::make()
-                ->title('Error al enviar la etiqueta: ' . $e->getMessage())
-                ->danger()
-                ->send();
-            return null;
-        }
+        // DEVOLVEMOS JSON PARA QUE JAVASCRIPT LO LEA
+        return response()->json([
+            'success' => true,
+            'zpl' => $zpl
+        ]);
     }
 
     public function group($status, $ordenId)
     {
-        $detalles = DetalleOrden::with('orden.cliente')
+        $detalles = DetalleOrden::with('orden.cliente', 'examen.tipoExamen')
             ->where('status', $status)
             ->where('orden_id', $ordenId)
             ->get();
 
         if ($detalles->isEmpty()) {
-            Notification::make()
-                ->title('No hay etiquetas para este grupo en esta orden.')
-                ->danger()
-                ->send();
-            return null;
+            return response()->json(['success' => false, 'message' => 'No hay etiquetas']);
         }
 
         $service = new ZebraLabelService();
         $zpl = $service->generarZplMultiple($detalles);
 
-        try {
-            $this->sendToPrinter($zpl);
-            Notification::make()
-                ->title('Etiquetas enviadas a la impresora')
-                ->success()
-                ->send();
-            return null;
-        } catch (\Exception $e) {
-            Notification::make()
-                ->title('Error al enviar las etiquetas: ' . $e->getMessage())
-                ->danger()
-                ->send();
-            return null;
-        }
+        // DEVOLVEMOS JSON
+        return response()->json([
+            'success' => true,
+            'zpl' => $zpl
+        ]);
+    }
+    
+    // Método nuevo para imprimir TODAS (botón "Generar ZPL" del header)
+    public function all($ordenId)
+    {
+        $detalles = DetalleOrden::with('orden.cliente', 'examen.tipoExamen')
+            ->where('orden_id', $ordenId)
+            ->get();
+
+        if ($detalles->isEmpty()) return response()->json(['success' => false]);
+
+        $service = new ZebraLabelService();
+        $zpl = $service->generarZplMultiple($detalles);
+
+        return response()->json([
+            'success' => true,
+            'zpl' => $zpl
+        ]);
     }
 }

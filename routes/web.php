@@ -16,7 +16,17 @@ Route::get('/detalles/zpl/{id}', [ZplController::class, 'single'])->name('detall
 
 Route::get('/grupo/{status}/zpl/{ordenId}', [ZplController::class, 'group'])
     ->name('grupo.zpl');
-
+    
+Route::middleware('auth')->group(function () {
+    // Ruta para una sola etiqueta
+    Route::get('/detalles/zpl/{id}', [ZplController::class, 'single'])->name('detalles.zpl');
+    
+    // Ruta para un grupo (columna)
+    Route::get('/grupo/{status}/zpl/{ordenId}', [ZplController::class, 'group'])->name('grupo.zpl');
+    
+    // Ruta para TODAS (Header action)
+    Route::get('/orden/zpl-all/{ordenId}', [ZplController::class, 'all'])->name('zpl.all');
+});
 
 Route::post('/ordenes/ordenar', function (Request $request) {
     foreach ($request->ids as $index => $id) {
