@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder; // <-- ¡Importante!
 class ListReactivos extends ListRecords
 {
     protected static string $resource = ReactivoResource::class;
+   public ?string $activeTab = 'disponibles';
 
     protected function getHeaderActions(): array
     {
@@ -20,58 +21,39 @@ class ListReactivos extends ListRecords
     }
 
 
+public function getTableQueryStringIdentifier(): ?string
+{
+    return $this->activeTab;
+}
+public function getActiveTab(): ?string
+{
+    return $this->activeTab;
+}
+
+
+
+
+
 
 public function getTabs(): array
 {
-    // Función para crear la consulta base de los reactivos que necesitan atención
-    $crearConsultaReabastecer = function (Builder $query) {
-        $query
-            // 1. Empezamos con los caducados o agotados
-            ->whereIn('estado', ['caducado', 'agotado'])
-            // 2. Nos aseguramos de que NO EXISTA un reemplazo disponible
-            ->whereNotExists(function ($subQuery) {
-                $subQuery->selectRaw(1)
-                         ->from('reactivos as r2')
-                         ->whereColumn('r2.nombre', 'reactivos.nombre') // Solo comparamos nombre
-                         // ->whereColumn('r2.prueba_id', 'reactivos.prueba_id') <--- ELIMINADO
-                         ->where('r2.estado', 'disponible');
-            })
-            // 3. Seleccionamos solo el registro MÁS RECIENTE de su grupo (por nombre)
-            ->whereIn('id', function ($subQuery) {
-                $subQuery->selectRaw('max(id)')
-                         ->from('reactivos')
-                         ->groupBy('nombre'); // <--- ELIMINADO ', prueba_id'
-            });
-    };
-
-    // Función para los históricos
-    $crearConsultaHistoricos = function (Builder $query) {
-        $query
-            ->whereIn('estado', ['caducado', 'agotado'])
-            ->whereExists(function ($subQuery) {
-                $subQuery->selectRaw(1)
-                         ->from('reactivos as r2')
-                         ->whereColumn('r2.nombre', 'reactivos.nombre') // Solo comparamos nombre
-                         // ->whereColumn('r2.prueba_id', 'reactivos.prueba_id') <--- ELIMINADO
-                         ->where('r2.estado', 'disponible');
-            });
-    };
-
     return [
-        
         'disponibles' => Tab::make('Disponibles')
             ->modifyQueryUsing(fn (Builder $query) => $query->where('estado', 'disponible'))
             ->badge(static::getModel()::where('estado', 'disponible')->count())
             ->badgeColor('success'),
         
         'por_reabastecer' => Tab::make('Por Reabastecer')
-            ->modifyQueryUsing($crearConsultaReabastecer)
-            ->badge(static::getModel()::query()->where(fn (Builder $q) => $crearConsultaReabastecer($q))->count())
+            ->modifyQueryUsing(fn (Builder $query) => 
+                $query->whereIn('estado', ['agotado', 'caducado'])
+                      ->where('es_historico', false) // Solo los que faltan atender
+            )
+            ->badge(static::getModel()::whereIn('estado', ['agotado', 'caducado'])->where('es_historico', false)->count())
             ->badgeColor('danger'),
 
         'historicos' => Tab::make('Históricos')
-            ->modifyQueryUsing($crearConsultaHistoricos)
-            ->badge(static::getModel()::query()->where(fn (Builder $q) => $crearConsultaHistoricos($q))->count())
+            ->modifyQueryUsing(fn (Builder $query) => $query->where('es_historico', true))
+            ->badge(static::getModel()::where('es_historico', true)->count())
             ->badgeColor('gray'),
     ];
 }

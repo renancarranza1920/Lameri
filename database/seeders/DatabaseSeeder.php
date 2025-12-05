@@ -10,7 +10,7 @@ use Spatie\Permission\Models\Permission;
 use App\Models\TipoExamen;
 use App\Models\Examen;
 use App\Models\User;
-use App\Models\cliente;
+use App\Models\Cliente;
 use App\Models\Muestra;
 use App\Models\Perfil;
 use App\Models\DetallePerfil;

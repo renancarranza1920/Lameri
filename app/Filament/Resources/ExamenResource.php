@@ -110,7 +110,21 @@ class ExamenResource extends Resource
                 Tables\Columns\TextColumn::make('nombre')
                     ->label('Nombre')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->description(function (Examen $record) {
+            // Si es interno y no tiene pruebas, mostramos alerta
+            if (!$record->es_externo && $record->pruebas()->count() === 0) {
+                return '⚠️ Sin pruebas asignadas';
+            }
+            return null;
+        })
+        // Cambiamos el color a naranja/rojo si falta configuración
+        ->color(function (Examen $record) {
+            if (!$record->es_externo && $record->pruebas()->count() === 0) {
+                return 'warning'; // O 'danger' si prefieres rojo
+            }
+            return null;
+        }),
 
                 Tables\Columns\TextColumn::make('muestras.nombre')
                     ->label('Muestras')

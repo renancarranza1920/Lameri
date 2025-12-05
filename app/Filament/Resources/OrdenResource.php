@@ -45,6 +45,7 @@ use Closure;
 use Filament\Forms\Components\Actions\Action as FormAction; // <-- Importante alias
 use Filament\Pages\Page;
 use Number;
+use Illuminate\Support\Facades\Storage;
 
 
 
@@ -76,7 +77,7 @@ class OrdenResource extends Resource
             ]);
     }
 
- public static function getClienteStep(): array
+    public static function getClienteStep(): array
     {
         return [
             Forms\Components\Select::make('cliente_id')
@@ -95,7 +96,7 @@ class OrdenResource extends Resource
                 ->preload()
                 ->searchable(['NumeroExp', 'nombre', 'apellido'])
                 ->getOptionLabelFromRecordUsing(fn($record) => "{$record->NumeroExp} - {$record->nombre} {$record->apellido}")
-                
+
                 // --- INICIO LÓGICA EMBARAZO ---
                 ->live() // 1. Escuchar cambios en tiempo real
                 ->afterStateUpdated(function ($state, Set $set) {
@@ -126,10 +127,10 @@ class OrdenResource extends Resource
                 ->required(),
 
             // --- CAMPOS PARA EMBARAZO ---
-            
+
             // Variable temporal para controlar la visibilidad (no se guarda en BD)
             Forms\Components\Hidden::make('genero_temp')
-                ->dehydrated(false), 
+                ->dehydrated(false),
 
             Forms\Components\TextInput::make('semanas_gestacion')
                 ->label('Semanas de Gestación')
@@ -139,9 +140,9 @@ class OrdenResource extends Resource
                 ->placeholder('Ej: 12')
                 ->helperText('Ingresa las semanas solo si aplica (embarazo).')
                 // Solo visible si el cliente es mujer
-                ->visible(fn (Get $get) => $get('genero_temp') === 'Femenino')
+                ->visible(fn(Get $get) => $get('genero_temp') === 'Femenino')
                 ->columnSpanFull(),
-            
+
             // -----------------------------
 
             Forms\Components\Textarea::make('observaciones')
@@ -240,7 +241,7 @@ class OrdenResource extends Resource
                                             Select::make('examen_id')
                                                 ->label('Buscar Examen')
                                                 ->options(\App\Models\Examen::where('estado', 1)
-                                                ->pluck('nombre', 'id')->toArray())
+                                                    ->pluck('nombre', 'id')->toArray())
                                                 ->searchable()
                                                 ->preload()
                                                 ->reactive()
@@ -308,9 +309,9 @@ class OrdenResource extends Resource
                 ]),
 
 
-Forms\Components\Hidden::make('subtotal')->default(0)->reactive(),
-Forms\Components\Hidden::make('descuento')->default(0)->reactive(),
-Forms\Components\Hidden::make('codigo_aplicado'),
+            Forms\Components\Hidden::make('subtotal')->default(0)->reactive(),
+            Forms\Components\Hidden::make('descuento')->default(0)->reactive(),
+            Forms\Components\Hidden::make('codigo_aplicado'),
 
 
 
@@ -334,11 +335,11 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                             ->icon('heroicon-o-check-circle')
                             ->color('success')
                             ->label('Aplicar')
-                          ->action(function ($livewire) {
-                                    $livewire->aplicarCodigo();
-                                })
-                                // Usamos $livewire para acceder a la propiedad pública
-                                ->visible(fn ($livewire) => is_null($livewire->codigoAplicado)), 
+                            ->action(function ($livewire) {
+                                $livewire->aplicarCodigo();
+                            })
+                            // Usamos $livewire para acceder a la propiedad pública
+                            ->visible(fn($livewire) => is_null($livewire->codigoAplicado)),
 
                     ),
                 // Placeholder para mostrar si el cupón está aplicado o el descuento
@@ -376,7 +377,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     Stack::make([
                         TextColumn::make('id')
                             ->label('Orden #')
-                            ->formatStateUsing(fn ($state) => "Orden #{$state}") // Formato visual "Orden #123"
+                            ->formatStateUsing(fn($state) => "Orden #{$state}") // Formato visual "Orden #123"
                             ->weight('bold')
                             ->color('primary')
                             ->searchable() // <--- ¡ESTO PERMITE BUSCAR POR ID!
@@ -433,7 +434,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                             ->when($data['fecha_desde'], fn(Builder $query, $date) => $query->whereDate('fecha', '>=', $date))
                             ->when($data['fecha_hasta'], fn(Builder $query, $date) => $query->whereDate('fecha', '<=', $date));
                     }),
-                
+
                 Filter::make('fecha_unica')
                     ->label('Filtrar por Fecha')
                     ->form([
@@ -450,9 +451,9 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                             );
                     })
             ])
-           ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContentCollapsible)
-        
-        ->filtersFormColumns(2)
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContentCollapsible)
+
+            ->filtersFormColumns(2)
             ->actions([
                 Tables\Actions\Action::make('gestionarMuestras')
                     ->label('Gestionar Muestras')
@@ -461,7 +462,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->iconButton()
                     ->color('info')
                     ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente'])
-                    && auth()->user()->can('procesar_muestras_orden'))
+                        && auth()->user()->can('procesar_muestras_orden'))
                     ->modalHeading('Registrar Muestras Recibidas')
                     ->modalSubmitActionLabel('Guardar Estado')
                     ->form(function (Orden $record) {
@@ -555,7 +556,7 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->iconButton()
                     ->color('primary')
                     ->visible(fn(Orden $record): bool => $record->estado === 'en proceso'
-                    && auth()->user()->can('ingresar_resultados_orden'))
+                        && auth()->user()->can('ingresar_resultados_orden'))
                     ->url(fn(Orden $record): string => static::getUrl('ingresar-resultados', ['record' => $record])),
 
                 Tables\Actions\Action::make('imprimirEtiquetas')
@@ -565,53 +566,77 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     ->color('gray')
                     // Visible si la orden no está finalizada o cancelada
                     ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente'])
-                    && auth()->user()->can('imprimir_etiquetas_orden'))
+                        && auth()->user()->can('imprimir_etiquetas_orden'))
                     ->url(fn(Orden $record): string => DetalleOrdenKanban::getUrl(['ordenId' => $record->id])),
 
-                Tables\Actions\Action::make('ver')
-                    ->tooltip('Ver Detalles')
-                    ->icon('heroicon-o-eye')
-                    ->iconButton()
-                    ->color('gray')
-                    ->modalContent(function (Orden $record) {
-                        // Corregido para evitar error de memoria
-                        $record->load([
-                            'cliente',
-                            'detalleOrden.examen.muestras',
-                            'detalleOrden.perfil',
-                            'resultados.prueba',
-                            'tomaMuestraUser'
-                        ]);
-                        return view('filament.modals.ver-orden', ['record' => $record]);
-                    })
-                    ->modalSubmitAction(false)
-                    ->modalCancelAction(false),
+               Tables\Actions\Action::make('ver')
+    ->tooltip('Ver Detalles')
+    ->icon('heroicon-o-eye')
+    ->iconButton()
+    ->color('gray')
+    ->modalContent(function (Orden $record) {
+        // 1. Cargar relaciones base
+        $record->load([
+            'cliente',
+            'tomaMuestraUser',
+            'resultados', // Cargamos resultados para verificar el estado
+            // Cargamos relaciones de respaldo por si es una orden vieja sin snapshot
+            'detalleOrden.examen.pruebas.reactivosActivos', 
+            'detalleOrden.perfil'
+        ]);
 
-                Tables\Actions\Action::make('verPruebas')
-                    ->tooltip('Ver Pruebas Realizadas')
-                    ->icon('heroicon-o-clipboard-document-check')
-                    ->iconButton()
-                    ->color('gray')
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado'])
-                    && auth()->user()->can('ver_pruebas_orden'))
-                    ->modalHeading('Pruebas a Realizar')
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Cerrar')
-                    ->form(function (Orden $record) {
-                        // 1. Cargamos resultados para no hacer consultas en el loop
-                        $record->load('resultados'); 
+        // 2. PROCESAR LA DATA (Lógica idéntica a IngresarResultados)
+        // Generamos una estructura limpia para la vista que ya tenga las pruebas correctas
+        $listaDePruebasVisual = $record->detalleOrden->map(function ($detalle) use ($record) {
+            
+            // A. Determinar la fuente de las pruebas (Snapshot vs BD)
+            $pruebas = collect([]);
+            
+            if (!empty($detalle->pruebas_snapshot)) {
+                // CASO 1: Usar Snapshot (JSON)
+                $pruebas = collect($detalle->pruebas_snapshot)->map(fn($item) => (object) $item);
+            } elseif ($detalle->examen) {
+                // CASO 2: Fallback a BD viva (Ordenes viejas)
+                $pruebas = $detalle->examen->pruebas;
+            }
 
-                        $detalles = $record->detalleOrden()->with('examen.pruebas')->get();
-                        $examenes = $detalles->map(fn($detalle) => $detalle->examen)->filter()->unique('id');
+            // Si no hay pruebas (ej: examen externo sin configurar), retornamos null para no mostrarlo en la lista de estado
+            if ($pruebas->isEmpty()) return null;
 
-                        return [
-                            Forms\Components\View::make('filament.modals.ver-orden-pruebas')
-                                ->viewData([
-                                    'examenes' => $examenes,
-                                    'orden' => $record, // <--- ¡ESTO ES LO NUEVO! Pasamos la orden completa
-                                ])
-                        ];
-                    }),
+            // B. Mapear cada prueba con su estado de resultado
+            $pruebasProcesadas = $pruebas->map(function ($prueba) use ($record, $detalle) {
+                // Buscamos si ya tiene resultado
+                $tieneResultado = $record->resultados
+                    ->where('detalle_orden_id', $detalle->id)
+                    ->where('prueba_id', $prueba->id)
+                    ->whereNotNull('resultado')
+                    ->where('resultado', '!=', '')
+                    ->isNotEmpty();
+
+                return [
+                    'id' => $prueba->id,
+                    'nombre' => $prueba->nombre,
+                    'completado' => $tieneResultado,
+                ];
+            });
+
+            return [
+                'nombre_examen' => $detalle->nombre_examen ?? ($detalle->examen->nombre ?? 'Examen'),
+                'es_externo' => $detalle->examen->es_externo ?? false,
+                'pruebas' => $pruebasProcesadas,
+            ];
+        })->filter(); // Eliminar nulos
+
+        // 3. Retornar la vista pasando la nueva variable procesada
+        return view('filament.modals.ver-orden', [
+            'record' => $record,
+            'lista_pruebas_visual' => $listaDePruebasVisual // <--- VARIABLE NUEVA
+        ]);
+    })
+    ->modalSubmitAction(false)
+    ->modalCancelAction(false),
+
+                
                 Tables\Actions\Action::make('pausarOrden')
                     ->tooltip('Pausar Orden')
                     ->icon('heroicon-o-pause-circle')
@@ -657,142 +682,257 @@ Forms\Components\Hidden::make('codigo_aplicado'),
                     }),
 
                 Tables\Actions\Action::make('generarReporte')
-    ->tooltip('Generar Reporte PDF')
-    ->icon('heroicon-o-printer')
-    ->iconButton()
-    ->color('gray')
-    ->visible(fn(Orden $record): bool => $record->estado === 'finalizado' &&
+                    ->tooltip('Generar Reporte PDF')
+                    ->icon('heroicon-o-printer')
+                    ->iconButton()
+                    ->color('gray')
+                    ->visible(fn(Orden $record): bool => $record->estado === 'finalizado' &&
                         auth()->user()->can('generar_reporte_orden'))
-    ->action(function (Orden $record) {
-        // 1. Cargar relaciones necesarias
-        $orden = $record->load([
-            'cliente',
-            'detalleOrden.examen.tipoExamen',
-            'detalleOrden.examen.pruebas.tipoPrueba',
-            'detalleOrden.examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario',
-            'resultados.prueba'
-        ]);
+                    ->action(function (Orden $record) {
+                        // 1. Cargar relaciones necesarias
+                        // CORRECCIÓN CLAVE: Cambiamos 'reactivoEnUso' por 'reactivosActivos'
+                        $orden = $record->load([
+                            'cliente',
+                            'detalleOrden.examen.tipoExamen',
+                            'detalleOrden.examen.pruebas.tipoPrueba',
+                            'detalleOrden.examen.pruebas.reactivosActivos.valoresReferencia.grupoEtario',
+                            'resultados.prueba'
+                        ]);
 
-        // 2. Agrupar por tipo de examen (Hematología, Química, etc.)
-        $detallesAgrupados = $orden->detalleOrden
-            ->whereNotNull('examen_id')
-            ->groupBy('examen.tipoExamen.nombre');
+                        // 2. Función Helper interna para procesar cada prueba (Unitaria)
+                        $procesarPrueba = function ($prueba, $orden, $detalleId) {
+                            // Buscamos el resultado en memoria (ya cargado)
+                            $resultado = $orden->resultados->first(function ($res) use ($prueba, $detalleId) {
+                                return $res->detalle_orden_id == $detalleId && $res->prueba_id == $prueba->id;
+                            });
 
-        $datos_agrupados = [];
-
-        foreach ($detallesAgrupados as $tipoExamenNombre => $detalles) {
-            $examenes_data = [];
-
-            foreach ($detalles as $detalle) {
-                
-                // --- LÓGICA DIFERENCIADA: EXTERNO vs INTERNO ---
-                
-                if ($detalle->examen->es_externo) {
-                    // CASO A: EXAMEN EXTERNO (REFERIDO)
-                    // Buscamos directamente en la tabla 'resultados' los datos guardados manualmente (snapshots)
-                    $resultadosExternos = $orden->resultados
-                        ->where('detalle_orden_id', $detalle->id)
-                        ->where('es_externo', true);
-
-                    $dataUnitarias = $resultadosExternos->map(function ($res) {
-                        return [
-                            'nombre' => $res->prueba_nombre_snapshot ?? 'Prueba Externa',
-                            'resultado' => $res->resultado,
-                            'referencia' => $res->valor_referencia_snapshot ?? 'N/A',
-                            'unidades' => $res->unidades_snapshot ?? '',
-                            'fecha_resultado' => $res->updated_at->format('d/m/Y'),
-                            'es_fuera_de_rango' => false, // No calculamos rangos en externos
-                        ];
-                    })->all();
-
-                    // Agregamos al reporte como un examen simple (sin matrices)
-                    $examenes_data[] = [
-                        'nombre' => $detalle->examen->nombre ,
-                        'codigo' => $detalle->examen->id,
-                        'pruebas_unitarias' => $dataUnitarias,
-                        'matrices' => [], // Los externos no suelen usar matrices complejas
-                    ];
-
-                } else {
-                    // CASO B: EXAMEN INTERNO (CATÁLOGO)
-                    // Usamos la definición de 'pruebas' y calculamos rangos con la función auxiliar
-                    $todasLasPruebas = $detalle->examen->pruebas->where('es_externo', false);
-
-                    $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
-                    $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
-
-                    // Procesar unitarias internas
-                    $dataUnitarias = $pruebasUnitarias->map(function ($prueba) use ($orden, $detalle) {
-                        return self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
-                    })->all();
-
-                    // Procesar matrices internas
-                    $dataMatrices = $pruebasConjuntas->map(function (Collection $pruebasDelConjunto) use ($orden, $detalle) {
-                        $filas = [];
-                        $columnas = [];
-                        $dataMatrix = [];
-                        foreach ($pruebasDelConjunto as $prueba) {
-                            $partes = explode(', ', $prueba->nombre);
-                            if (count($partes) >= 2) {
-                                [$nombreFila, $nombreColumna] = $partes;
-                                $filas[] = $nombreFila;
-                                $columnas[] = $nombreColumna;
-                                $dataMatrix[$nombreFila][$nombreColumna] = self::getDatosPruebaParaPdf($prueba, $orden, $detalle->id);
+                            // Si hay resultado guardado, usamos sus snapshots (LO MÁS SEGURO)
+                            if ($resultado) {
+                                return [
+                                    'nombre' => $resultado->prueba_nombre_snapshot ?? $prueba->nombre,
+                                    'resultado' => $resultado->resultado,
+                                    'referencia' => $resultado->valor_referencia_snapshot ?? 'N/A',
+                                    'unidades' => $resultado->unidades_snapshot ?? '',
+                                    'fecha_resultado' => $resultado->updated_at->format('d/m/Y'),
+                                    'es_fuera_de_rango' => (bool) $resultado->fuera_de_rango,
+                                ];
                             }
+
+                            // FALLBACK: Si no hay resultado (raro en finalizado), intentamos calcular referencia en vivo
+                            $referencia = 'N/A';
+                            $unidades = '';
+
+                            // Lógica para obtener reactivo (Soporta Objeto JSON o Modelo Eloquent)
+                            $reactivo = null;
+                            if ($prueba instanceof \App\Models\Prueba) {
+                                // Usamos el accessor mágico o la relación cargada
+                                $reactivo = $prueba->reactivosActivos->first();
+                            } elseif (isset($prueba->reactivo)) {
+                                // Si viene del snapshot JSON
+                                $reactivo = (object) $prueba->reactivo;
+                            }
+
+                            if ($reactivo && isset($reactivo->valores_referencia)) {
+                                // Aquí podrías recalcular la referencia si fuera estrictamente necesario
+                                // Pero para un reporte final, normalmente se muestra vacío si no hay resultado.
+                                $unidades = is_array($reactivo->valores_referencia)
+                                    ? ($reactivo->valores_referencia[0]['unidades'] ?? '')
+                                    : ($reactivo->valores_referencia->first()->unidades ?? '');
+                            }
+
+                            return [
+                                'nombre' => $prueba->nombre,
+                                'resultado' => 'Pendiente', // O vacío
+                                'referencia' => $referencia,
+                                'unidades' => $unidades,
+                                'fecha_resultado' => $orden->fecha->format('d/m/Y'),
+                                'es_fuera_de_rango' => false,
+                            ];
+                        };
+
+                        // 3. Agrupar por tipo de examen
+                        $detallesAgrupados = $orden->detalleOrden
+                            ->whereNotNull('examen_id')
+                            ->groupBy('examen.tipoExamen.nombre');
+
+                        $datos_agrupados = [];
+
+                        foreach ($detallesAgrupados as $tipoExamenNombre => $detalles) {
+                            $examenes_data = [];
+
+                            foreach ($detalles as $detalle) {
+                                // CASO A: EXAMEN EXTERNO
+                                if ($detalle->examen->es_externo) {
+                                    $resultadosExternos = $orden->resultados
+                                        ->where('detalle_orden_id', $detalle->id)
+                                        ->where('es_externo', true);
+
+                                    $dataUnitarias = $resultadosExternos->map(function ($res) {
+                                        return [
+                                            'nombre' => $res->prueba_nombre_snapshot ?? 'Prueba Externa',
+                                            'resultado' => $res->resultado,
+                                            'referencia' => $res->valor_referencia_snapshot ?? 'N/A',
+                                            'unidades' => $res->unidades_snapshot ?? '',
+                                            'fecha_resultado' => $res->updated_at->format('d/m/Y'),
+                                            'es_fuera_de_rango' => false,
+                                        ];
+                                    })->all();
+
+                                    $examenes_data[] = [
+                                        'nombre' => $detalle->examen->nombre,
+                                        'codigo' => $detalle->examen->id,
+                                        'pruebas_unitarias' => $dataUnitarias,
+                                        'matrices' => [],
+                                    ];
+                                }
+                                // CASO B: EXAMEN INTERNO
+                                else {
+                                    // LÓGICA HÍBRIDA (SNAPSHOT vs BD) para determinar qué pruebas mostrar
+                                    if (!empty($detalle->pruebas_snapshot)) {
+                                        // Usamos el snapshot para saber qué pruebas tenía la orden originalmente
+                                        $todasLasPruebas = collect($detalle->pruebas_snapshot)->map(fn($item) => json_decode(json_encode($item)));
+                                    } else {
+                                        // Fallback a BD viva
+                                        $todasLasPruebas = $detalle->examen->pruebas->where('es_externo', false);
+                                    }
+
+                                    $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
+                                    $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
+
+                                    // Procesar Unitarias
+                                    $dataUnitarias = $pruebasUnitarias->map(function ($prueba) use ($procesarPrueba, $orden, $detalle) {
+                                        return $procesarPrueba($prueba, $orden, $detalle->id);
+                                    })->all();
+
+                                    // Procesar Matrices
+                                    $dataMatrices = $pruebasConjuntas->map(function ($pruebasDelConjunto) use ($procesarPrueba, $orden, $detalle) {
+                                        $filas = [];
+                                        $columnas = [];
+                                        $dataMatrix = [];
+                                        foreach ($pruebasDelConjunto as $prueba) {
+                                            $partes = explode(', ', $prueba->nombre);
+                                            if (count($partes) >= 2) {
+                                                [$nombreFila, $nombreColumna] = $partes;
+                                                $filas[] = $nombreFila;
+                                                $columnas[] = $nombreColumna;
+                                                $dataMatrix[$nombreFila][$nombreColumna] = $procesarPrueba($prueba, $orden, $detalle->id);
+                                            }
+                                        }
+                                        return [
+                                            'filas' => array_values(array_unique($filas)),
+                                            'columnas' => array_values(array_unique($columnas)),
+                                            'data' => $dataMatrix,
+                                        ];
+                                    })->all();
+
+                                    $examenes_data[] = [
+                                        'nombre' => $detalle->nombre_examen, // Usar nombre del detalle (snapshot)
+                                        'codigo' => $detalle->examen->id,
+                                        'pruebas_unitarias' => $dataUnitarias,
+                                        'matrices' => $dataMatrices,
+                                    ];
+                                }
+                            }
+                            $datos_agrupados[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
                         }
-                        return [
-                            'filas' => array_values(array_unique($filas)),
-                            'columnas' => array_values(array_unique($columnas)),
-                            'data' => $dataMatrix,
+
+                        // 4. Datos de Firma y Sello
+                        $usuarioQueFirma = auth()->user();
+                        $rutaFirma = $usuarioQueFirma?->firma_path ?? null;
+                        $rutaSello = $usuarioQueFirma?->sello_path ?? null;
+
+                        // 5. Generar PDF
+                        $pdf_data = [
+                            'orden' => $orden,
+                            'datos_agrupados' => $datos_agrupados,
+                            'ruta_firma_digital' => $rutaFirma,
+                            'ruta_sello_digital' => $rutaSello,
+                            'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado',
+                            'ruta_sello_registro' => public_path('storage/sello.png'),
                         ];
-                    })->all();
 
-                    $examenes_data[] = [
-                        'nombre' => $detalle->examen->nombre,
-                        'codigo' => $detalle->examen->id,
-                        'pruebas_unitarias' => $dataUnitarias,
-                        'matrices' => $dataMatrices,
-                    ];
-                }
-            }
-            $datos_agrupados[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
-        }
+                        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.reporte_resultados', $pdf_data);
+                        // Definir nombre y ruta del archivo
+                        $fileName = "reporte_orden_{$record->id}.pdf";
+                        $filePath = "reportes/{$fileName}"; // Se guardará en storage/app/public/reportes
+            
+                        // Guardar (sobrescribe si existe)
+                        // Usamos 'public' disk para que sea accesible si quieres dar un link público
+                        Storage::disk('public')->put($filePath, $pdf->output());
 
-        // 3. Datos de Firma y Sello
-        $usuarioQueFirma = auth()->user();
-        $rutaFirma = $usuarioQueFirma?->firma_path ?? null;
-        $rutaSello = $usuarioQueFirma?->sello_path ?? null;
+                        // Notificar al usuario
+                        \Filament\Notifications\Notification::make()
+                            ->title('Reporte generado y guardado')
+                            ->success()
+                            ->send();
 
-        // 4. Preparar PDF
-        $pdf_data = [
-            'orden' => $orden,
-            'datos_agrupados' => $datos_agrupados,
-            'ruta_firma_digital' => $rutaFirma,
-            'ruta_sello_digital' => $rutaSello,
-            'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado Desconocido',
-            'ruta_sello_registro' => public_path('storage/sello.png'),
-        ];
-
-        $pdf = Pdf::loadView('pdf.reporte_resultados', $pdf_data);
-
-        return response()->streamDownload(
-            fn() => print ($pdf->output()),
-            "Resultados-{$orden->cliente->nombre}-{$orden->id}.pdf"
-        );
-    }),
+                        // Descargar inmediatamente
+                        return response()->streamDownload(
+                            fn() => print ($pdf->output()),
+                            $fileName
+                        );
+                    }),
                 Tables\Actions\Action::make('cancelarOrden')
                     ->tooltip('Cancelar Orden')
                     ->icon('heroicon-o-x-circle')
                     ->iconButton()
                     ->color('danger')
                     ->visible(fn(Orden $record): bool => in_array($record->estado, ['pendiente', 'en proceso', 'pausada'])
-                    &&
+                        &&
                         auth()->user()->can('cancelar_orden'))
                     ->requiresConfirmation()
                     ->action(function (Orden $record) {
                         $record->estado = 'cancelado';
                         $record->save();
                         Notification::make()->title('Orden Cancelada')->danger()->send();
+                    }),
+
+                Tables\Actions\Action::make('descargarReporte')
+                    ->tooltip('Descargar Reporte Guardado')
+                    ->icon('heroicon-o-arrow-down-tray') // Icono de descarga
+                    ->iconButton()
+                    ->color('success') // Verde para diferenciar
+                    // Solo visible si el archivo EXISTE en el disco
+                    ->visible(function (Orden $record) {
+                        $filePath = "reportes/reporte_orden_{$record->id}.pdf";
+                        return Storage::disk('public')->exists($filePath) && $record->estado === 'finalizado';
+                    })
+                    ->action(function (Orden $record) {
+                        $filePath = "reportes/reporte_orden_{$record->id}.pdf";
+                        $fullPath = storage_path("app/public/{$filePath}");
+                        return response()->download($fullPath);
+                    }),
+
+                Tables\Actions\Action::make('restaurarOrden')
+                    ->label('Restaurar')
+                    ->tooltip('Regresar a estado "En Proceso"')
+                    ->icon('heroicon-o-arrow-uturn-left') // Icono de "Deshacer"
+                    ->color('warning') // Naranja para indicar precaución
+
+                    // --- VISIBILIDAD BLINDADA ---
+                    ->visible(
+                        fn(Orden $record): bool =>
+                        ($record->estado === 'finalizado' || $record->estado === 'cancelado') && // 1. Solo si está finalizada o cancelada
+                        auth()->user()->can('restaurar_orden') // 2. Solo si tiene el permiso especial
+                    )
+
+                    // --- CONFIRMACIÓN ---
+                    ->requiresConfirmation()
+                    ->modalHeading('¿Restaurar Orden?')
+                    ->modalDescription('La orden cambiará de estado "Finalizado" a "En Proceso". Esto permitirá modificar resultados nuevamente.')
+                    ->modalSubmitActionLabel('Sí, Restaurar')
+
+                    // --- LÓGICA ---
+                    ->action(function (Orden $record) {
+                        $record->update([
+                            'estado' => 'en proceso' // Regresamos el estado
+                        ]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Orden Restaurada')
+                            ->body("La orden #{$record->id} está abierta nuevamente.")
+                            ->success()
+                            ->send();
                     }),
             ]);
     }
@@ -801,159 +941,137 @@ Forms\Components\Hidden::make('codigo_aplicado'),
         return [];
     }
 
-    public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
-    {
-        $resultado = $orden->resultados->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
+    // En app/Filament/Resources/OrdenResource.php
 
-        $nombre_prueba = $prueba->nombre; // Nombre por defecto
-        $referencia_formateada = 'N/A';
-        $unidades = '';
-        $es_fuera_de_rango = false;
-        $valor_resultado_num = null;
+public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
+{
+    $resultado = $orden->resultados->where('prueba_id', $prueba->id)->where('detalle_orden_id', $detalleId)->first();
 
-        if ($resultado && is_numeric($resultado->resultado)) {
-            $valor_resultado_num = (float) $resultado->resultado;
-        }
+    $nombre_prueba = $prueba->nombre;
+    $referencia_formateada = 'N/A'; // Valor por defecto
+    $unidades = '';                 // Unidades vacías por defecto
+    $es_fuera_de_rango = false;
+    $valor_resultado_num = null;
 
-        // --- INICIO DE LA LÓGICA DE REFERENCIA CORREGIDA ---
-        if ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-
-            // 1. OBTENER DATOS DEL PACIENTE
-            $cliente = $orden->cliente;
-            $generoCliente = $cliente->genero; // "Masculino" o "Femenino"
-            $grupoEtarioCliente = $cliente->getGrupoEtario(); // Objeto GrupoEtario o null
-
-            $valorRef = null;
-            $todosLosValores = $prueba->reactivoEnUso->valoresReferencia;
-
-            if ($grupoEtarioCliente) {
-                // 2. INTENTO DE BÚSQUEDA 1: Grupo Etario + Género Específico
-                // Ej: "Adultos" (ID: 8) + "Masculino"
-
-                // AGREGAR ESTO TEMPORALMENTE PARA PROBAR
-               
-                $valorRef = $todosLosValores
-                    ->where('grupo_etario_id', $grupoEtarioCliente->id)
-                    ->where('genero', $generoCliente)
-                    ->first();
-
-                // 3. INTENTO DE BÚSQUEDA 2 (FALLBACK): Grupo Etario + "Ambos"
-                // Ej: "Adultos" (ID: 8) + "Ambos"
-                if (!$valorRef) {
-                    $valorRef = $todosLosValores
-                        ->where('grupo_etario_id', $grupoEtarioCliente->id)
-                        ->where('genero', 'Ambos')
-                        ->first();
-                }
-            }
-
-            // 4. INTENTO DE BÚSQUEDA 3 (FALLBACK): Sin Grupo Etario + Género Específico
-            // (Para valores que no dependen de la edad, solo del género)
-            if (!$valorRef) {
-                $valorRef = $todosLosValores
-                    ->whereNull('grupo_etario_id')
-                    ->where('genero', $generoCliente)
-                    ->first();
-            }
-
-            // 5. INTENTO DE BÚSQUEDA 4 (FALLBACK): Sin Grupo Etario + "Ambos"
-            // (El valor más genérico, ej: 0-100 U/L para todos)
-            if (!$valorRef) {
-                $valorRef = $todosLosValores
-                    ->whereNull('grupo_etario_id')
-                    ->where('genero', 'Ambos')
-                    ->first();
-            }
-
-            // 6. ÚLTIMO RECURSO: Si todo falla, toma el primero (evita crasheo)
-            if (!$valorRef) {
-                $valorRef = $todosLosValores->first();
-            }
-
-            // --- FIN DE LA LÓGICA DE BÚSQUEDA ---
-
-            // Ahora $valorRef es el correcto (o el mejor disponible)
-            if ($resultado && !empty($resultado->prueba_nombre_snapshot)) {
-
-                $nombre_prueba = $resultado->prueba_nombre_snapshot;
-                $referencia_formateada = $resultado->valor_referencia_snapshot ?? 'N/A';
-                $unidades = $resultado->unidades_snapshot ?? '';
-
-                // Intentar extraer valores numéricos del snapshot para la comparación
-                // Esto asume un formato simple como "1.0 - 5.0"
-                if (preg_match('/([\d\.]+)\s*-\s*([\d\.]+)/', $referencia_formateada, $matches)) {
-                    $valorMin = (float) $matches[1];
-                    $valorMax = (float) $matches[2];
-                    if (!is_null($valor_resultado_num)) {
-                        if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) {
-                            $es_fuera_de_rango = true;
-                        }
-                    }
-                }
-                // (Puedes añadir más 'preg_match' para operadores como '<', '≥', etc.)
-
-            }
-            // CASO 2: Es una orden antigua sin "foto", usamos los datos en vivo
-            elseif ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
-
-                $valorMin = (float) $valorRef->valor_min;
-                $valorMax = (float) $valorRef->valor_max;
-                $unidades = $valorRef->unidades ?? '';
-
-                // Formatear el texto de referencia
-                $rangoTexto = match ($valorRef->operador) {
-                    'rango' => "{$valorMin} - {$valorMax}",
-                    '<=' => "≤ {$valorMax}",
-                    '<' => "< {$valorMax}",
-                    '>=' => "≥ {$valorMin}",
-                    '>' => "> {$valorMin}",
-                    '=' => "= {$valorMin}",
-                    default => $valorRef->descriptivo ?? '',
-                };
-                $referencia_formateada = $rangoTexto;
-
-                // --- NUEVA LÓGICA DE COMPARACIÓN ---
-                if (!is_null($valor_resultado_num)) {
-                    switch ($valorRef->operador) {
-                        case 'rango':
-                            if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax)
-                                $es_fuera_de_rango = true;
-                            break;
-                        case '<=':
-                            if ($valor_resultado_num > $valorMax)
-                                $es_fuera_de_rango = true;
-                            break;
-                        case '<':
-                            if ($valor_resultado_num >= $valorMax)
-                                $es_fuera_de_rango = true;
-                            break;
-                        case '>=':
-                            if ($valor_resultado_num < $valorMin)
-                                $es_fuera_de_rango = true;
-                            break;
-                        case '>':
-                            if ($valor_resultado_num <= $valorMin)
-                                $es_fuera_de_rango = true;
-                            break;
-                        case '=':
-                            if ($valor_resultado_num != $valorMin)
-                                $es_fuera_de_rango = true;
-                            break;
-                    }
-                }
-            }
-        }
-
-        return [
-            'nombre' => $nombre_prueba, // <-- Usa el nombre de la "foto" o el nombre en vivo
-            'resultado' => $resultado->resultado ?? 'PENDIENTE',
-            'referencia' => $referencia_formateada, // <-- Usa la referencia de la "foto" o la de en vivo
-            'unidades' => $unidades, // <-- Usa las unidades de la "foto" o las de en vivo
-            'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
-            'es_fuera_de_rango' => $es_fuera_de_rango, // <-- Devuelve la bandera
-            'tipo_prueba' => $prueba->tipoPrueba->nombre ?? '', 
-        ];
+    if ($resultado && is_numeric($resultado->resultado)) {
+        $valor_resultado_num = (float) $resultado->resultado;
     }
+
+    // --- 1. INTENTAR CALCULAR EN VIVO (BD VIVA) ---
+    $todosLosValores = collect([]);
+    if ($prueba->reactivoEnUso && $prueba->reactivoEnUso->valoresReferencia->isNotEmpty()) {
+        $todosLosValores = $prueba->reactivoEnUso->valoresReferencia;
+    }
+
+    if ($todosLosValores->isNotEmpty()) {
+        $cliente = $orden->cliente;
+        $generoCliente = $cliente->genero; 
+        $valorRef = null;
+
+        // A. Embarazo
+        if (isset($orden->semanas_gestacion) && $orden->semanas_gestacion) {
+                $grupoEmbarazo = \App\Models\GrupoEtario::where('unidad_tiempo', 'semanas')
+                ->where('edad_min', '<=', $orden->semanas_gestacion)
+                ->where('edad_max', '>=', $orden->semanas_gestacion)
+                ->first();
+
+            if ($grupoEmbarazo) {
+                $valorRef = $todosLosValores->first(function($val) use ($grupoEmbarazo) {
+                    $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
+                    return $gid == $grupoEmbarazo->id;
+                });
+            }
+        }
+
+        // B. Cascada de Grupos (Específico -> Universal)
+        if (!$valorRef) {
+            $grupoEtarioCliente = $cliente->getGrupoEtario(); 
+            $grupoTodasEdades = \App\Models\GrupoEtario::where('nombre', 'Todas las edades')
+                ->orWhere(function($query) {
+                    $query->where('edad_min', 0)->where('edad_max', '>=', 120);
+                })->first();
+
+            // 1. Específico + Género
+            if ($grupoEtarioCliente) {
+                $valorRef = $todosLosValores->first(fn($val) => 
+                    ($val->grupo_etario_id == $grupoEtarioCliente->id) && ($val->genero == $generoCliente)
+                );
+            }
+            // 2. Específico + Ambos
+            if (!$valorRef && $grupoEtarioCliente) {
+                $valorRef = $todosLosValores->first(fn($val) => 
+                    ($val->grupo_etario_id == $grupoEtarioCliente->id) && ($val->genero == 'Ambos')
+                );
+            }
+            // 3. Universal + Género
+            if (!$valorRef && $grupoTodasEdades) {
+                $valorRef = $todosLosValores->first(fn($val) => 
+                    ($val->grupo_etario_id == $grupoTodasEdades->id) && ($val->genero == $generoCliente)
+                );
+            }
+            // 4. Universal + Ambos
+            if (!$valorRef && $grupoTodasEdades) {
+                $valorRef = $todosLosValores->first(fn($val) => 
+                    ($val->grupo_etario_id == $grupoTodasEdades->id) && ($val->genero == 'Ambos')
+                );
+            }
+        }
+
+        // Si encontramos referencia en vivo, seteamos valores
+        if ($valorRef) {
+            $valorMin = (float) $valorRef->valor_min;
+            $valorMax = (float) $valorRef->valor_max;
+            $unidades = $valorRef->unidades ?? '';
+
+            $referencia_formateada = match ($valorRef->operador) {
+                'rango' => "$valorMin - $valorMax",
+                '<=' => "≤ $valorMax",
+                '<' => "< $valorMax",
+                '>=' => "≥ $valorMin",
+                '>' => "> $valorMin",
+                '=' => "= $valorMin",
+                default => $valorRef->descriptivo ?? '',
+            };
+
+            // Cálculo Fuera de Rango
+            if (!is_null($valor_resultado_num)) {
+                switch ($valorRef->operador) {
+                    case 'rango': if ($valor_resultado_num < $valorMin || $valor_resultado_num > $valorMax) $es_fuera_de_rango = true; break;
+                    case '<=': if ($valor_resultado_num > $valorMax) $es_fuera_de_rango = true; break;
+                    case '<': if ($valor_resultado_num >= $valorMax) $es_fuera_de_rango = true; break;
+                    case '>=': if ($valor_resultado_num < $valorMin) $es_fuera_de_rango = true; break;
+                    case '>': if ($valor_resultado_num <= $valorMin) $es_fuera_de_rango = true; break;
+                    case '=': if ($valor_resultado_num != $valorMin) $es_fuera_de_rango = true; break;
+                }
+            }
+        }
+    }
+
+    // --- 2. PRIORIDAD AL SNAPSHOT (Datos Guardados) ---
+    if ($resultado && !empty($resultado->prueba_nombre_snapshot)) {
+        $nombre_prueba = $resultado->prueba_nombre_snapshot;
+        // Tomamos lo que dice la BD, pero abajo lo validamos
+        $referencia_formateada = $resultado->valor_referencia_snapshot ?? 'N/A';
+        $unidades = $resultado->unidades_snapshot ?? '';
+    }
+
+    // --- 3. LIMPIEZA FINAL (El arreglo que pediste) ---
+    // Si dice "SIN RANGO" (porque se guardó así antes) o es nulo/vacío -> Forzamos N/A y sin unidades
+    if ($referencia_formateada === 'SIN RANGO' || empty($referencia_formateada)) {
+        $referencia_formateada = 'N/A';
+        $unidades = ''; // <--- Aquí borramos las unidades
+    }
+
+    return [
+        'nombre' => $nombre_prueba,
+        'resultado' => $resultado->resultado ?? 'PENDIENTE',
+        'referencia' => $referencia_formateada,
+        'unidades' => $unidades,
+        'fecha_resultado' => $resultado ? $resultado->updated_at->format('d/m/Y') : '',
+        'es_fuera_de_rango' => $es_fuera_de_rango,
+        'tipo_prueba' => $prueba->tipoPrueba->nombre ?? '',
+    ];
+}
 
 
     public static function getRecordUrlUsing(): Closure

@@ -6,7 +6,7 @@ use App\Filament\Resources\OrdenResource;
 use App\Models\Examen;
 use App\Models\GrupoEtario;
 use App\Models\Orden;
-use App\Models\Prueba;
+use App\Models\Prueba; // Asegúrate de importar el modelo
 use Filament\Actions\Action;
 use Filament\Forms\Components\View;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -15,7 +15,7 @@ use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str; // Importante para generar IDs temporales en la vista
+use Illuminate\Support\Str;
 
 class IngresarResultados extends Page implements HasForms
 {
@@ -32,55 +32,81 @@ class IngresarResultados extends Page implements HasForms
         abort_unless(static::getResource()::canView($record), 404);
         abort_unless(auth()->user()->can('ingresar_resultados_orden'), 403);
         $this->record = $record;
-        // Cargamos los datos iniciales (internos y externos) al formulario
         $this->form->fill($this->prepareInitialData());
     }
 
     public function form(Form $form): Form
     {
         return $form->schema([
-            // Apuntamos a la vista Blade personalizada que contiene las pestañas y tablas
             View::make('filament.resources.orden-resource.pages.ingresar-resultados-view')
                 ->statePath('resultados_examenes'),
         ])->statePath('data');
     }
+
+    // En app/Filament/Resources/OrdenResource/Pages/IngresarResultados.php
+
 public function isOrderComplete(): bool
 {
-    // 1. Calcular total de pruebas INTERNAS requeridas
-    // Filtramos los detalles cuyo EXAMEN no sea externo
-    $totalPruebasInternas = $this->record->detalleOrden
+    // 1. Traemos los detalles para iterar uno por uno
+    $detalles = $this->record->detalleOrden()
         ->whereNotNull('examen_id')
-        ->filter(function ($detalle) {
-            // Verificamos que exista el examen y que NO sea externo
-            return $detalle->examen && ! $detalle->examen->es_externo;
-        })
-        ->flatMap(fn ($detalle) => $detalle->examen->pruebas)
-        ->count();
+        // Cargamos la relación para no hacer mil consultas
+        ->with(['examen', 'orden.resultados']) 
+        ->get();
 
-    // 2. Contar resultados INTERNOS válidos ya ingresados
-    $resultadosInternosIngresados = $this->record->resultados()
-        ->where('es_externo', false)
-        ->whereNotNull('resultado')
-        ->where('resultado', '!=', '')
-        ->count();
+    $totalRequeridas = 0;
+    $totalCompletadas = 0;
 
-    // ESCENARIO A: La orden es 100% Externa (No requiere pruebas internas)
-    if ($totalPruebasInternas === 0) {
-        // Opción 1: Permitir completar siempre (el botón sale siempre)
-        return true; 
+    foreach ($detalles as $detalle) {
+        // Saltamos los externos porque esos se manejan diferente
+        if ($detalle->examen && $detalle->examen->es_externo) continue;
+
+        // A. DETERMINAR QUÉ PRUEBAS PIDE EL SNAPSHOT ACTUAL
+        $idsRequeridos = [];
         
-        // Opción 2 (Más estricta): Solo permitir si ya ingresó al menos 1 resultado externo
-        // return $this->record->resultados()->where('es_externo', true)->exists();
+        if (!empty($detalle->pruebas_snapshot)) {
+            // Si hay foto, sacamos los IDs de la foto
+            $idsRequeridos = collect($detalle->pruebas_snapshot)->pluck('id')->toArray();
+        } elseif ($detalle->examen) {
+            // Si es vieja, sacamos los IDs activos de la BD
+            $idsRequeridos = $detalle->examen->pruebas
+                ->where('estado', 'activo') // Tu filtro personalizado
+                ->pluck('id')
+                ->toArray();
+        }
+
+        if (empty($idsRequeridos)) continue;
+
+        // Sumamos al contador global de lo que se necesita
+        $totalRequeridas += count($idsRequeridos);
+
+        // B. CONTAR RESULTADOS VÁLIDOS (LA CORRECCIÓN MÁGICA)
+        // Usamos la colección de resultados en memoria ($this->record->resultados)
+        // y filtramos para contar SOLO los que coinciden con los IDs requeridos.
+        $completadasEnEsteDetalle = $this->record->resultados
+            ->where('detalle_orden_id', $detalle->id)
+            ->whereIn('prueba_id', $idsRequeridos) // <--- ¡AQUÍ ESTÁ EL TRUCO! Ignoramos los huérfanos
+            ->whereNotNull('resultado')
+            ->where('resultado', '!=', '')
+            ->count();
+
+        $totalCompletadas += $completadasEnEsteDetalle;
     }
 
-    // ESCENARIO B: La orden tiene pruebas internas
-    // El botón solo sale si se han llenado todos los resultados internos
-    return $totalPruebasInternas === $resultadosInternosIngresados;
+    // Si por alguna razón no se requieren pruebas, asumimos completo
+    if ($totalRequeridas === 0) return true;
+
+    // Ahora sí: 1 requerido === 1 completado válido (aunque sobren huérfanos)
+    return $totalRequeridas === $totalCompletadas;
 }
 
     protected function prepareInitialData(): array
     {
-        $detalles = $this->record->detalleOrden()->with(['examen.pruebas.reactivoEnUso.valoresReferencia.grupoEtario'])->get();
+        // Cargamos la relación correcta 'reactivosActivos' para evitar errores SQL
+        $detalles = $this->record->detalleOrden()
+            ->with(['examen.pruebas.reactivosActivos.valoresReferencia.grupoEtario']) 
+            ->get();
+            
         $preparedData = [];
 
         foreach ($detalles as $detalle) {
@@ -89,44 +115,44 @@ public function isOrderComplete(): bool
 
             // --- LÓGICA HÍBRIDA (SNAPSHOT VS BD) ---
             if (!empty($detalle->pruebas_snapshot)) {
-                $todasLasPruebas = collect($detalle->pruebas_snapshot)->map(function($item) {
-                    return json_decode(json_encode($item)); // Truco rápido para convertir array profuso a objetos stdClass
+                $todasLasPruebas = collect($detalle->pruebas_snapshot)->map(function ($item) {
+                    return json_decode(json_encode($item)); 
                 });
-                 } elseif ($detalle->examen) {
-               // Fallback a BD antigua
-                $detalle->load('examen.pruebas.reactivoEnUso.valoresReferencia');
-                $todasLasPruebas = $detalle->examen->pruebas;
+            } elseif ($detalle->examen) {
+                // FALLBACK: Si no hay snapshot, usamos los datos en vivo cargados arriba
+                $todasLasPruebas = $detalle->examen->pruebas->where('estado', 'activo');
             } else {
                 continue;
             }
-            
-            
-            // --- LÓGICA 1: RESULTADOS INTERNOS (CATÁLOGO) ---
+
+            // Clasificación
             $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
             $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
 
-            // Mapeamos pruebas unitarias
-          $dataUnitarias = $pruebasUnitarias->map(fn($prueba) => $this->getPruebaData($prueba, $detalle->id))->values()->all();  
-            // Mapeamos matrices
-            $dataMatrices = $pruebasConjuntas->map(function (Collection $pruebasDelConjunto) use ($detalle) {
-                $filas = []; $columnas = []; $dataMatrix = [];
+            // Mapeo (Nota: quitamos el tipo 'Prueba $prueba' para que soporte stdClass del snapshot)
+            $dataUnitarias = $pruebasUnitarias->map(fn($prueba) => $this->getPruebaData($prueba, $detalle->id))->values()->all();
+            
+            $dataMatrices = $pruebasConjuntas->map(function ($pruebasDelConjunto) use ($detalle) {
+                $filas = [];
+                $columnas = [];
+                $dataMatrix = [];
                 foreach ($pruebasDelConjunto as $prueba) {
                     $partes = explode(', ', $prueba->nombre);
                     if (count($partes) >= 2) {
                         [$nombreFila, $nombreColumna] = $partes;
-                        $filas[] = $nombreFila; $columnas[] = $nombreColumna;
+                        $filas[] = $nombreFila;
+                        $columnas[] = $nombreColumna;
                         $dataMatrix[$nombreFila][$nombreColumna] = $this->getPruebaData($prueba, $detalle->id);
                     }
                 }
                 return [
-                    'filas' => array_values(array_unique($filas)), 
-                    'columnas' => array_values(array_unique($columnas)), 
+                    'filas' => array_values(array_unique($filas)),
+                    'columnas' => array_values(array_unique($columnas)),
                     'data' => $dataMatrix
                 ];
             })->all();
 
-            // --- LÓGICA 2: RESULTADOS EXTERNOS (MANUALES) ---
-            // Buscamos en la BD si ya existen resultados guardados como externos para este detalle
+            // Externos
             $resultadosExternosDB = $this->record->resultados()
                 ->where('detalle_orden_id', $detalle->id)
                 ->where('es_externo', true)
@@ -135,8 +161,8 @@ public function isOrderComplete(): bool
             $dataExternos = [];
             foreach ($resultadosExternosDB as $resExt) {
                 $dataExternos[] = [
-                    'id' => $resExt->id, // ID real de la BD
-                    'temp_id' => Str::uuid()->toString(), // ID temporal para manejo visual
+                    'id' => $resExt->id,
+                    'temp_id' => Str::uuid()->toString(),
                     'prueba_nombre' => $resExt->prueba_nombre_snapshot,
                     'resultado' => $resExt->resultado,
                     'valor_referencia' => $resExt->valor_referencia_snapshot,
@@ -144,9 +170,8 @@ public function isOrderComplete(): bool
                 ];
             }
 
-            // Armamos la estructura final para este detalle (examen)
             $preparedData[$detalle->id] = [
-                'examen_nombre' => $detalle->nombre_examen, // Usar nombre congelado del detalle
+                'examen_nombre' => $detalle->nombre_examen,
                 'es_referido' => (bool) ($detalle->examen->es_externo ?? false),
                 'pruebas_unitarias' => $dataUnitarias,
                 'matrices' => $dataMatrices,
@@ -157,115 +182,156 @@ public function isOrderComplete(): bool
         return ['resultados_examenes' => $preparedData];
     }
 
-protected function getPruebaData($prueba, int $detalleId): array
-    {
-        // 1. Buscamos resultado ya ingresado (siempre de BD)
-        $resultadoExistente = $this->record->resultados()
-            ->where('prueba_id', $prueba->id)
-            ->where('detalle_orden_id', $detalleId)
-            ->first();
+    protected function getPruebaData($prueba, int $detalleId): array
+{
+    // 1. Buscamos si ya hay un resultado guardado
+    $resultadoExistente = $this->record->resultados()
+        ->where('prueba_id', $prueba->id)
+        ->where('detalle_orden_id', $detalleId)
+        ->first();
 
-        $referencia = 'N/A'; 
-        $unidades = '';
+    $referencia = ''; 
+    $unidades = '';
+    $esAlerta = false; 
+    $mensajeAlerta = '';
 
-        // 2. OBTENER LISTA DE VALORES (Desde JSON o Modelo)
-        $todosLosValores = collect([]);
+    // 2. Obtener la lista de todos los valores de referencia posibles
+    $todosLosValores = collect([]);
 
-        // CASO A: Es un SNAPSHOT (Objeto stdClass del JSON)
-        if (isset($prueba->reactivo) && isset($prueba->reactivo->valores_referencia)) {
-            // Convertimos el array del json a colección
-            $todosLosValores = collect($prueba->reactivo->valores_referencia);
-            // Tomamos unidades del primer valor (asumiendo homogeneidad) o lógica especifica
-            $unidades = $todosLosValores->first()->unidades ?? '';
-        } 
-        // CASO B: Es un MODELO (BD Viva)
-        elseif ($prueba instanceof \App\Models\Prueba && $prueba->reactivoEnUso) {
-            $todosLosValores = $prueba->reactivoEnUso->valoresReferencia;
+    if (isset($prueba->reactivo) && isset($prueba->reactivo->valores_referencia)) {
+        // Viene del Snapshot (JSON)
+        $todosLosValores = collect($prueba->reactivo->valores_referencia);
+        $unidades = $todosLosValores->first()->unidades ?? ''; 
+    } elseif ($prueba instanceof \App\Models\Prueba) {
+        // Viene de la BD (Orden vieja o sin snapshot)
+        $reactivo = $prueba->reactivosActivos->first();
+        if ($reactivo) {
+            $todosLosValores = $reactivo->valoresReferencia;
         }
-
-        // 3. CALCULAR REFERENCIA (Lógica agnóstica: funciona con arrays o modelos)
-        if ($todosLosValores->isNotEmpty()) {
-            $cliente = $this->record->cliente;
-            $generoCliente = $cliente->genero;
-            $valorRef = null;
-
-            // Logica Embarazo
-            if (isset($this->record->semanas_gestacion) && $this->record->semanas_gestacion) {
-                $grupoEmbarazo = GrupoEtario::where('unidad_tiempo', 'semanas')
-                    ->where('edad_min', '<=', $this->record->semanas_gestacion)
-                    ->where('edad_max', '>=', $this->record->semanas_gestacion)
-                    ->first();
-                
-                if ($grupoEmbarazo) {
-                    // Nota: Accedemos como objeto ($val->grupo_etario_id)
-                    // Funciona tanto para Eloquent como para json_decode objects
-                    $valorRef = $todosLosValores->first(fn($val) => $val->grupo_etario_id == $grupoEmbarazo->id);
-                }
-            }
-
-            // Logica Edad Cronológica
-            if (!$valorRef) {
-                $grupoEtarioCliente = $cliente->getGrupoEtario();
-                if ($grupoEtarioCliente) {
-                    $valorRef = $todosLosValores->first(fn($val) => 
-                        $val->grupo_etario_id == $grupoEtarioCliente->id && $val->genero == $generoCliente
-                    );
-                    
-                    if (!$valorRef) {
-                        $valorRef = $todosLosValores->first(fn($val) => 
-                            $val->grupo_etario_id == $grupoEtarioCliente->id && $val->genero == 'Ambos'
-                        );
-                    }
-                }
-            }
-
-            // Fallbacks
-            if (!$valorRef) $valorRef = $todosLosValores->first(fn($val) => is_null($val->grupo_etario_id) && $val->genero == $generoCliente);
-            if (!$valorRef) $valorRef = $todosLosValores->first(fn($val) => is_null($val->grupo_etario_id) && $val->genero == 'Ambos');
-            if (!$valorRef) $valorRef = $todosLosValores->first();
-
-            // Formatear Texto
-            if ($valorRef) {
-                // Asegurar acceso seguro a propiedades sea array u objeto
-                $vMin = is_array($valorRef) ? $valorRef['valor_min'] : $valorRef->valor_min;
-                $vMax = is_array($valorRef) ? $valorRef['valor_max'] : $valorRef->valor_max;
-                $vOp  = is_array($valorRef) ? $valorRef['operador'] : $valorRef->operador;
-                $vDesc = is_array($valorRef) ? ($valorRef['descriptivo'] ?? null) : ($valorRef->descriptivo ?? null);
-                $vUni = is_array($valorRef) ? ($valorRef['unidades'] ?? '') : ($valorRef->unidades ?? '');
-
-                $valorMin = rtrim(rtrim(number_format($vMin, 2, '.', ''), '0'), '.');
-                $valorMax = rtrim(rtrim(number_format($vMax, 2, '.', ''), '0'), '.');
-                
-                $referencia = match ($vOp) {
-                    'rango' => "$valorMin - $valorMax",
-                    '<=' => "≤ $valorMax",
-                    '<' => "< $valorMax",
-                    '>=' => "≥ $valorMin",
-                    '>' => "> $valorMin",
-                    '=' => "= $valorMin",
-                    default => $vDesc ?? "$valorMin - $valorMax",
-                };
-                
-                // Si viene del modelo, $unidades estaba vacía al inicio, la llenamos aquí
-                if(empty($unidades)) $unidades = $vUni;
-            }
-        }
-
-        return [
-            'prueba_id' => $prueba->id, 
-            'prueba_nombre' => $prueba->nombre,
-            'resultado_id' => $resultadoExistente?->id,
-            'resultado' => $resultadoExistente?->resultado, 
-            'valor_referencia' => $referencia,
-            'unidades' => $unidades,
-        ];
     }
-    
-    // --- MÉTODOS PARA MANIPULAR LA TABLA DE EXTERNOS DESDE LA VISTA ---
 
+    // 3. Lógica de Selección Prioritaria (El corazón del cambio)
+    if ($todosLosValores->isNotEmpty()) {
+        $cliente = $this->record->cliente;
+        $generoCliente = $cliente->genero; // 'Masculino' o 'Femenino'
+        $valorRef = null;
+
+        // --- PRE-FILTRO: Caso Especial Embarazo (Prioridad Absoluta) ---
+        if (isset($this->record->semanas_gestacion) && $this->record->semanas_gestacion) {
+             $grupoEmbarazo = \App\Models\GrupoEtario::where('unidad_tiempo', 'semanas')
+                ->where('edad_min', '<=', $this->record->semanas_gestacion)
+                ->where('edad_max', '>=', $this->record->semanas_gestacion)
+                ->first();
+
+            if ($grupoEmbarazo) {
+                $valorRef = $todosLosValores->first(function($val) use ($grupoEmbarazo) {
+                    $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
+                    return $gid == $grupoEmbarazo->id;
+                });
+            }
+        }
+
+        // Si no es embarazo, seguimos la lógica estándar 1-2-3-4
+        if (!$valorRef) {
+            
+            // Paso A: Obtener el Grupo Etario Específico (Ej: Adultos)
+            $grupoEtarioCliente = $cliente->getGrupoEtario(); 
+
+            // Paso B: Obtener el Grupo "Todas las edades" (Ej: 0-120 años)
+            $grupoTodasEdades = \App\Models\GrupoEtario::where('nombre', 'Todas las edades')
+                ->orWhere(function($query) {
+                    $query->where('edad_min', 0)->where('edad_max', '>=', 120);
+                })->first();
+
+            // --- INTENTO 1: Grupo Específico + Género Exacto ---
+            if ($grupoEtarioCliente) {
+                $valorRef = $todosLosValores->first(function($val) use ($grupoEtarioCliente, $generoCliente) {
+                    $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
+                    $gen = is_array($val) ? ($val['genero'] ?? null) : $val->genero;
+                    return $gid == $grupoEtarioCliente->id && $gen == $generoCliente;
+                });
+            }
+
+            // --- INTENTO 2: Grupo Específico + "Ambos" ---
+            if (!$valorRef && $grupoEtarioCliente) {
+                $valorRef = $todosLosValores->first(function($val) use ($grupoEtarioCliente) {
+                    $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
+                    $gen = is_array($val) ? ($val['genero'] ?? null) : $val->genero;
+                    return $gid == $grupoEtarioCliente->id && $gen == 'Ambos';
+                });
+            }
+
+            // --- INTENTO 3: Grupo "Todas las edades" + Género Exacto ---
+            if (!$valorRef && $grupoTodasEdades) {
+                $valorRef = $todosLosValores->first(function($val) use ($grupoTodasEdades, $generoCliente) {
+                    $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
+                    $gen = is_array($val) ? ($val['genero'] ?? null) : $val->genero;
+                    return $gid == $grupoTodasEdades->id && $gen == $generoCliente;
+                });
+            }
+
+            // --- INTENTO 4: Grupo "Todas las edades" + "Ambos" ---
+            if (!$valorRef && $grupoTodasEdades) {
+                $valorRef = $todosLosValores->first(function($val) use ($grupoTodasEdades) {
+                    $gid = is_array($val) ? ($val['grupo_etario_id'] ?? null) : $val->grupo_etario_id;
+                    $gen = is_array($val) ? ($val['genero'] ?? null) : $val->genero;
+                    return $gid == $grupoTodasEdades->id && $gen == 'Ambos';
+                });
+            }
+        }
+
+        // 4. Resultado del Proceso
+        if ($valorRef) {
+            // --- ÉXITO: Formateamos el valor encontrado ---
+            $vMin = is_array($valorRef) ? $valorRef['valor_min'] : $valorRef->valor_min;
+            $vMax = is_array($valorRef) ? $valorRef['valor_max'] : $valorRef->valor_max;
+            $vOp = is_array($valorRef) ? $valorRef['operador'] : $valorRef->operador;
+            $vDesc = is_array($valorRef) ? ($valorRef['descriptivo'] ?? null) : ($valorRef->descriptivo ?? null);
+            $vUni = is_array($valorRef) ? ($valorRef['unidades'] ?? '') : ($valorRef->unidades ?? '');
+
+            $valorMin = rtrim(rtrim(number_format((float)$vMin, 2, '.', ''), '0'), '.');
+            $valorMax = rtrim(rtrim(number_format((float)$vMax, 2, '.', ''), '0'), '.');
+
+            $referencia = match ($vOp) {
+                'rango' => "$valorMin - $valorMax",
+                '<=' => "≤ $valorMax",
+                '<' => "< $valorMax",
+                '>=' => "≥ $valorMin",
+                '>' => "> $valorMin",
+                '=' => "= $valorMin",
+                default => $vDesc ?? "$valorMin - $valorMax",
+            };
+
+            if (empty($unidades)) $unidades = $vUni;
+            
+        } else {
+            // --- FALLO: Activamos la Alerta ---
+            $esAlerta = true;
+            $referencia = "N/A"; 
+            
+            $grupoNombre = $cliente->getGrupoEtario()?->nombre ?? 'Edad sin clasificar';
+            $mensajeAlerta = "Falta conf. para: {$grupoNombre} ({$generoCliente})";
+        }
+
+    } else {
+         // No hay valores configurados en el reactivo siquiera
+         $esAlerta = false; 
+         $referencia = '';
+    }
+
+    return [
+        'prueba_id' => $prueba->id,
+        'prueba_nombre' => $prueba->nombre,
+        'resultado_id' => $resultadoExistente?->id,
+        'resultado' => $resultadoExistente?->resultado,
+        'valor_referencia' => $referencia,
+        'unidades' => $unidades,
+        'es_alerta' => $esAlerta,
+        'mensaje_alerta' => $mensajeAlerta
+    ];
+}
     public function addExternalRow($detalleId)
     {
-        // Añade una fila vacía al array de externos en memoria
         $this->data['resultados_examenes'][$detalleId]['externos'][] = [
             'id' => null,
             'temp_id' => Str::uuid()->toString(),
@@ -278,23 +344,18 @@ protected function getPruebaData($prueba, int $detalleId): array
 
     public function removeExternalRow($detalleId, $index, $resultadoId = null)
     {
-        // Si tiene ID real, lo borramos de la BD
         if ($resultadoId) {
             $this->deleteResultado($resultadoId);
         }
-        // Lo quitamos del array visual
         unset($this->data['resultados_examenes'][$detalleId]['externos'][$index]);
-        // Reindexamos para evitar huecos en el array que confundan a JavaScript
         $this->data['resultados_examenes'][$detalleId]['externos'] = array_values($this->data['resultados_examenes'][$detalleId]['externos']);
     }
 
-    // --- ACCIONES ---
-
     protected function getFormActions(): array
-    { 
-        return [Action::make('save')->label('Guardar Resultados')->submit('save')->visible(fn() => auth()->user()->can('ingresar_resultados_orden'))]; 
+    {
+        return [Action::make('save')->label('Guardar Resultados')->submit('save')->visible(fn() => auth()->user()->can('ingresar_resultados_orden'))];
     }
-    
+
     protected function getHeaderActions(): array
     {
         return [
@@ -302,27 +363,21 @@ protected function getPruebaData($prueba, int $detalleId): array
                 ->label('Sincronizar con Catálogo')
                 ->color('warning')
                 ->icon('heroicon-o-arrow-path')
-                // Solo visible si la orden no está finalizada/cancelada
                 ->visible(fn() => !in_array($this->record->estado, ['finalizado', 'cancelado']))
                 ->requiresConfirmation()
                 ->modalHeading('¿Actualizar definición de pruebas?')
-                ->modalDescription('Esto volverá a cargar los nombres, reactivos activos y valores de referencia desde el catálogo maestro. Úsalo si corregiste un error tipográfico o cambiaste un rango de referencia y necesitas que esta orden lo refleje.')
+                ->modalDescription('Esto actualizará la orden con la configuración actual del catálogo (nombres, reactivos y valores de referencia).')
                 ->action(function () {
-                    // Recorremos cada detalle (examen) de la orden
                     foreach ($this->record->detalleOrden as $detalle) {
-                        
-                        // Solo procesamos si está vinculado a un examen del catálogo
                         if ($detalle->examen_id) {
-                            
-                            // 1. Cargamos la data FRESCA y PROFUNDA de la BD
+                            // 1. Cargamos la data FRESCA con la relación correcta
                             $examenFresco = Examen::with([
-                                'pruebas.reactivoEnUso.valoresReferencia'
+                                'pruebas.reactivosActivos.valoresReferencia' // <--- CORRECTO
                             ])->find($detalle->examen_id);
-                            
+
                             if ($examenFresco) {
-                                // 2. Generamos el NUEVO SNAPSHOT (Misma lógica que en CreateOrden)
-                                $nuevoSnapshot = $examenFresco->pruebas->map(function($prueba) {
-                                    
+                                // 2. Generamos el NUEVO SNAPSHOT
+                                $nuevoSnapshot = $examenFresco->pruebas->where('estado', 'activo')->map(function ($prueba) {
                                     $data = [
                                         'id' => $prueba->id,
                                         'nombre' => $prueba->nombre,
@@ -331,17 +386,15 @@ protected function getPruebaData($prueba, int $detalleId): array
                                         'reactivo' => null,
                                     ];
 
-                                    // Si hay reactivo activo, guardamos sus datos y sus valores filtrados
-                                    if ($prueba->reactivoEnUso) {
-                                        
-                                        // AQUI ESTA TU NUEVA LOGICA DE FILTRADO POR PRUEBA_ID
-                                        $valoresRefFiltrados = $prueba->reactivoEnUso->valoresReferencia
-                                            ->filter(function($val) use ($prueba) {
-                                                // Aceptamos si el valor apunta a esta prueba específica
-                                                // O si es null (valor genérico para el reactivo)
+                                    // CORRECCIÓN: Usamos la colección y sacamos el primero
+                                    $reactivoEnUso = $prueba->reactivosActivos->first();
+
+                                    if ($reactivoEnUso) {
+                                        $valoresRefFiltrados = $reactivoEnUso->valoresReferencia
+                                            ->filter(function ($val) use ($prueba) {
                                                 return $val->prueba_id === $prueba->id || is_null($val->prueba_id);
                                             })
-                                            ->map(function($val) {
+                                            ->map(function ($val) {
                                                 return [
                                                     'grupo_etario_id' => $val->grupo_etario_id,
                                                     'genero' => $val->genero,
@@ -354,32 +407,28 @@ protected function getPruebaData($prueba, int $detalleId): array
                                             })->values()->toArray();
 
                                         $data['reactivo'] = [
-                                            'nombre' => $prueba->reactivoEnUso->nombre,
-                                            'lote' => $prueba->reactivoEnUso->lote,
+                                            'nombre' => $reactivoEnUso->nombre,
+                                            'lote' => $reactivoEnUso->lote,
                                             'valores_referencia' => $valoresRefFiltrados
                                         ];
                                     }
-
                                     return $data;
                                 })->toArray();
 
-                                // 3. Guardamos el JSON actualizado en el detalle
+                                // 3. Guardamos
                                 $detalle->update(['pruebas_snapshot' => $nuevoSnapshot]);
                             }
                         }
                     }
-
-                    Notification::make()->title('Orden sincronizada correctamente')->success()->send();
-                    
-                    // Recargamos la página para que la vista lea el nuevo JSON
+                    Notification::make()->title('Orden sincronizada')->success()->send();
                     return redirect(request()->header('Referer'));
                 }),
-            ////
+
             Action::make('completar')->label('Completar Orden')->color('success')->icon('heroicon-o-check-circle')
-                ->visible(fn (): bool => $this->isOrderComplete())->requiresConfirmation()->modalHeading('Finalizar Orden')
-                ->modalDescription('Una vez completada, ya no podrás ingresar más resultados. ¿Estás seguro?')
+                ->visible(fn(): bool => $this->isOrderComplete())
+                ->requiresConfirmation()
                 ->action(function () {
-                    $this->record->estado = 'finalizado'; 
+                    $this->record->estado = 'finalizado';
                     $this->record->save();
                     Notification::make()->title('Orden Completada')->success()->send();
                     return redirect(static::getResource()::getUrl('index'));
@@ -392,31 +441,25 @@ protected function getPruebaData($prueba, int $detalleId): array
     public function save(): void
     {
         $formData = $this->form->getState()['resultados_examenes'];
-        
+
         foreach ($formData as $detalleId => $examenData) {
-            // 1. Guardar Internos (Pruebas Unitarias)
-            foreach (($examenData['pruebas_unitarias'] ?? []) as $r) { 
-                $this->guardarResultado($detalleId, $r); 
+            foreach (($examenData['pruebas_unitarias'] ?? []) as $r) {
+                $this->guardarResultado($detalleId, $r);
             }
-            // 2. Guardar Internos (Matrices)
             foreach (($examenData['matrices'] ?? []) as $m) {
-                foreach ($m['data'] as $f) { 
-                    foreach ($f as $c) { 
-                        $this->guardarResultado($detalleId, $c); 
-                    } 
+                foreach ($m['data'] as $f) {
+                    foreach ($f as $c) {
+                        $this->guardarResultado($detalleId, $c);
+                    }
                 }
             }
-            // 3. Guardar Externos (NUEVO)
             foreach (($examenData['externos'] ?? []) as $ext) {
-                // Solo guardamos si el usuario escribió al menos nombre y resultado
                 if (!empty($ext['prueba_nombre']) && !empty($ext['resultado'])) {
                     $this->guardarResultadoExterno($detalleId, $ext);
                 }
             }
         }
-        
         Notification::make()->title('Resultados guardados')->success()->send();
-        // Recargamos los datos para que los nuevos IDs se reflejen en el formulario
         $this->form->fill($this->prepareInitialData());
     }
 
@@ -424,17 +467,14 @@ protected function getPruebaData($prueba, int $detalleId): array
     {
         if (isset($r['resultado']) && $r['resultado'] !== '' && !is_null($r['resultado'])) {
             $this->record->resultados()->updateOrCreate(
-                [
-                    'detalle_orden_id' => $detalleId, 
-                    'prueba_id' => $r['prueba_id']
-                ],
+                ['detalle_orden_id' => $detalleId, 'prueba_id' => $r['prueba_id']],
                 [
                     'resultado' => $r['resultado'],
                     'user_id' => auth()->id(),
                     'prueba_nombre_snapshot' => $r['prueba_nombre'],
                     'valor_referencia_snapshot' => $r['valor_referencia'],
                     'unidades_snapshot' => $r['unidades'],
-                    'es_externo' => 0 // Forzamos 0 para internos
+                    'es_externo' => 0
                 ]
             );
         }
@@ -444,24 +484,22 @@ protected function getPruebaData($prueba, int $detalleId): array
     {
         $dataToSave = [
             'detalle_orden_id' => $detalleId,
-            'prueba_id' => null, // No tiene ID de catálogo
+            'prueba_id' => null,
             'prueba_nombre_snapshot' => $ext['prueba_nombre'],
             'resultado' => $ext['resultado'],
             'user_id' => auth()->id(),
             'valor_referencia_snapshot' => $ext['valor_referencia'],
             'unidades_snapshot' => $ext['unidades'],
-            'es_externo' => 1, // Forzamos 1 para externos
+            'es_externo' => 1,
         ];
 
         if (!empty($ext['id'])) {
-            // Si ya tiene ID, actualizamos
             $this->record->resultados()->where('id', $ext['id'])->update($dataToSave);
         } else {
-            // Si no, creamos uno nuevo
             $this->record->resultados()->create($dataToSave);
         }
     }
-    
+
     public function deleteResultado($resultadoId): void
     {
         $resultado = \App\Models\Resultado::find($resultadoId);

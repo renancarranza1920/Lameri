@@ -12,17 +12,20 @@ class CreateReactivo extends CreateRecord
 
     protected function afterCreate(): void
     {
-        // Si el usuario marcó el switch "En Uso" en el formulario...
+        // Si el usuario marcó "En Uso"...
         if ($this->record->en_uso) {
-            // ...limpiamos los conflictos automáticamente.
-            $this->record->resolverConflictosDeUso();
             
-            // Opcional: Avisar al usuario
-            \Filament\Notifications\Notification::make()
-                ->title('Conflictos resueltos')
-                ->body('Se han desactivado otros reactivos automáticamente.')
-                ->success()
-                ->send();
+            // Ejecutamos la limpieza y guardamos CUÁNTOS se desactivaron
+            $afectados = $this->record->resolverConflictosDeUso();
+            
+            // CORRECCIÓN CLAVE: Solo mostramos la alerta si hubo afectados reales (> 0)
+            if ($afectados > 0) {
+                \Filament\Notifications\Notification::make()
+                    ->title('Conflictos resueltos')
+                    ->body("Se han desactivado {$afectados} reactivo(s) antiguo(s) automáticamente.")
+                    ->warning() // Color naranja para diferenciarlo del verde "Creado"
+                    ->send();
+            }
         }
     }
     protected function getRedirectUrl(): string
