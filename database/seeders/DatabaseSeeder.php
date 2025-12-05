@@ -10,7 +10,7 @@ use Spatie\Permission\Models\Permission;
 use App\Models\TipoExamen;
 use App\Models\Examen;
 use App\Models\User;
-use App\Models\cliente;
+use App\Models\Cliente;
 use App\Models\Muestra;
 use App\Models\Perfil;
 use App\Models\DetallePerfil;
@@ -943,7 +943,6 @@ class DatabaseSeeder extends Seeder
             'reanudar_orden',            // Para "Reanudar"
             'finalizar_orden',           // Para "Finalizar"
             'generar_reporte_orden',     // Para "Generar Reporte PDF"
-            'restaurar_orden',          // Para "Restaurar"
             'cancelar_orden',            // Para "Cancelar"
         ];
 
