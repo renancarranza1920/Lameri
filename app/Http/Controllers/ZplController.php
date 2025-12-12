@@ -2,64 +2,46 @@
 
 namespace App\Http\Controllers;
 
+
 use App\Models\DetalleOrden;
 use App\Services\ZebraLabelService;
+use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ZplController extends Controller
 {
-    // Eliminamos la función sendToPrinter y $printerName, ya no sirven en la nube.
+  // private $printerName = '\\\\localhost\\ZebraZD230'; // Nombre del recurso compartido
 
-    public function single($id)
-    {
-        $detalle = DetalleOrden::with('orden.cliente', 'examen.tipoExamen')->findOrFail($id);
+   
 
-        $service = new ZebraLabelService();
-        $zpl = $service->generarZpl($detalle);
+public function single($id)
+{
+    $detalle = DetalleOrden::with('orden.cliente')->findOrFail($id);
 
-        // DEVOLVEMOS JSON PARA QUE JAVASCRIPT LO LEA
-        return response()->json([
-            'success' => true,
-            'zpl' => $zpl
-        ]);
-    }
+    $service = new ZebraLabelService();
+    $zpl = $service->generarZpl($detalle);
 
-    public function group($status, $ordenId)
-    {
-        $detalles = DetalleOrden::with('orden.cliente', 'examen.tipoExamen')
-            ->where('status', $status)
-            ->where('orden_id', $ordenId)
-            ->get();
+    return response()->json([
+        'zpl' => $zpl
+    ]);
+}
 
-        if ($detalles->isEmpty()) {
-            return response()->json(['success' => false, 'message' => 'No hay etiquetas']);
-        }
 
-        $service = new ZebraLabelService();
-        $zpl = $service->generarZplMultiple($detalles);
+public function group($status, $ordenId)
+{
+    $detalles = DetalleOrden::with('orden.cliente')
+        ->where('status', $status)
+        ->where('orden_id', $ordenId)
+        ->get();
 
-        // DEVOLVEMOS JSON
-        return response()->json([
-            'success' => true,
-            'zpl' => $zpl
-        ]);
-    }
-    
-    // Método nuevo para imprimir TODAS (botón "Generar ZPL" del header)
-    public function all($ordenId)
-    {
-        $detalles = DetalleOrden::with('orden.cliente', 'examen.tipoExamen')
-            ->where('orden_id', $ordenId)
-            ->get();
+    $service = new ZebraLabelService();
+    $zpl = $service->generarZplMultiple($detalles);
 
-        if ($detalles->isEmpty()) return response()->json(['success' => false]);
+    return response()->json([
+        'zpl' => $zpl
+    ]);
+}
 
-        $service = new ZebraLabelService();
-        $zpl = $service->generarZplMultiple($detalles);
 
-        return response()->json([
-            'success' => true,
-            'zpl' => $zpl
-        ]);
-    }
 }
