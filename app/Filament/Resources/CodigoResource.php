@@ -33,6 +33,7 @@ protected static ?int $navigationSort = 3;
                 ->schema([
                     Forms\Components\TextInput::make('codigo')
                         ->required()
+                        
                         ->unique(ignoreRecord: true)
                         ->maxLength(50)
                         ->label('Código'),
