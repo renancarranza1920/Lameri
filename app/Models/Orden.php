@@ -35,6 +35,7 @@ class Orden extends Model
     protected $casts = [
         'muestras_recibidas' => 'array',
         'fecha_toma_muestra' => 'datetime',
+         'fecha' => 'datetime',
     ];
 
     public function cliente(): BelongsTo
