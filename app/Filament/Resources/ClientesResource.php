@@ -37,16 +37,25 @@ class ClientesResource extends Resource
                                         Forms\Components\TextInput::make('nombre')
                                             ->label('Nombre')
                                             ->required()
+                                            ->validationMessages([
+                                                'required' => 'El nombre es obligatorio.',
+                                            ])
                                             ->maxLength(255),
 
                                         Forms\Components\TextInput::make('apellido')
                                             ->label('Apellido')
                                             ->required()
+                                            ->validationMessages([
+                                                'required' => 'El apellido es obligatorio.',
+                                            ])
                                             ->maxLength(255),
 
                                         Forms\Components\DatePicker::make('fecha_nacimiento')
                                             ->label('Fecha de Nacimiento')
                                             ->required()
+                                            ->validationMessages([
+                                                'required' => 'La fecha de nacimiento es obligatoria.',
+                                            ])
                                             ->placeholder('dd/mm/aaaa')
                                             ->maxDate(now()->subYears(5)),
 
@@ -56,7 +65,10 @@ class ClientesResource extends Resource
                                                 'Masculino' => 'Masculino',
                                                 'Femenino' => 'Femenino',
                                             ])
-                                            ->required(),
+                                            ->required()
+                                            ->validationMessages([
+                                                'required' => 'Por favor, selecciona un género.',
+                                            ]),
                                     ]),
                             ]),
 

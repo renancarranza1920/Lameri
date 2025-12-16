@@ -48,16 +48,42 @@ class ZebraLabelService
 ^XA
 ^PW406
 ^LL203
-^CI28
-^FO5,5^GB396,193,2^FS
-^FO20,20^A0N,28,28^FDLaboratorio Merino^FS
-^FO20,50^A0N,18,18^FDPaciente: {$paciente}^FS
-^FO20,75^A0N,18,18^FDRecipiente: {$recipiente}^FS
-^FO20,100^A0N,18,18^FDFecha y Hora: {$fecha} {$hora}^FS
-^FO20,120^GB366,1,1^FS
-^FO30,135^ADN,8,4^FD-{$examen}^FS
+^ci27
 
-^XZ\n\n";
+// --- SECCION 1: ENCABEZADO (FONDO NEGRO OPCIONAL O TEXTO CENTRADO) ---
+// Marco Exterior
+^FO2,2^GB402,199,2^FS
+
+// Nombre del Laboratorio Centrado (^FB = Field Block para centrar)
+^FO0,15^FB406,1,0,C,0^A0N,26,26^FDLABORATORIO MERINO^FS
+
+// Línea separadora 1
+^FO10,45^GB386,1,1^FS
+
+
+// --- SECCION 2: INFORMACION DEL PACIENTE ---
+// Paciente
+^FO15,55^A0N,20,20^FDPaciente: {$paciente}^FS
+
+// Recipiente y Fecha (En la misma línea para ahorrar espacio)
+^FO15,80^A0N,20,20^FDRecip.: {$recipiente}^FS
+^FO240,80^A0N,20,20^FD{$fecha}^FS
+
+// Línea separadora 2
+^FO10,105^GB386,1,1^FS
+
+
+// --- SECCION 3: DETALLE DEL EXAMEN (DESTACADO) ---
+// Nombre del examen centrado y un poco más grande
+^FO0,120^FB406,2,0,C,0^A0N,24,24^FD{$examen}^FS
+
+
+// --- SECCION 4: PIE DE PAGINA (Pequeño) ---
+^FO15,175^A0N,18,18^FDHora: {$hora}^FS
+^FO280,175^A0N,18,18^FDOrd: #{$ordenId}^FS
+
+^XZ
+\n\n";
     }
 
     private function generarZplPorColor($color, $items): string
@@ -120,19 +146,33 @@ class ZebraLabelService
 
         $examenLines .= "^FO{$posX},{$posY}^ADN,8,4^FD-{$examenTexto}^FS\n";
     }
-
+$ordenId = $items->first()->orden->id;
     // Plantilla fija de la etiqueta
-    $zpl .= "^XA
+// Asegúrate de tener el ID disponible antes: $ordenId = $items->first()->orden->id;
+
+$zpl .= "^XA
 ^PW406
 ^LL203
-^CI28 
-^FO5,5^GB396,193,2^FS
-^FO20,20^A0N,28,28^FDLaboratorio Merino^FS
-^FO20,50^A0N,18,18^FDPaciente: {$paciente}^FS
-^FO20,75^A0N,18,18^FDRecipiente: {$recipiente}^FS
-^FO20,100^A0N,18,18^FDFecha y Hora: {$fecha} {$hora}^FS
-^FO20,120^GB366,1,1^FS
+^ci27
+
+// 1. ENCABEZADO
+^FO2,2^GB402,199,2^FS
+^FO0,15^FB406,1,0,C,0^A0N,24,24^FDLABORATORIO MERINO^FS
+^FO10,42^GB386,1,1^FS
+
+// 2. DATOS PACIENTE Y RECIPIENTE
+^FO15,50^A0N,20,20^FDPaciente: {$paciente}^FS
+^FO15,75^A0N,20,20^FDRecip.: {$recipiente}^FS
+^FO220,75^A0N,20,20^FD{$fecha}^FS
+
+// 3. SEPARADOR Y CUERPO (LISTA)
+^FO10,105^GB386,1,1^FS
 {$examenLines}
+
+// 4. PIE DE PAGINA (Hora y Orden)
+^FO15,180^A0N,15,15^FDHora: {$hora}^FS
+// Si tienes la variable $ordenId disponible, descomenta la siguiente linea:
+// ^FO280,180^A0N,18,18^FDOrd: #{$ordenId}^FS
 ^XZ\n\n";
 }
 
@@ -141,17 +181,33 @@ class ZebraLabelService
     $posX = 30;
     $posY = 135;
 
-    $zpl .= "^XA
+  // Dentro del foreach ($examenesSecereciones...)
+
+$zpl .= "^XA
 ^PW406
 ^LL203
-^CI28 
-^FO5,5^GB396,193,2^FS
-^FO20,20^A0N,28,28^FDLaboratorio Merino^FS
-^FO20,50^A0N,18,18^FDPaciente: {$paciente}^FS
-^FO20,75^A0N,18,18^FDRecipiente: {$recipiente}^FS
-^FO20,100^A0N,18,18^FDFecha y Hora: {$fecha} {$hora}^FS
-^FO20,120^GB366,1,1^FS
-^FO30,135^A0N,18,18^FD -{$examenTexto}
+^ci27
+
+// 1. ENCABEZADO
+^FO2,2^GB402,199,2^FS
+^FO0,15^FB406,1,0,C,0^A0N,24,24^FDLABORATORIO MERINO^FS
+^FO10,42^GB386,1,1^FS
+
+// 2. DATOS PACIENTE
+^FO15,50^A0N,20,20^FDPaciente: {$paciente}^FS
+^FO15,75^A0N,20,20^FDRecip.: {$recipiente}^FS
+^FO220,75^A0N,20,20^FD{$fecha}^FS
+
+// 3. SEPARADOR Y EXAMEN DESTACADO
+^FO10,105^GB386,1,1^FS
+
+// Nombre del examen centrado automáticamente en el área inferior
+^FO0,125^FB406,2,0,C,0^A0N,24,24^FD{$examenTexto}^FS
+
+// 4. PIE DE PAGINA
+^FO15,180^A0N,15,15^FDHora: {$hora}^FS
+// Si tienes $ordenId:
+// ^FO280,180^A0N,18,18^FDOrd: #{$ordenId}^FS
 ^XZ\n\n";
 }
 
