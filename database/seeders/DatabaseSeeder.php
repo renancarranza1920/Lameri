@@ -30,10 +30,10 @@ class DatabaseSeeder extends Seeder
 
         // Crear usuario administrador
         $admin = User::factory()->create([
-            'name' => 'Administrador',
-            'email' => 'admin@gmail.com',
-            'nickname' => 'admin',
-            'password' => Hash::make('admin'),
+            'name' => 'Saul Merino',
+            'email' => 'saulmerino@gmail.com',
+            'nickname' => 'saulmerino',
+            'password' => Hash::make('saul2025'),
         ]);
 
         Log::info('Usuario administrador creado:', ['email' => $admin->email]);
@@ -944,6 +944,7 @@ class DatabaseSeeder extends Seeder
             'finalizar_orden',           // Para "Finalizar"
             'generar_reporte_orden',     // Para "Generar Reporte PDF"
             'cancelar_orden',            // Para "Cancelar"
+            'restaurar_orden',           // Para "Restaurar"
         ];
 
         foreach ($ordenActions as $permission) {
