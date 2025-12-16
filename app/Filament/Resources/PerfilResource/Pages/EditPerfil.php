@@ -65,9 +65,11 @@ class EditPerfil extends EditRecord
 
             \Log::debug('IDs extraídos en EditPerfil:', $ids);
 
-            // Sincronizar los exámenes con el perfil
-            $this->record->examenes()->sync($ids);
-
+            // --- CAMBIO AQUÍ: Capturamos el resultado de la sincronización ---
+            $cambios = $this->record->examenes()->sync($ids);
+            
+            // --- NUEVA LÍNEA: Llamamos al método de registro ---
+            $this->registrarBitacoraExamenes($cambios);
             \DB::commit();
 
             // Redirigir si se solicita
@@ -93,6 +95,68 @@ class EditPerfil extends EditRecord
         }
     }
 
+
+/**
+     * Registra en la bitácora si hubo cambios en los exámenes del perfil,
+     * incluyendo explícitamente el ID y Nombre del Perfil afectado.
+     */
+    private function registrarBitacoraExamenes(array $cambios): void
+    {
+        // Si no se agregó ni quitó nada, no registramos nada.
+        if (empty($cambios['attached']) && empty($cambios['detached'])) {
+            return;
+        }
+
+        // 1. Datos del Perfil Modificado
+        $perfilId = $this->record->id;
+        $perfilNombre = $this->record->nombre;
+
+        // 2. Obtener nombres de exámenes afectados
+        $nombresAgregados = [];
+        $nombresEliminados = [];
+
+        if (!empty($cambios['attached'])) {
+            $nombresAgregados = \App\Models\Examen::whereIn('id', $cambios['attached'])
+                ->pluck('nombre')
+                ->toArray();
+        }
+
+        if (!empty($cambios['detached'])) {
+            $nombresEliminados = \App\Models\Examen::whereIn('id', $cambios['detached'])
+                ->pluck('nombre')
+                ->toArray();
+        }
+
+        // 3. Construir el mensaje descriptivo
+        $detallesTexto = [];
+
+        if (count($nombresAgregados) > 0) {
+            $detallesTexto[] = "Agregados: [" . implode(', ', $nombresAgregados) . "]";
+        }
+        
+        if (count($nombresEliminados) > 0) {
+            $detallesTexto[] = "Eliminados: [" . implode(', ', $nombresEliminados) . "]";
+        }
+
+        $cambiosLegibles = implode(' | ', $detallesTexto);
+
+        // 4. Guardar el Log
+        activity()
+            ->performedOn($this->record) // Vincula el modelo automáticamente
+            ->causedBy(auth()->user())   // Usuario responsable
+            ->useLog('Perfiles')         // Canal del log
+            ->withProperties([           // Guardamos la data técnica en JSON
+                'perfil_afectado' => [   // <--- AQUÍ GUARDAMOS EL PERFIL EXPLÍCITAMENTE
+                    'id' => $perfilId,
+                    'nombre' => $perfilNombre,
+                ],
+                'examenes_agregados_ids' => $cambios['attached'],
+                'examenes_eliminados_ids' => $cambios['detached'],
+            ])
+            // En la descripción ponemos el nombre del perfil para lectura rápida
+            ->log("Actualización de exámenes en perfil '{$perfilNombre}' (ID: {$perfilId}): {$cambiosLegibles}");
+    }
+    
   public function mount(int|string $record): void
 {
     parent::mount($record);

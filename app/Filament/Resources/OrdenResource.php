@@ -636,31 +636,7 @@ class OrdenResource extends Resource
     ->modalSubmitAction(false)
     ->modalCancelAction(false),
 
-                Tables\Actions\Action::make('verPruebas')
-                    ->tooltip('Ver Pruebas Realizadas')
-                    ->icon('heroicon-o-clipboard-document-check')
-                    ->iconButton()
-                    ->color('gray')
-                    ->visible(fn(Orden $record): bool => in_array($record->estado, ['en proceso', 'pausada', 'finalizado'])
-                        && auth()->user()->can('ver_pruebas_orden'))
-                    ->modalHeading('Pruebas a Realizar')
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Cerrar')
-                    ->form(function (Orden $record) {
-                        // 1. Cargamos resultados para no hacer consultas en el loop
-                        $record->load('resultados');
-
-                        $detalles = $record->detalleOrden()->with('examen.pruebas')->get();
-                        $examenes = $detalles->map(fn($detalle) => $detalle->examen)->filter()->unique('id');
-
-                        return [
-                            Forms\Components\View::make('filament.modals.ver-orden-pruebas')
-                                ->viewData([
-                                    'examenes' => $examenes,
-                                    'orden' => $record, // <--- ¡ESTO ES LO NUEVO! Pasamos la orden completa
-                                ])
-                        ];
-                    }),
+                
                 Tables\Actions\Action::make('pausarOrden')
                     ->tooltip('Pausar Orden')
                     ->icon('heroicon-o-pause-circle')
@@ -866,16 +842,42 @@ class OrdenResource extends Resource
                         $rutaSello = $usuarioQueFirma?->sello_path ?? null;
 
                         // 5. Generar PDF
+                        
+                        // --- NUEVO: Conversión SOLO DEL LOGO a Base64 ---
+                       $imgToBase64 = function($path) {
+                            if ($path && file_exists($path)) {
+                                $type = pathinfo($path, PATHINFO_EXTENSION);
+                                $data = file_get_contents($path);
+                                return 'data:image/' . $type . ';base64,' . base64_encode($data);
+                                }
+                            return null;
+                        };
+                        
+                        $pathLogo = storage_path('app/public/logo.png');
+                        $pathSelloRegistro = storage_path('app/public/sello.png');
+                        
+                        $pathFirmaUsuario = $rutaFirma ? storage_path('app/public/' . $rutaFirma) : null;
+                        $pathSelloUsuario = $rutaSello ? storage_path('app/public/' . $rutaSello) : null;
+                        // -----------------------------------------------
                         $pdf_data = [
-                            'orden' => $orden,
-                            'datos_agrupados' => $datos_agrupados,
-                            'ruta_firma_digital' => $rutaFirma,
-                            'ruta_sello_digital' => $rutaSello,
-                            'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado',
-                            'ruta_sello_registro' => public_path('storage/sello.png'),
+                        'orden' => $orden,
+                        'datos_agrupados' => $datos_agrupados,
+                        'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado',
+                        
+                        // --- IMÁGENES OPTIMIZADAS (Base64) ---
+                        'logo_b64'           => $imgToBase64($pathLogo),
+                        'sello_registro_b64' => $imgToBase64($pathSelloRegistro),
+                        'firma_usuario_b64'  => $imgToBase64($pathFirmaUsuario),
+                        'sello_usuario_b64'  => $imgToBase64($pathSelloUsuario),
                         ];
 
-                        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.reporte_resultados', $pdf_data);
+                     $pdf = \Barryvdh\DomPDF\Facade\Pdf::setOptions([
+    'isRemoteEnabled' => false,
+    'isHtml5ParserEnabled' => true,
+    'dpi' => 96,
+    'defaultFont' => 'sans-serif',
+    'chroot' => base_path(), // <--- AGREGA ESTA LÍNEA (Define la raíz del proyecto como segura)
+])->loadView('pdf.reporte_resultados', $pdf_data);
                         // Definir nombre y ruta del archivo
                         $fileName = "reporte_orden_{$record->id}.pdf";
                         $filePath = "reportes/{$fileName}"; // Se guardará en storage/app/public/reportes
@@ -936,7 +938,7 @@ class OrdenResource extends Resource
                     // --- VISIBILIDAD BLINDADA ---
                     ->visible(
                         fn(Orden $record): bool =>
-                        $record->estado === 'finalizado' && // 1. Solo si está finalizada
+                        ($record->estado === 'finalizado' || $record->estado === 'cancelado') && // 1. Solo si está finalizada o cancelada
                         auth()->user()->can('restaurar_orden') // 2. Solo si tiene el permiso especial
                     )
 
