@@ -16,6 +16,40 @@ Route::get('/detalles/zpl/{id}', [ZplController::class, 'single'])->name('detall
 
 Route::get('/grupo/{status}/zpl/{ordenId}', [ZplController::class, 'group'])
     ->name('grupo.zpl');
+    
+Route::middleware('auth')->group(function () {
+    // Ruta para una sola etiqueta
+    Route::get('/detalles/zpl/{id}', [ZplController::class, 'single'])->name('detalles.zpl');
+    
+    // Ruta para un grupo (columna)
+    Route::get('/grupo/{status}/zpl/{ordenId}', [ZplController::class, 'group'])->name('grupo.zpl');
+    
+    // Ruta para TODAS (Header action)
+    Route::get('/orden/zpl-all/{ordenId}', [ZplController::class, 'all'])->name('zpl.all');
+});
+
+Route::get('/sign-message', function() {
+    $message = request('request');
+
+    $privateKey = openssl_pkey_get_private(file_get_contents(storage_path('app/private-key.pem')));
+
+    openssl_sign($message, $signature, $privateKey, OPENSSL_ALGO_SHA256);
+
+    return base64_encode($signature); // ✔ QZ solo acepta Base64
+});
+
+
+Route::get('/test-key', function () {
+    $privateKey = storage_path('app/private-key.pem');
+
+    $pkeyid = openssl_pkey_get_private(file_get_contents($privateKey));
+    if ($pkeyid === false) {
+        return "❌ Clave privada NO válida";
+    }
+
+    return "✔ Clave privada cargada correctamente";
+});
+
 
 
 Route::post('/ordenes/ordenar', function (Request $request) {
