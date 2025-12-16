@@ -10,7 +10,7 @@ use Spatie\Permission\Models\Permission;
 use App\Models\TipoExamen;
 use App\Models\Examen;
 use App\Models\User;
-use App\Models\cliente;
+use App\Models\Cliente;
 use App\Models\Muestra;
 use App\Models\Perfil;
 use App\Models\DetallePerfil;
@@ -30,10 +30,10 @@ class DatabaseSeeder extends Seeder
 
         // Crear usuario administrador
         $admin = User::factory()->create([
-            'name' => 'Administrador',
-            'email' => 'admin@gmail.com',
-            'nickname' => 'admin',
-            'password' => Hash::make('admin'),
+            'name' => 'Saul Merino',
+            'email' => 'saulmerino@gmail.com',
+            'nickname' => 'saulmerino',
+            'password' => Hash::make('saul2025'),
         ]);
 
         Log::info('Usuario administrador creado:', ['email' => $admin->email]);
@@ -943,8 +943,8 @@ class DatabaseSeeder extends Seeder
             'reanudar_orden',            // Para "Reanudar"
             'finalizar_orden',           // Para "Finalizar"
             'generar_reporte_orden',     // Para "Generar Reporte PDF"
-            'restaurar_orden',          // Para "Restaurar"
             'cancelar_orden',            // Para "Cancelar"
+            'restaurar_orden',           // Para "Restaurar"
         ];
 
         foreach ($ordenActions as $permission) {

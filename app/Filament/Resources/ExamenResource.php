@@ -43,6 +43,9 @@ class ExamenResource extends Resource
                                         return TipoExamen::where('estado', 1)->pluck('nombre', 'id');
                                     })
                                     ->required()
+                                    ->validationMessages([
+                                        'required' => 'Por favor, selecciona un tipo de examen.',
+                                    ])
                                     ->searchable()
                                     ->preload(),
 
@@ -50,6 +53,9 @@ class ExamenResource extends Resource
                                     ->label('Nombre del Examen')
                                     ->placeholder('Ej: Glucosa, Creatinina...')
                                     ->required()
+                                    ->validationMessages([
+                                        'required' => 'El nombre del examen es obligatorio.',
+                                    ])
                                     ->reactive()
                                     ->maxLength(255),
 
@@ -64,6 +70,9 @@ class ExamenResource extends Resource
                                         'cultivo_secreciones' => 'Cultivo Secreciones',
                                     ])
                                     ->required()
+                                    ->validationMessages([
+                                        'required' => 'Por favor, selecciona un recipiente.',
+                                    ])
                                     ->searchable(),
 
                                 Forms\Components\Select::make('muestras')
@@ -71,9 +80,16 @@ class ExamenResource extends Resource
                                     ->multiple()
                                     ->preload()
                                     ->searchable()
+                                    ->required()
+                                   ->validationMessages([ 
+                                   'required' => 'Por favor, selecciona al menos una muestra.',
+                                    ])
                                     ->createOptionForm([
                                         Forms\Components\TextInput::make('nombre')
                                             ->required()
+                                            ->validationMessages([
+                                                'required' => 'El nombre de la muestra es obligatorio.',
+                                            ])
                                             ->unique('muestras', 'nombre'),
                                     ]),
 
@@ -85,11 +101,18 @@ class ExamenResource extends Resource
                                     ->label('Precio')
                                     ->prefix('$')
                                     ->numeric()
+                                    ->validationMessages([
+                                        'numeric' => 'El precio debe ser un número válido.',
+                                        'required' => 'El precio es obligatorio.',
+                                    ])
                                     ->required(),
 
                                 Forms\Components\Toggle::make('estado')
                                     ->label('Activo')
                                     ->required()
+                                    ->validationMessages([
+                                        'required' => 'El estado del examen es obligatorio.',
+                                    ])
                                     ->default(true)
                                     ->inline(false),
                             ])->columns(2),
@@ -112,19 +135,19 @@ class ExamenResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->description(function (Examen $record) {
-            // Si es interno y no tiene pruebas, mostramos alerta
-            if (!$record->es_externo && $record->pruebas()->count() === 0) {
-                return '⚠️ Sin pruebas asignadas';
-            }
-            return null;
-        })
-        // Cambiamos el color a naranja/rojo si falta configuración
-        ->color(function (Examen $record) {
-            if (!$record->es_externo && $record->pruebas()->count() === 0) {
-                return 'warning'; // O 'danger' si prefieres rojo
-            }
-            return null;
-        }),
+                        // Si es interno y no tiene pruebas, mostramos alerta
+                        if (!$record->es_externo && $record->pruebas()->count() === 0) {
+                            return '⚠️ Sin pruebas asignadas';
+                        }
+                        return null;
+                    })
+                    // Cambiamos el color a naranja/rojo si falta configuración
+                    ->color(function (Examen $record) {
+                        if (!$record->es_externo && $record->pruebas()->count() === 0) {
+                            return 'warning'; // O 'danger' si prefieres rojo
+                        }
+                        return null;
+                    }),
 
                 Tables\Columns\TextColumn::make('muestras.nombre')
                     ->label('Muestras')
@@ -220,7 +243,10 @@ class ExamenResource extends Resource
                             ->label('Nombres de las Pruebas')
                             ->helperText('Escribe un nombre y presiona Enter para añadirlo a la lista.')
                             ->placeholder('Nueva prueba...')
-                            ->required(),
+                            ->required()
+                            ->validationMessages([
+                                'required' => 'Por favor, ingresa al menos una prueba.',
+                            ]),
                     ])
                     ->action(function (Examen $record, array $data) {
                         $nombres = $data['nombres_pruebas'];
@@ -286,7 +312,7 @@ class ExamenResource extends Resource
                             $alertaRiesgo = '';
                             if (!empty($perfilesEnRiesgo)) {
                                 $afectados = implode(', ', $perfilesEnRiesgo);
-                                $alertaRiesgo = 
+                                $alertaRiesgo =
                                     "<div class='mt-3 text-sm text-red-600 dark:text-red-400 font-semibold text-center'>" .
                                     "⚠️ Nota: Se desactivarán automáticamente los perfiles:<br>" .
                                     "<span class='text-base'>{$afectados}</span><br>" .
@@ -354,7 +380,7 @@ class ExamenResource extends Resource
                     ->iconButton()
             ])
             ->bulkActions([
-                
+
             ]);
     }
 

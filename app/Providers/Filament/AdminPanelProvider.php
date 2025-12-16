@@ -38,7 +38,7 @@ class AdminPanelProvider extends PanelProvider
         // Esto elimina las posibilidades de errores sutiles de encadenamiento.
         $panel->default();
         $panel->id('admin');
-        $panel->path('admin');
+        $panel->path('');
         $panel->login( Login::class);
         $panel->favicon('storage/iconlab.png');
       $panel->colors([
