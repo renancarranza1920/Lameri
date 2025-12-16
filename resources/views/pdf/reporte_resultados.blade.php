@@ -247,23 +247,25 @@
             </p>
             <p style="font-size: 9px; margin: 0; color: #333; line-height: 1.5;">
                 <span>
-                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjIgMTYuOTJ2M2EyIDIgMCAwIDEtMi4xOCAyIDE5Ljc5IDE5Ljc5IDAgMCAxLTguNjMtMy4wNyAxOS41IDE5LjUgMCAwIDEtNi02IDE5Ljc5IDE5Ljc5IDAgMCAxLTMuMDctOC42M0EyIDIgMCAwIDEgNC4xMSAySDdBMiAyIDAgMCAxIDkgMy4yNmExMi44NCAxMi44NCAwIDAgMCAuNyAyLjgxIDIgMiAwIDAgMS0uNDUgMi4xMUw4LjA5IDkuOTFhMTYgMTYgMCAwIDAgNiA2bDEuMjctMS4yN2EyIDIgMCAwIDEgMi4xMS0uNDUgMTIuODQgMTIuODQgMCAwIDAgMi44MS43QTIgMiAwIDAgMSAyMiAxNi45MnoiPjwvcGF0aD48L3N2Zz4="
-                        width="8" height="8" style="vertical-align: middle; margin-right: 3px;" />
+                   
                 </span>
                 <a> </a>
                 <span style="font-weight: bold;">2606-6596</span>
                 <span style="margin-left: 8px; margin-right: 8px; color: #888;">|</span>
                 <span>
-                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjEgMTEuNWE4LjM4IDguMzggMCAwIDEtLjkgMy44IDguNSA4LjUgMCAwIDEtNy42IDQuNyA4LjM4IDguMzggMCAwIDEtMy44LS45TDMgMjFsMS45LTUuN2E4LjM4IDguMzggMCAwIDEtLjktMy44IDguNSA4LjUgMCAwIDEgNC43LTcuNiA4LjM4IDguMzggMCAwIDEgMy44LS45aC41YTguNDggOC40OCAwIDAgMSA4IDh2LjV6Ij48L3BhdGg+PC9zdmc+Cg=="
-                        width="8" height="8" style="vertical-align: middle; margin-right: 3px;" />
+                   
                 </span>
                  <a> </a>
                 <span style="font-weight: bold;">WhatsApp: 7595-4210</span>
             </p>
         </div>
-        <div class="header-right" style="width: 30%; text-align: right;">
-            <img src="{{ public_path('storage/logo.png') }}" alt="Logo" style="max-width: 90px; vertical-align: middle;">
-        </div>
+   <div class="header-right" style="width: 30%; text-align: right;">
+    @if(isset($logo_b64) && $logo_b64)
+        <img src="{{ $logo_b64 }}" alt="Logo" style="max-width: 90px; vertical-align: middle;">
+    @else
+        <span style="color:red; font-weight:bold;">ERROR: IMAGEN NO ENCONTRADA</span>
+    @endif
+</div>
     </div>
 
     <div style="margin-top: 5px; padding: 5px; font-size: 9px;">
@@ -430,31 +432,48 @@
 
     <div style="margin-top: 40px; text-align: right; width: 100%;">
         <div style="display: inline-block;">
+            
+            {{-- BLOQUE 1: SELLO DEL REGISTRO (Izquierda) --}}
             <div style="display: inline-block; margin-left: 20px; vertical-align: top;">
                 @php $size = '130px'; @endphp
-                @if (file_exists($ruta_sello_registro))
-                    <img src="{{ $ruta_sello_registro }}" alt="Sello Registro" style="width: {{ $size }}; height: auto;">
+                @if ($sello_registro_b64)
+                    <img src="{{ $sello_registro_b64 }}" alt="Sello Registro" style="width: {{ $size }}; height: auto;">
                 @else
-                    <div style="width: {{ $size }}; height: 80px; border: 1px dashed #ccc;">[Sello Reg. Faltante]</div>
+                    {{-- Espacio vacío o mensaje si no hay sello --}}
+                    <div style="width: {{ $size }}; height: 80px; border: 1px dashed #ccc; display:flex; align-items:center; justify-content:center; font-size:9px;">
+                        [Sello Reg.]
+                    </div>
                 @endif
             </div>
+
+            {{-- BLOQUE 2: FIRMA Y SELLO DEL LICENCIADO (Derecha) --}}
             <div style="display: inline-block; margin-left: 20px; vertical-align: top;">
-                @php
-                    $pathFirmaUsuario = isset($ruta_firma_digital) ? storage_path('app/public/' . $ruta_firma_digital) : null;
-                    $pathSelloUsuario = isset($ruta_sello_digital) ? storage_path('app/public/' . $ruta_sello_digital) : null;
-                @endphp
                 <div style="position: relative; width: {{ $size }}; height: 80px; margin-top: 0;">
-                    @if ($pathSelloUsuario && file_exists($pathSelloUsuario))
-                        <img src="{{ $pathSelloUsuario }}" alt="Sello Usuario" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;">
-                    @else
-                        <div style="width: 100%; height: 100%; border: 1px dashed #ccc;">[Sello Usr Faltante]</div>
+                    
+                    {{-- Capa 1: Sello del Usuario (Fondo) --}}
+                    @if ($sello_usuario_b64)
+                        <img src="{{ $sello_usuario_b64 }}" alt="Sello Usuario" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;">
                     @endif
-                    @if ($pathFirmaUsuario && file_exists($pathFirmaUsuario))
-                        <img src="{{ $pathFirmaUsuario }}" alt="Firma" style="position: absolute; top: 8%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; height: auto; object-fit: contain; z-index: 10;">
+
+                    {{-- Capa 2: Firma del Usuario (Superpuesta) --}}
+                    @if ($firma_usuario_b64)
+                        {{-- z-index: 10 asegura que la firma quede encima del sello --}}
+                        <img src="{{ $firma_usuario_b64 }}" alt="Firma" style="position: absolute; top: 8%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; height: auto; object-fit: contain; z-index: 10;">
                     @endif
+
+                    {{-- Capa 3: Placeholder si no hay nada --}}
+                    @if (!$sello_usuario_b64 && !$firma_usuario_b64)
+                        <div style="width: 100%; height: 100%; border: 1px dashed #ccc; display:flex; align-items:center; justify-content:center; font-size:9px;">
+                            [Sin Firma]
+                        </div>
+                    @endif
+                    
                 </div>
             </div>
+
         </div>
     </div>
+</body>
+</html>
 </body>
 </html>
