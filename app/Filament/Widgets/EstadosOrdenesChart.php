@@ -24,9 +24,9 @@ class EstadosOrdenesChart extends ChartWidget
                     'label' => 'Órdenes',
                     'data' => $data->pluck('total')->toArray(),
            'backgroundColor' => [
-    '#34D399' , // succes (Más suave)
+    '#ffcb47ff' , // pendiente (Más suave)
     '#60A5FA', // En Proceso (Más suave)
-    '#ffcb47ff', // pendiente (Más suave)
+    '#34D399', // finalizado (Más suave)
     '#F87171', // Pausada (Más suave)
     '#9CA3AF', // Cancelado (Gris medio)
 ],

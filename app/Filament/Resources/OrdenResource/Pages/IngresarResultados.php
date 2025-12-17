@@ -118,11 +118,9 @@ public function isOrderComplete(): bool
                 $todasLasPruebas = collect($detalle->pruebas_snapshot)->map(function ($item) {
                     return json_decode(json_encode($item)); 
                 });
-            } elseif ($detalle->examen) {
-                // FALLBACK: Si no hay snapshot, usamos los datos en vivo cargados arriba
-                $todasLasPruebas = $detalle->examen->pruebas->where('estado', 'activo');
             } else {
-                continue;
+                // Si no hay snapshot, no precargamos nada
+                $todasLasPruebas = collect();
             }
 
             // Clasificación
