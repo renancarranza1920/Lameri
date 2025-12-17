@@ -17,6 +17,8 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\SimplePage;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
 use Filament\Forms\Get; // Añadido para la validación condicional
 use Filament\Forms\Set; // Añadido: para limpiar el campo opuesto cuando cambia
@@ -185,6 +187,7 @@ class Login extends SimplePage
             ->revealable(filament()->arePasswordsRevealable())
             ->autocomplete('current-password')
             ->required()
+            ->hint(filament()->hasPasswordReset() ? new HtmlString(Blade::render('<x-filament::link :href="filament()->getRequestPasswordResetUrl()"> {{ __(\'filament-panels::pages/auth/login.actions.request_password_reset.label\') }}</x-filament::link>')) : null)
             ->extraInputAttributes(['tabindex' => 2]);
     }
 
