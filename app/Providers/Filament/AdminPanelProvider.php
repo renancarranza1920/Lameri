@@ -40,6 +40,8 @@ class AdminPanelProvider extends PanelProvider
         $panel->id('admin');
         $panel->path('');
         $panel->login( Login::class);
+        $panel->passwordReset();
+        
         $panel->favicon('storage/iconlab.png');
       $panel->colors([
     'primary'   => '#1E73BE', // Azul base
