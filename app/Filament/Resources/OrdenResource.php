@@ -367,6 +367,8 @@ class OrdenResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->defaultSort('id', 'desc')
+        ->defaultPaginationPageOption(50)
             ->contentGrid([
                 'md' => 2,
                 'lg' => 3,
@@ -689,214 +691,225 @@ class OrdenResource extends Resource
                     ->visible(fn(Orden $record): bool => $record->estado === 'finalizado' &&
                         auth()->user()->can('generar_reporte_orden'))
                     ->action(function (Orden $record) {
-                        // 1. Cargar relaciones necesarias
-                        // CORRECCIÓN CLAVE: Cambiamos 'reactivoEnUso' por 'reactivosActivos'
-                        $orden = $record->load([
-                            'cliente',
-                            'detalleOrden.examen.tipoExamen',
-                            'detalleOrden.examen.pruebas.tipoPrueba',
-                            'detalleOrden.examen.pruebas.reactivosActivos.valoresReferencia.grupoEtario',
-                            'resultados.prueba'
-                        ]);
+                      // 1. Cargar relaciones (QUITAMOS 'resultados.user' porque no existe la relación)
+        $orden = $record->load([
+            'cliente',
+            'detalleOrden.examen.tipoExamen',
+            'detalleOrden.examen.pruebas.tipoPrueba',
+            'detalleOrden.examen.pruebas.reactivosActivos.valoresReferencia.grupoEtario',
+            'resultados.prueba'
+        ]);
 
-                        // 2. Función Helper interna para procesar cada prueba (Unitaria)
-                        $procesarPrueba = function ($prueba, $orden, $detalleId) {
-                            // Buscamos el resultado en memoria (ya cargado)
-                            $resultado = $orden->resultados->first(function ($res) use ($prueba, $detalleId) {
-                                return $res->detalle_orden_id == $detalleId && $res->prueba_id == $prueba->id;
-                            });
+        // 2. Helper para convertir imágenes a Base64
+        $imgToBase64 = function ($path) {
+            if ($path && file_exists($path)) {
+                $type = pathinfo($path, PATHINFO_EXTENSION);
+                $data = file_get_contents($path);
+                return 'data:image/' . $type . ';base64,' . base64_encode($data);
+            }
+            return null;
+        };
 
-                            // Si hay resultado guardado, usamos sus snapshots (LO MÁS SEGURO)
-                            if ($resultado) {
-                                return [
-                                    'nombre' => $resultado->prueba_nombre_snapshot ?? $prueba->nombre,
-                                    'resultado' => $resultado->resultado,
-                                    'referencia' => $resultado->valor_referencia_snapshot ?? 'N/A',
-                                    'unidades' => $resultado->unidades_snapshot ?? '',
-                                    'fecha_resultado' => $resultado->updated_at->format('d/m/Y'),
-                                    'es_fuera_de_rango' => (bool) $resultado->fuera_de_rango,
-                                ];
+        // 3. Helper interno para procesar cada prueba
+        $procesarPrueba = function ($prueba, $orden, $detalleId) {
+            // Buscamos en la colección de resultados cargados en memoria
+            $resultado = $orden->resultados->first(function ($res) use ($prueba, $detalleId) {
+                return $res->detalle_orden_id == $detalleId && $res->prueba_id == $prueba->id;
+            });
+
+            if ($resultado) {
+                return [
+                    'nombre' => $resultado->prueba_nombre_snapshot ?? $prueba->nombre,
+                    'resultado' => $resultado->resultado,
+                    'referencia' => $resultado->valor_referencia_snapshot ?? 'N/A',
+                    'unidades' => $resultado->unidades_snapshot ?? '',
+                    'fecha_resultado' => $resultado->updated_at->format('d/m/Y'),
+                    'es_fuera_de_rango' => (bool) $resultado->fuera_de_rango,
+                    'user_id' => $resultado->user_id, // Guardamos el ID crudo
+                ];
+            }
+
+            // Lógica de Fallback (Pendientes)
+            $referencia = 'N/A';
+            $unidades = '';
+            $reactivo = ($prueba instanceof \App\Models\Prueba)
+                ? $prueba->reactivosActivos->first()
+                : (isset($prueba->reactivo) ? (object) $prueba->reactivo : null);
+
+            if ($reactivo && isset($reactivo->valores_referencia)) {
+                $unidades = is_array($reactivo->valores_referencia)
+                    ? ($reactivo->valores_referencia[0]['unidades'] ?? '')
+                    : ($reactivo->valores_referencia->first()->unidades ?? '');
+            }
+
+            return [
+                'nombre' => $prueba->nombre,
+                'resultado' => 'Pendiente',
+                'referencia' => $referencia,
+                'unidades' => $unidades,
+                'fecha_resultado' => $orden->fecha->format('d/m/Y'),
+                'es_fuera_de_rango' => false,
+                'user_id' => null,
+            ];
+        };
+
+        // 4. Procesamiento Inicial (Contenido Maestro)
+        $detallesAgrupados = $orden->detalleOrden->whereNotNull('examen_id')->groupBy('examen.tipoExamen.nombre');
+        $contenido_maestro = [];
+
+        foreach ($detallesAgrupados as $tipoExamenNombre => $detalles) {
+            $examenes_data = [];
+            foreach ($detalles as $detalle) {
+                if ($detalle->examen->es_externo) {
+                    $resultadosExternos = $orden->resultados
+                        ->where('detalle_orden_id', $detalle->id)
+                        ->where('es_externo', true);
+
+                    $dataUnitarias = $resultadosExternos->map(fn($res) => [
+                        'nombre' => $res->prueba_nombre_snapshot ?? 'Prueba Externa',
+                        'resultado' => $res->resultado,
+                        'referencia' => $res->valor_referencia_snapshot ?? 'N/A',
+                        'unidades' => $res->unidades_snapshot ?? '',
+                        'fecha_resultado' => $res->updated_at->format('d/m/Y'),
+                        'es_fuera_de_rango' => false,
+                        'user_id' => $res->user_id,
+                    ])->all();
+
+                    $examenes_data[] = [
+                        'nombre' => $detalle->examen->nombre,
+                        'pruebas_unitarias' => $dataUnitarias,
+                        'matrices' => [],
+                    ];
+                } else {
+                    $todasLasPruebas = !empty($detalle->pruebas_snapshot)
+                        ? collect($detalle->pruebas_snapshot)->map(fn($item) => json_decode(json_encode($item)))
+                        : $detalle->examen->pruebas->where('es_externo', false);
+
+                    $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
+                    $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
+
+                    $dataUnitarias = $pruebasUnitarias->map(fn($p) => $procesarPrueba($p, $orden, $detalle->id))->all();
+
+                    $dataMatrices = $pruebasConjuntas->map(function ($pruebasDelConjunto) use ($procesarPrueba, $orden, $detalle) {
+                        $f = []; $c = []; $m = [];
+                        foreach ($pruebasDelConjunto as $p) {
+                            $partes = explode(', ', $p->nombre);
+                            if (count($partes) >= 2) {
+                                [$nf, $nc] = $partes;
+                                $f[] = $nf; $c[] = $nc;
+                                $m[$nf][$nc] = $procesarPrueba($p, $orden, $detalle->id);
                             }
-
-                            // FALLBACK: Si no hay resultado (raro en finalizado), intentamos calcular referencia en vivo
-                            $referencia = 'N/A';
-                            $unidades = '';
-
-                            // Lógica para obtener reactivo (Soporta Objeto JSON o Modelo Eloquent)
-                            $reactivo = null;
-                            if ($prueba instanceof \App\Models\Prueba) {
-                                // Usamos el accessor mágico o la relación cargada
-                                $reactivo = $prueba->reactivosActivos->first();
-                            } elseif (isset($prueba->reactivo)) {
-                                // Si viene del snapshot JSON
-                                $reactivo = (object) $prueba->reactivo;
-                            }
-
-                            if ($reactivo && isset($reactivo->valores_referencia)) {
-                                // Aquí podrías recalcular la referencia si fuera estrictamente necesario
-                                // Pero para un reporte final, normalmente se muestra vacío si no hay resultado.
-                                $unidades = is_array($reactivo->valores_referencia)
-                                    ? ($reactivo->valores_referencia[0]['unidades'] ?? '')
-                                    : ($reactivo->valores_referencia->first()->unidades ?? '');
-                            }
-
-                            return [
-                                'nombre' => $prueba->nombre,
-                                'resultado' => 'Pendiente', // O vacío
-                                'referencia' => $referencia,
-                                'unidades' => $unidades,
-                                'fecha_resultado' => $orden->fecha->format('d/m/Y'),
-                                'es_fuera_de_rango' => false,
-                            ];
-                        };
-
-                        // 3. Agrupar por tipo de examen
-                        $detallesAgrupados = $orden->detalleOrden
-                            ->whereNotNull('examen_id')
-                            ->groupBy('examen.tipoExamen.nombre');
-
-                        $datos_agrupados = [];
-
-                        foreach ($detallesAgrupados as $tipoExamenNombre => $detalles) {
-                            $examenes_data = [];
-
-                            foreach ($detalles as $detalle) {
-                                // CASO A: EXAMEN EXTERNO
-                                if ($detalle->examen->es_externo) {
-                                    $resultadosExternos = $orden->resultados
-                                        ->where('detalle_orden_id', $detalle->id)
-                                        ->where('es_externo', true);
-
-                                    $dataUnitarias = $resultadosExternos->map(function ($res) {
-                                        return [
-                                            'nombre' => $res->prueba_nombre_snapshot ?? 'Prueba Externa',
-                                            'resultado' => $res->resultado,
-                                            'referencia' => $res->valor_referencia_snapshot ?? 'N/A',
-                                            'unidades' => $res->unidades_snapshot ?? '',
-                                            'fecha_resultado' => $res->updated_at->format('d/m/Y'),
-                                            'es_fuera_de_rango' => false,
-                                        ];
-                                    })->all();
-
-                                    $examenes_data[] = [
-                                        'nombre' => $detalle->examen->nombre,
-                                        'codigo' => $detalle->examen->id,
-                                        'pruebas_unitarias' => $dataUnitarias,
-                                        'matrices' => [],
-                                    ];
-                                }
-                                // CASO B: EXAMEN INTERNO
-                                else {
-                                    // LÓGICA HÍBRIDA (SNAPSHOT vs BD) para determinar qué pruebas mostrar
-                                    if (!empty($detalle->pruebas_snapshot)) {
-                                        // Usamos el snapshot para saber qué pruebas tenía la orden originalmente
-                                        $todasLasPruebas = collect($detalle->pruebas_snapshot)->map(fn($item) => json_decode(json_encode($item)));
-                                    } else {
-                                        // Fallback a BD viva
-                                        $todasLasPruebas = $detalle->examen->pruebas->where('es_externo', false);
-                                    }
-
-                                    $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
-                                    $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
-
-                                    // Procesar Unitarias
-                                    $dataUnitarias = $pruebasUnitarias->map(function ($prueba) use ($procesarPrueba, $orden, $detalle) {
-                                        return $procesarPrueba($prueba, $orden, $detalle->id);
-                                    })->all();
-
-                                    // Procesar Matrices
-                                    $dataMatrices = $pruebasConjuntas->map(function ($pruebasDelConjunto) use ($procesarPrueba, $orden, $detalle) {
-                                        $filas = [];
-                                        $columnas = [];
-                                        $dataMatrix = [];
-                                        foreach ($pruebasDelConjunto as $prueba) {
-                                            $partes = explode(', ', $prueba->nombre);
-                                            if (count($partes) >= 2) {
-                                                [$nombreFila, $nombreColumna] = $partes;
-                                                $filas[] = $nombreFila;
-                                                $columnas[] = $nombreColumna;
-                                                $dataMatrix[$nombreFila][$nombreColumna] = $procesarPrueba($prueba, $orden, $detalle->id);
-                                            }
-                                        }
-                                        return [
-                                            'filas' => array_values(array_unique($filas)),
-                                            'columnas' => array_values(array_unique($columnas)),
-                                            'data' => $dataMatrix,
-                                        ];
-                                    })->all();
-
-                                    $examenes_data[] = [
-                                        'nombre' => $detalle->nombre_examen, // Usar nombre del detalle (snapshot)
-                                        'codigo' => $detalle->examen->id,
-                                        'pruebas_unitarias' => $dataUnitarias,
-                                        'matrices' => $dataMatrices,
-                                    ];
-                                }
-                            }
-                            $datos_agrupados[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
                         }
+                        return ['filas' => array_values(array_unique($f)), 'columnas' => array_values(array_unique($c)), 'data' => $m];
+                    })->all();
 
-                        // 4. Datos de Firma y Sello
-                        $usuarioQueFirma = auth()->user();
-                        $rutaFirma = $usuarioQueFirma?->firma_path ?? null;
-                        $rutaSello = $usuarioQueFirma?->sello_path ?? null;
+                    $examenes_data[] = [
+                        'nombre' => $detalle->nombre_examen,
+                        'pruebas_unitarias' => $dataUnitarias,
+                        'matrices' => $dataMatrices,
+                    ];
+                }
+            }
+            $contenido_maestro[$tipoExamenNombre ?: 'Exámenes Generales'] = $examenes_data;
+        }
 
-                        // 5. Generar PDF
-                        
-                        // --- NUEVO: Conversión SOLO DEL LOGO a Base64 ---
-                       $imgToBase64 = function($path) {
-                            if ($path && file_exists($path)) {
-                                $type = pathinfo($path, PATHINFO_EXTENSION);
-                                $data = file_get_contents($path);
-                                return 'data:image/' . $type . ';base64,' . base64_encode($data);
+        // 5. RE-AGRUPACIÓN POR USUARIO (Manual, sin relaciones)
+        
+        // A. Obtenemos los IDs únicos de la columna user_id
+        $userIdsParticipantes = $orden->resultados->pluck('user_id')->filter()->unique();
+        
+        // B. Cargamos manualmente los modelos User
+        $usuariosCargados = \App\Models\User::whereIn('id', $userIdsParticipantes)->get();
+
+        // Fallback si no hay usuarios (o resultados vacíos), usamos el auth actual para que no truene
+        if ($usuariosCargados->isEmpty() && $orden->resultados->count() > 0) {
+            $usuariosCargados = collect([auth()->user()]);
+        }
+
+        $grupos_finales = [];
+
+        foreach ($usuariosCargados as $usuario) {
+            $uId = $usuario->id;
+            $datos_usuario = []; 
+
+            foreach ($contenido_maestro as $tipo => $listaExamenes) {
+                $examenesFiltrados = [];
+                
+                foreach ($listaExamenes as $ex) {
+                    // Filtrar Pruebas Unitarias por user_id crudo
+                    $unitariasUser = array_filter($ex['pruebas_unitarias'], fn($p) => ($p['user_id'] ?? null) == $uId);
+                    
+                    // Filtrar Matrices
+                    $matricesUser = [];
+                    foreach ($ex['matrices'] as $matriz) {
+                        $tieneData = false;
+                        foreach($matriz['data'] as $row) {
+                            foreach($row as $cell) {
+                                if (($cell['user_id'] ?? null) == $uId) {
+                                    $tieneData = true; break 2;
                                 }
-                            return null;
-                        };
-                        
-                        $pathLogo = storage_path('app/public/logo.png');
-                        $pathSelloRegistro = storage_path('app/public/sello.png');
-                        
-                        $pathFirmaUsuario = $rutaFirma ? storage_path('app/public/' . $rutaFirma) : null;
-                        $pathSelloUsuario = $rutaSello ? storage_path('app/public/' . $rutaSello) : null;
-                        // -----------------------------------------------
-                        $pdf_data = [
-                        'orden' => $orden,
-                        'datos_agrupados' => $datos_agrupados,
-                        'nombre_licenciado' => $usuarioQueFirma?->name ?? 'Licenciado',
-                        
-                        // --- IMÁGENES OPTIMIZADAS (Base64) ---
-                        'logo_b64'           => $imgToBase64($pathLogo),
-                        'sello_registro_b64' => $imgToBase64($pathSelloRegistro),
-                        'firma_usuario_b64'  => $imgToBase64($pathFirmaUsuario),
-                        'sello_usuario_b64'  => $imgToBase64($pathSelloUsuario),
+                            }
+                        }
+                        if ($tieneData) {
+                            $matricesUser[] = $matriz;
+                        }
+                    }
+
+                    if (!empty($unitariasUser) || !empty($matricesUser)) {
+                        $examenesFiltrados[] = [
+                            'nombre' => $ex['nombre'],
+                            'pruebas_unitarias' => $unitariasUser,
+                            'matrices' => $matricesUser
                         ];
+                    }
+                }
 
-                     $pdf = \Barryvdh\DomPDF\Facade\Pdf::setOptions([
-    'isRemoteEnabled' => false,
-    'isHtml5ParserEnabled' => true,
-    'dpi' => 96,
-    'defaultFont' => 'sans-serif',
-    'chroot' => base_path(), // <--- AGREGA ESTA LÍNEA (Define la raíz del proyecto como segura)
-])->loadView('pdf.reporte_resultados', $pdf_data);
-                        // Definir nombre y ruta del archivo
-                        $fileName = "reporte_orden_{$record->id}.pdf";
-                        $filePath = "reportes/{$fileName}"; // Se guardará en storage/app/public/reportes
-            
-                        // Guardar (sobrescribe si existe)
-                        // Usamos 'public' disk para que sea accesible si quieres dar un link público
-                        Storage::disk('public')->put($filePath, $pdf->output());
+                if (!empty($examenesFiltrados)) {
+                    $datos_usuario[$tipo] = $examenesFiltrados;
+                }
+            }
 
-                        // Notificar al usuario
-                        \Filament\Notifications\Notification::make()
-                            ->title('Reporte generado y guardado')
-                            ->success()
-                            ->send();
+            if (!empty($datos_usuario)) {
+                $pathFirma = $usuario->firma_path ? storage_path('app/public/' . $usuario->firma_path) : null;
+                $pathSello = $usuario->sello_path ? storage_path('app/public/' . $usuario->sello_path) : null;
 
-                        // Descargar inmediatamente
-                        return response()->streamDownload(
-                            fn() => print ($pdf->output()),
-                            $fileName
-                        );
+                $grupos_finales[] = [
+                    'laboratorista' => $usuario->name,
+                    'firma_b64' => $imgToBase64($pathFirma),
+                    'sello_b64' => $imgToBase64($pathSello),
+                    'datos' => $datos_usuario
+                ];
+            }
+        }
+
+        // 6. Preparar PDF
+        $pathLogo = storage_path('app/public/logo.png');
+        $pathSelloRegistro = storage_path('app/public/sello.png');
+
+        $pdf_data = [
+            'orden' => $orden,
+            'grupos_por_usuario' => $grupos_finales,
+            'logo_b64' => $imgToBase64($pathLogo),
+            'sello_registro_b64' => $imgToBase64($pathSelloRegistro),
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::setOptions([
+            'isRemoteEnabled' => false,
+            'isHtml5ParserEnabled' => true,
+            'dpi' => 96,
+            'defaultFont' => 'sans-serif',
+            'chroot' => base_path(),
+        ])->loadView('pdf.reporte_resultados', $pdf_data);
+
+        // Nombre y Descarga
+        $expediente = $record->cliente->NumeroExp ?? 'SinExp';
+        $nombreCliente = \Illuminate\Support\Str::slug($record->cliente->nombre . ' ' . $record->cliente->apellido);
+        $fileName = "{$expediente}-{$nombreCliente}-ORDEN{$record->id}.pdf";
+        
+        \Illuminate\Support\Facades\Storage::disk('public')->put("reportes/{$fileName}", $pdf->output());
+        \Filament\Notifications\Notification::make()->title('Reporte generado')->success()->send();
+
+        return response()->streamDownload(fn() => print($pdf->output()), $fileName);
                     }),
                 Tables\Actions\Action::make('cancelarOrden')
                     ->tooltip('Cancelar Orden')
@@ -913,21 +926,36 @@ class OrdenResource extends Resource
                         Notification::make()->title('Orden Cancelada')->danger()->send();
                     }),
 
-                Tables\Actions\Action::make('descargarReporte')
-                    ->tooltip('Descargar Reporte Guardado')
-                    ->icon('heroicon-o-arrow-down-tray') // Icono de descarga
-                    ->iconButton()
-                    ->color('success') // Verde para diferenciar
-                    // Solo visible si el archivo EXISTE en el disco
-                    ->visible(function (Orden $record) {
-                        $filePath = "reportes/reporte_orden_{$record->id}.pdf";
-                        return Storage::disk('public')->exists($filePath) && $record->estado === 'finalizado';
-                    })
-                    ->action(function (Orden $record) {
-                        $filePath = "reportes/reporte_orden_{$record->id}.pdf";
-                        $fullPath = storage_path("app/public/{$filePath}");
-                        return response()->download($fullPath);
-                    }),
+               Tables\Actions\Action::make('descargarReporte')
+                ->tooltip('Descargar Reporte Guardado')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->iconButton()
+                ->color('success')
+                ->visible(function (Orden $record) {
+                    // 1. Reconstruimos el nombre EXACTO para verificar si existe
+                    $expediente = $record->cliente->NumeroExp ?? 'SinExp';
+                    $nombreCliente = \Illuminate\Support\Str::slug($record->cliente->nombre . ' ' . $record->cliente->apellido);
+                    $ordenId = $record->id;
+            
+                    $fileName = "{$expediente}-{$nombreCliente}-ORDEN{$ordenId}.pdf";
+                    $filePath = "reportes/{$fileName}";
+            
+                    // Verificamos existencia y estado
+                    return Storage::disk('public')->exists($filePath) && $record->estado === 'finalizado';
+                })
+                ->action(function (Orden $record) {
+                    // 1. Reconstruimos el nombre nuevamente para proceder a la descarga
+                    $expediente = $record->cliente->NumeroExp ?? 'SinExp';
+                    $nombreCliente = \Illuminate\Support\Str::slug($record->cliente->nombre . ' ' . $record->cliente->apellido);
+                    $ordenId = $record->id;
+            
+                    $fileName = "{$expediente}-{$nombreCliente}-ORDEN{$ordenId}.pdf";
+                    $filePath = "reportes/{$fileName}";
+                    $fullPath = storage_path("app/public/{$filePath}");
+            
+                    // 2. Descargar
+                    return response()->download($fullPath);
+                }),
 
                 Tables\Actions\Action::make('restaurarOrden')
                     ->label('Restaurar')
@@ -1102,7 +1130,7 @@ public static function getDatosPruebaParaPdf($prueba, $orden, $detalleId): array
 
     public static function getRecordUrlUsing(): Closure
     {
-        return fn($record) => null; // 👈 esto desactiva el enlace de clic en la tarjeta
+        return fn($record) => null; // esto desactiva el enlace de clic en la tarjeta
     }
 
 
