@@ -52,7 +52,7 @@ class ZebraLabelService
 
 // --- SECCION 1: ENCABEZADO (FONDO NEGRO OPCIONAL O TEXTO CENTRADO) ---
 // Marco Exterior
-^FO2,2^GB402,199,2^FS
+
 
 // Nombre del Laboratorio Centrado (^FB = Field Block para centrar)
 ^FO0,15^FB406,1,0,C,0^A0N,26,26^FDLABORATORIO MERINO^FS
@@ -67,7 +67,7 @@ class ZebraLabelService
 
 // Recipiente y Fecha (En la misma línea para ahorrar espacio)
 ^FO15,80^A0N,20,20^FDRecip.: {$recipiente}^FS
-^FO240,80^A0N,20,20^FD{$fecha}^FS
+^FO270,80^A0N,20,20^FD{$fecha}^FS
 
 // Línea separadora 2
 ^FO10,105^GB386,1,1^FS
@@ -138,7 +138,7 @@ class ZebraLabelService
     $lineHeight = 25;
 
     foreach ($bloque->values() as $index => $examen) {
-        $examenTexto = strtoupper(substr($examen, 0, 16));
+        $examenTexto = strtoupper(substr($examen, 0, 20));
         $col = $index % 2; // 0 = primera columna, 1 = segunda
         $row = intdiv($index, 2); // fila dentro del bloque
         $posX = $col === 0 ? 30 : 200;
@@ -156,14 +156,14 @@ $zpl .= "^XA
 ^ci27
 
 // 1. ENCABEZADO
-^FO2,2^GB402,199,2^FS
+
 ^FO0,15^FB406,1,0,C,0^A0N,24,24^FDLABORATORIO MERINO^FS
 ^FO10,42^GB386,1,1^FS
 
 // 2. DATOS PACIENTE Y RECIPIENTE
 ^FO15,50^A0N,20,20^FDPaciente: {$paciente}^FS
 ^FO15,75^A0N,20,20^FDRecip.: {$recipiente}^FS
-^FO220,75^A0N,20,20^FD{$fecha}^FS
+^FO270,75^A0N,20,20^FD{$fecha}^FS
 
 // 3. SEPARADOR Y CUERPO (LISTA)
 ^FO10,105^GB386,1,1^FS
@@ -189,14 +189,14 @@ $zpl .= "^XA
 ^ci27
 
 // 1. ENCABEZADO
-^FO2,2^GB402,199,2^FS
+
 ^FO0,15^FB406,1,0,C,0^A0N,24,24^FDLABORATORIO MERINO^FS
 ^FO10,42^GB386,1,1^FS
 
 // 2. DATOS PACIENTE
 ^FO15,50^A0N,20,20^FDPaciente: {$paciente}^FS
 ^FO15,75^A0N,20,20^FDRecip.: {$recipiente}^FS
-^FO220,75^A0N,20,20^FD{$fecha}^FS
+^FO270,75^A0N,20,20^FD{$fecha}^FS
 
 // 3. SEPARADOR Y EXAMEN DESTACADO
 ^FO10,105^GB386,1,1^FS
