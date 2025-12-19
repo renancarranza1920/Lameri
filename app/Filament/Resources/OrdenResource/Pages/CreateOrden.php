@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Number;
 use Illuminate\Support\HtmlString;
+use Filament\Notifications\Actions\Action as NotificationAction;
 
 class CreateOrden extends CreateRecord
 {
@@ -181,115 +182,125 @@ class CreateOrden extends CreateRecord
 
     // --- MANEJO DE REGISTRO Y GUARDADO ---
 
-  protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
-    {
-        return DB::transaction(function () use ($data) {
-            $orden = static::getModel()::create($data);
-            $this->record = $orden;
+protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
+{
+    return DB::transaction(function () use ($data) {
+        $orden = static::getModel()::create($data);
+        $this->record = $orden;
 
-            if ($this->codigoAplicado) {
-                $this->codigoAplicado->registrarUso();
-            }
+        if ($this->codigoAplicado) {
+            $this->codigoAplicado->registrarUso();
+        }
 
-            session()->flash('from_create_orden', true);
-            $state = $this->form->getState();
-            $perfiles = $state['perfiles_seleccionados'] ?? [];
-            $examenes = $state['examenes_seleccionados'] ?? [];
-            
-            // --- FUNCIÓN HELPER PARA GENERAR EL SNAPSHOT PROFUNDO ---
-             // --- FUNCIÓN HELPER PARA GENERAR EL SNAPSHOT PROFUNDO ---
-            $generarSnapshot = function($examenId) {
-                
-                // CAMBIO AQUÍ: Cambiamos 'reactivoEnUso' por 'reactivosActivos'
-                $examenModel = Examen::with([
-                    'pruebas.reactivosActivos.valoresReferencia' 
-                ])->find($examenId);
+        session()->flash('from_create_orden', true);
+        $state = $this->form->getState();
+        $perfiles = $state['perfiles_seleccionados'] ?? [];
+        $examenes = $state['examenes_seleccionados'] ?? [];
+        
+        // --- VARIABLE PARA CONTROLAR DUPLICADOS ---
+        $examenesProcesados = [];
 
-                if (!$examenModel) return null;
+        // --- FUNCIÓN HELPER PARA GENERAR EL SNAPSHOT PROFUNDO ---
+        $generarSnapshot = function($examenId) {
+            $examenModel = Examen::with([
+                'pruebas.reactivosActivos.valoresReferencia' 
+            ])->find($examenId);
 
-                return $examenModel->pruebas->where('estado', 'activo')->map(function($prueba) {
-                    $data = [
-                        'id' => $prueba->id,
-                        'nombre' => $prueba->nombre,
-                        'tipo_conjunto' => $prueba->tipo_conjunto,
-                        'tipo_prueba_id' => $prueba->tipo_prueba_id,
-                        'reactivo' => null, 
+            if (!$examenModel) return null;
+
+            return $examenModel->pruebas->where('estado', 'activo')->map(function($prueba) {
+                $data = [
+                    'id' => $prueba->id,
+                    'nombre' => $prueba->nombre,
+                    'tipo_conjunto' => $prueba->tipo_conjunto,
+                    'tipo_prueba_id' => $prueba->tipo_prueba_id,
+                    'reactivo' => null, 
+                ];
+
+                if ($prueba->reactivoEnUso) {
+                    $valoresRef = $prueba->reactivoEnUso->valoresReferencia
+                        ->filter(function($val) use ($prueba) {
+                            return $val->prueba_id === $prueba->id || is_null($val->prueba_id);
+                        })
+                        ->map(function($val) {
+                            return [
+                                'grupo_etario_id' => $val->grupo_etario_id,
+                                'genero' => $val->genero,
+                                'valor_min' => $val->valor_min,
+                                'valor_max' => $val->valor_max,
+                                'operador' => $val->operador,
+                                'unidades' => $val->unidades,
+                                'descriptivo' => $val->descriptivo,
+                            ];
+                        })->values()->toArray();
+
+                    $data['reactivo'] = [
+                        'nombre' => $prueba->reactivoEnUso->nombre,
+                        'lote' => $prueba->reactivoEnUso->lote,
+                        'valores_referencia' => $valoresRef
                     ];
-
-                    // AQUÍ NO CAMBIAS NADA.
-                    // Gracias al "Atajo Mágico" (Accessor) del Paso 1,
-                    // puedes seguir usando ->reactivoEnUso aquí sin problemas.
-                    if ($prueba->reactivoEnUso) {
-                        
-                        $valoresRef = $prueba->reactivoEnUso->valoresReferencia
-                            ->filter(function($val) use ($prueba) {
-                                return $val->prueba_id === $prueba->id || is_null($val->prueba_id);
-                            })
-                            ->map(function($val) {
-                                return [
-                                    'grupo_etario_id' => $val->grupo_etario_id,
-                                    'genero' => $val->genero,
-                                    'valor_min' => $val->valor_min,
-                                    'valor_max' => $val->valor_max,
-                                    'operador' => $val->operador,
-                                    'unidades' => $val->unidades,
-                                    'descriptivo' => $val->descriptivo,
-                                ];
-                            })->values()->toArray();
-
-                        $data['reactivo'] = [
-                            'nombre' => $prueba->reactivoEnUso->nombre,
-                            'lote' => $prueba->reactivoEnUso->lote,
-                            'valores_referencia' => $valoresRef // <--- AQUÍ ESTÁ EL ORO
-                        ];
-                    }
-
-                    return $data;
-                })->toArray();
-            };
-            // -------------------------------------------------------
-            // 1. PROCESAR PERFILES
-            foreach ($perfiles as $perfil) {
-                $examenesPerfil = [];
-                $precioPerfil = $perfil['precio_hidden'];
-                
-                $perfilModel = Perfil::find($perfil['perfil_id']);
-                $nombrePerfil = $perfilModel?->nombre ?? 'Perfil desconocido';
-
-                if ($perfilModel) {
-                    $perfilModel->examenes()
-                        ->where('estado', 1)
-                        ->get()
-                        ->each(function ($examen) use ($orden, $generarSnapshot, $nombrePerfil, $precioPerfil) { // pasar vars
-                            
-                            $orden->detalleOrden()->create([
-                                'examen_id' => $examen->id,
-                                'perfil_id' => $examen->pivot->perfil_id,
-                                'nombre_perfil' => $nombrePerfil,
-                                'precio_perfil' => $precioPerfil,
-                                'nombre_examen' => $examen->nombre,
-                                'precio_examen' => $examen->precio,
-                                'status' => $examen->recipiente,
-                                'pruebas_snapshot' => $generarSnapshot($examen->id), // <--- USO DEL HELPER
-                            ]);
-                        });
                 }
+                return $data;
+            })->toArray();
+        };
+
+        // 1. PROCESAR PERFILES
+        foreach ($perfiles as $perfil) {
+            $perfilModel = Perfil::find($perfil['perfil_id']);
+            $nombrePerfil = $perfilModel?->nombre ?? 'Perfil desconocido';
+            $precioPerfil = $perfil['precio_hidden'];
+
+            if ($perfilModel) {
+                $perfilModel->examenes()
+                    ->where('estado', 1)
+                    ->get()
+                    ->each(function ($examen) use ($orden, $generarSnapshot, $nombrePerfil, $precioPerfil, &$examenesProcesados) {
+                        
+                        // VALIDACIÓN: Si el examen ya se procesó, no lo creamos de nuevo
+                        if (in_array($examen->id, $examenesProcesados)) {
+                            return; 
+                        }
+
+                        $orden->detalleOrden()->create([
+                            'examen_id' => $examen->id,
+                            'perfil_id' => $examen->pivot->perfil_id,
+                            'nombre_perfil' => $nombrePerfil,
+                            'precio_perfil' => $precioPerfil,
+                            'nombre_examen' => $examen->nombre,
+                            'precio_examen' => $examen->precio,
+                            'status' => $examen->recipiente,
+                            'pruebas_snapshot' => $generarSnapshot($examen->id),
+                        ]);
+
+                        // Marcamos como procesado
+                        $examenesProcesados[] = $examen->id;
+                    });
+            }
+        }
+
+        // 2. PROCESAR EXÁMENES INDIVIDUALES
+        foreach ($examenes as $examen) {
+            $examenId = $examen['examen_id'];
+
+            // VALIDACIÓN: Si el examen ya vino en un perfil, lo ignoramos aquí
+            if (in_array($examenId, $examenesProcesados)) {
+                continue;
             }
 
-            // 2. PROCESAR EXÁMENES INDIVIDUALES
-            foreach ($examenes as $examen) {
-                $orden->detalleOrden()->create([
-                    'examen_id' => $examen['examen_id'],
-                    'nombre_examen' => $examen['nombre_examen'],
-                    'precio_examen' => $examen['precio_hidden'],
-                    'status' => $examen['recipiente'] ?? null,
-                    'pruebas_snapshot' => $generarSnapshot($examen['examen_id']), // <--- USO DEL HELPER
-                ]);
-            }
+            $orden->detalleOrden()->create([
+                'examen_id' => $examenId,
+                'nombre_examen' => $examen['nombre_examen'],
+                'precio_examen' => $examen['precio_hidden'],
+                'status' => $examen['recipiente'] ?? null,
+                'pruebas_snapshot' => $generarSnapshot($examenId),
+            ]);
 
-            return $orden;
-        });
-    }
+            $examenesProcesados[] = $examenId;
+        }
+
+        return $orden;
+    });
+}
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
@@ -322,10 +333,31 @@ class CreateOrden extends CreateRecord
         }
     }
 
+// 1. Modificamos o eliminamos el redireccionamiento automático
     protected function getRedirectUrl(): string
     {
+        // Al terminar el Wizard, lo mandamos al index o al Kanban 
+        // pero la notificación le dará la opción de imprimir.
         return DetalleOrdenKanban::getUrl(['ordenId' => $this->record->id]);
     }
+
+    // 2. Creamos la notificación personalizada con el botón de impresión
+    protected function getCreatedNotification(): ?Notification
+{
+    return Notification::make()
+        ->success()
+        ->title('¡Orden Registrada!')
+        ->body('Presione para imprimir la boleta (Copia Cliente/Laboratorio)')
+        ->persistent()
+        ->actions([
+            \Filament\Notifications\Actions\Action::make('imprimir')
+                ->label('Imprimir Boleta')
+                ->icon('heroicon-o-printer')
+                ->color('success')
+                ->url(route('orden.boleta.pdf', ['orden' => $this->record->id]))
+                ->openUrlInNewTab(),
+        ]);
+}
 
     public function generatePdfPreview(): StreamedResponse
     {
