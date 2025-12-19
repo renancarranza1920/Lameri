@@ -6,7 +6,8 @@ use App\Http\Controllers\ZplController;
 use App\Models\DetalleOrden;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
-
+use App\Models\Orden;
+use Barryvdh\DomPDF\Facade\Pdf;
 /*
 Route::get('/', function () {
     return view('welcome');
@@ -27,6 +28,18 @@ Route::middleware('auth')->group(function () {
     // Ruta para TODAS (Header action)
     Route::get('/orden/zpl-all/{ordenId}', [ZplController::class, 'all'])->name('zpl.all');
 });
+Route::get('/orden/{orden}/boleta', function (App\Models\Orden $orden) {
+    $data = [
+        'orden' => $orden->load(['cliente', 'detalleOrden']),
+        'usuario' => auth()->user()->name,
+    ];
+
+    $pdf = Pdf::loadView('pdf.boleta-simple', $data)
+        ->setPaper('letter', 'portrait');
+
+    return $pdf->stream("boleta-{$orden->id}.pdf");
+})->name('orden.boleta.pdf')->middleware('auth');
+
 
 Route::get('/sign-message', function() {
     $message = request('request');
