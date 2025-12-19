@@ -100,85 +100,93 @@ public function isOrderComplete(): bool
     return $totalRequeridas === $totalCompletadas;
 }
 
-    protected function prepareInitialData(): array
-    {
-        // Cargamos la relación correcta 'reactivosActivos' para evitar errores SQL
-        $detalles = $this->record->detalleOrden()
-            ->with(['examen.pruebas.reactivosActivos.valoresReferencia.grupoEtario']) 
-            ->get();
+protected function prepareInitialData(): array
+{
+    // Cargamos relaciones incluyendo tipoPrueba
+    $detalles = $this->record->detalleOrden()
+        ->with([
+            'examen.tipoExamen',
+            'examen.pruebas.tipoPrueba', 
+            'examen.pruebas.reactivosActivos.valoresReferencia.grupoEtario'
+        ]) 
+        ->get();
+        
+    $preparedData = [];
+
+    foreach ($detalles as $detalle) {
+        if (!$detalle->examen) continue;
+
+        // --- LÓGICA HÍBRIDA (SNAPSHOT VS BD) ---
+        $todasLasPruebas = !empty($detalle->pruebas_snapshot) 
+            ? collect($detalle->pruebas_snapshot)->map(fn($item) => json_decode(json_encode($item)))
+            : collect();
+
+        // Clasificación
+        $pruebasUnitariasRaw = $todasLasPruebas->whereNull('tipo_conjunto');
+        $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
+
+        // Mapeo de Unitarias incluyendo el nombre del Tipo de Prueba
+        $dataUnitarias = $pruebasUnitariasRaw->map(function($prueba) use ($detalle) {
+            $data = $this->getPruebaData($prueba, $detalle->id);
             
-        $preparedData = [];
-
-        foreach ($detalles as $detalle) {
-
-            if (!$detalle->examen) continue;
-
-            // --- LÓGICA HÍBRIDA (SNAPSHOT VS BD) ---
-            if (!empty($detalle->pruebas_snapshot)) {
-                $todasLasPruebas = collect($detalle->pruebas_snapshot)->map(function ($item) {
-                    return json_decode(json_encode($item)); 
-                });
-            } else {
-                // Si no hay snapshot, no precargamos nada
-                $todasLasPruebas = collect();
-            }
-
-            // Clasificación
-            $pruebasUnitarias = $todasLasPruebas->whereNull('tipo_conjunto');
-            $pruebasConjuntas = $todasLasPruebas->whereNotNull('tipo_conjunto')->groupBy('tipo_conjunto');
-
-            // Mapeo (Nota: quitamos el tipo 'Prueba $prueba' para que soporte stdClass del snapshot)
-            $dataUnitarias = $pruebasUnitarias->map(fn($prueba) => $this->getPruebaData($prueba, $detalle->id))->values()->all();
+            // Buscamos el nombre del tipo de prueba en la relación cargada
+            $pruebaOriginal = $detalle->examen->pruebas->where('id', $prueba->id)->first();
+            $data['tipo_prueba_nombre'] = $pruebaOriginal?->tipoPrueba?->nombre ?? 'General';
             
-            $dataMatrices = $pruebasConjuntas->map(function ($pruebasDelConjunto) use ($detalle) {
-                $filas = [];
-                $columnas = [];
-                $dataMatrix = [];
-                foreach ($pruebasDelConjunto as $prueba) {
-                    $partes = explode(', ', $prueba->nombre);
-                    if (count($partes) >= 2) {
-                        [$nombreFila, $nombreColumna] = $partes;
-                        $filas[] = $nombreFila;
-                        $columnas[] = $nombreColumna;
-                        $dataMatrix[$nombreFila][$nombreColumna] = $this->getPruebaData($prueba, $detalle->id);
-                    }
+            return $data;
+        })->values()->all();
+        
+        // Matrices
+        $dataMatrices = $pruebasConjuntas->map(function ($pruebasDelConjunto) use ($detalle) {
+            $filas = []; $columnas = []; $dataMatrix = [];
+            foreach ($pruebasDelConjunto as $prueba) {
+                $partes = explode(', ', $prueba->nombre);
+                if (count($partes) >= 2) {
+                    [$nombreFila, $nombreColumna] = $partes;
+                    $filas[] = $nombreFila; $columnas[] = $nombreColumna;
+                    $dataMatrix[$nombreFila][$nombreColumna] = $this->getPruebaData($prueba, $detalle->id);
                 }
-                return [
-                    'filas' => array_values(array_unique($filas)),
-                    'columnas' => array_values(array_unique($columnas)),
-                    'data' => $dataMatrix
-                ];
-            })->all();
-
-            // Externos
-            $resultadosExternosDB = $this->record->resultados()
-                ->where('detalle_orden_id', $detalle->id)
-                ->where('es_externo', true)
-                ->get();
-
-            $dataExternos = [];
-            foreach ($resultadosExternosDB as $resExt) {
-                $dataExternos[] = [
-                    'id' => $resExt->id,
-                    'temp_id' => Str::uuid()->toString(),
-                    'prueba_nombre' => $resExt->prueba_nombre_snapshot,
-                    'resultado' => $resExt->resultado,
-                    'valor_referencia' => $resExt->valor_referencia_snapshot,
-                    'unidades' => $resExt->unidades_snapshot,
-                ];
             }
+            return [
+                'filas' => array_values(array_unique($filas)),
+                'columnas' => array_values(array_unique($columnas)),
+                'data' => $dataMatrix
+            ];
+        })->all();
+       
 
-            $preparedData[$detalle->id] = [
-                'examen_nombre' => $detalle->nombre_examen,
-                'es_referido' => (bool) ($detalle->examen->es_externo ?? false),
-                'pruebas_unitarias' => $dataUnitarias,
-                'matrices' => $dataMatrices,
-                'externos' => $dataExternos,
+
+        // Externos (Mantenemos tu lógica igual)
+        $resultadosExternosDB = $this->record->resultados()
+            ->where('detalle_orden_id', $detalle->id)
+            ->where('es_externo', true)
+            ->get();
+
+        $dataExternos = [];
+        foreach ($resultadosExternosDB as $resExt) {
+            $dataExternos[] = [
+                'id' => $resExt->id,
+                'temp_id' => Str::uuid()->toString(),
+                'prueba_nombre' => $resExt->prueba_nombre_snapshot,
+                'resultado' => $resExt->resultado,
+                'valor_referencia' => $resExt->valor_referencia_snapshot,
+                'unidades' => $resExt->unidades_snapshot,
             ];
         }
 
-        return ['resultados_examenes' => $preparedData];
+        $preparedData[$detalle->id] = [
+            'examen_nombre' => $detalle->nombre_examen,
+            'es_referido' => (bool) ($detalle->examen->es_externo ?? false),
+            'pruebas_unitarias' => $dataUnitarias, // Lista plana para preservar índices
+            'tipo_examen' => $detalle->examen->tipoExamen->nombre ?? 'Otros',
+            'matrices' => $dataMatrices,
+            'externos' => $dataExternos,
+        ];
     }
+ //   dd($preparedData);
+
+    return ['resultados_examenes' => $preparedData];
+}
 
     protected function getPruebaData($prueba, int $detalleId): array
 {
@@ -461,42 +469,65 @@ public function isOrderComplete(): bool
         $this->form->fill($this->prepareInitialData());
     }
 
-    protected function guardarResultado(int $detalleId, array $r): void
-    {
-        if (isset($r['resultado']) && $r['resultado'] !== '' && !is_null($r['resultado'])) {
-            $this->record->resultados()->updateOrCreate(
-                ['detalle_orden_id' => $detalleId, 'prueba_id' => $r['prueba_id']],
-                [
+   protected function guardarResultado(int $detalleId, array $r): void
+{
+    if (isset($r['resultado']) && $r['resultado'] !== '' && !is_null($r['resultado'])) {
+        // Buscar si ya existe un resultado para esta prueba y detalle
+        $resultadoExistente = $this->record->resultados()
+            ->where('detalle_orden_id', $detalleId)
+            ->where('prueba_id', $r['prueba_id'])
+            ->first();
+
+        if ($resultadoExistente) {
+            // Si el resultado ya existe y es diferente, actualizamos solo el user_id
+            if ($resultadoExistente->resultado !== $r['resultado']) {
+                $resultadoExistente->update([
                     'resultado' => $r['resultado'],
-                    'user_id' => auth()->id(),
+                    'user_id' => auth()->id(),  // Solo actualizamos el user_id si el resultado cambia
                     'prueba_nombre_snapshot' => $r['prueba_nombre'],
                     'valor_referencia_snapshot' => $r['valor_referencia'],
                     'unidades_snapshot' => $r['unidades'],
                     'es_externo' => 0
-                ]
-            );
-        }
-    }
-
-    protected function guardarResultadoExterno(int $detalleId, array $ext): void
-    {
-        $dataToSave = [
-            'detalle_orden_id' => $detalleId,
-            'prueba_id' => null,
-            'prueba_nombre_snapshot' => $ext['prueba_nombre'],
-            'resultado' => $ext['resultado'],
-            'user_id' => auth()->id(),
-            'valor_referencia_snapshot' => $ext['valor_referencia'],
-            'unidades_snapshot' => $ext['unidades'],
-            'es_externo' => 1,
-        ];
-
-        if (!empty($ext['id'])) {
-            $this->record->resultados()->where('id', $ext['id'])->update($dataToSave);
+                ]);
+            }
         } else {
-            $this->record->resultados()->create($dataToSave);
+            // Si no existe, creamos un nuevo resultado con el user_id del usuario logueado
+            $this->record->resultados()->create([
+                'detalle_orden_id' => $detalleId,
+                'prueba_id' => $r['prueba_id'],
+                'resultado' => $r['resultado'],
+                'user_id' => auth()->id(),  // Asignamos el user_id actual
+                'prueba_nombre_snapshot' => $r['prueba_nombre'],
+                'valor_referencia_snapshot' => $r['valor_referencia'],
+                'unidades_snapshot' => $r['unidades'],
+                'es_externo' => 0
+            ]);
         }
     }
+}
+
+protected function guardarResultadoExterno(int $detalleId, array $ext): void
+{
+    $dataToSave = [
+        'detalle_orden_id' => $detalleId,
+        'prueba_id' => null,
+        'prueba_nombre_snapshot' => $ext['prueba_nombre'],
+        'resultado' => $ext['resultado'],
+        'user_id' => auth()->id(),  // Asignamos el user_id actual
+        'valor_referencia_snapshot' => $ext['valor_referencia'],
+        'unidades_snapshot' => $ext['unidades'],
+        'es_externo' => 1,
+    ];
+
+    if (!empty($ext['id'])) {
+        // Si el resultado externo ya existe, lo actualizamos
+        $this->record->resultados()->where('id', $ext['id'])->update($dataToSave);
+    } else {
+        // Si no existe, lo creamos como un nuevo resultado
+        $this->record->resultados()->create($dataToSave);
+    }
+}
+
 
     public function deleteResultado($resultadoId): void
     {
