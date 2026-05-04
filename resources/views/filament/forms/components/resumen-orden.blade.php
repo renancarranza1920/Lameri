@@ -151,30 +151,14 @@
                     </div>
                 </div>
             @endif
-
-            <div class="flex justify-end pt-4">
-                <button
-                    type="button"
-                    wire:click="generatePdfPreview"
-                    wire:loading.attr="disabled"
-                    class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all w-full sm:w-auto"
-                >
-                    <svg wire:loading wire:target="generatePdfPreview" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <svg wire:loading.remove wire:target="generatePdfPreview" xmlns="http://www.w3.org/2000/svg" class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Generar Comprobante
-                </button>
-            </div>
-
+            
+            
+           
         </div>
         
         <div class="bg-gray-50 dark:bg-gray-900/30 p-3 text-center border-t border-gray-200 dark:border-gray-700">
             <p class="text-xs text-gray-400 dark:text-gray-500">
-                Este documento es una vista previa y no tiene validez fiscal hasta confirmar la orden.
+                Esta es una vista previa y no tiene validez  hasta confirmar la orden.
             </p>
         </div>
 

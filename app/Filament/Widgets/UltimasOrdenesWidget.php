@@ -12,54 +12,68 @@ use Filament\Tables\Actions\Action;
 
 class UltimasOrdenesWidget extends BaseWidget
 {
-    protected static ?int $sort = 0; // Para que aparezca al final de los widgets
-    protected int | string | array $columnSpan = 'full'; // Ocupa todo el ancho
     protected static ?string $heading = 'Últimas Órdenes Pendientes o en Proceso';
+
+    // 🔢 Orden visual (fila 3 izquierda)
+    protected static ?int $sort = 3;
+
+    // 📐 SOLO una columna (para que no baje el Top 5)
+    protected int | string | array $columnSpan = 1;
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
                 Orden::query()
-                    // Muestra solo órdenes pendientes o en proceso
                     ->whereIn('estado', ['pendiente', 'en proceso'])
-                    ->latest() // Las más recientes primero
-                    ->limit(5) // Limita a las 5 últimas
+                    ->latest()
+                    ->limit(5)
             )
             ->columns([
                 Tables\Columns\TextColumn::make('cliente.nombre')
                     ->label('Cliente')
-                    ->formatStateUsing(fn ($record) => $record->cliente->nombre . ' ' . $record->cliente->apellido)
+                    ->formatStateUsing(
+                        fn (Orden $record) => "{$record->cliente->nombre} {$record->cliente->apellido}"
+                    )
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('estado')
-                    ->badge() // Muestra el estado como un badge de color
-                    ->color(fn(string $state): string => match ($state) {
-                        'pendiente' => 'warning',
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pendiente'  => 'warning',
                         'en proceso' => 'info',
-                        default => 'gray',
+                        default      => 'gray',
                     }),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Fecha de Creación')
-                    ->since() // Muestra "hace X tiempo"
-                    ->sortable(),
+
+               Tables\Columns\TextColumn::make('created_at')
+    ->label('Fecha de Creación')
+    ->since() // sigue mostrando "hace X tiempo"
+    ->sortable()
+    ->tooltip(
+        fn (Orden $record) =>
+            $record->created_at->format('d/m/Y H:i:s')
+    ),
+
             ])
             ->actions([
-                // Acción para ir a la página de etiquetas
                 Action::make('etiquetas')
                     ->label('Etiquetas')
                     ->icon('heroicon-o-ticket')
                     ->color('gray')
-                    ->url(fn (Orden $record): string => DetalleOrdenKanban::getUrl(['ordenId' => $record->id]))
-                    ->openUrlInNewTab(), // Abre en una nueva pestaña
-                
-                // Acción para ir a la página de ingresar resultados
+                    ->url(fn (Orden $record) => DetalleOrdenKanban::getUrl([
+                        'ordenId' => $record->id,
+                    ]))
+                    ->openUrlInNewTab(),
+
                 Action::make('resultados')
                     ->label('Resultados')
                     ->icon('heroicon-o-pencil-square')
                     ->color('primary')
-                    // Solo visible si la orden está en proceso
                     ->visible(fn (Orden $record): bool => $record->estado === 'en proceso')
-                    ->url(fn (Orden $record): string => OrdenResource::getUrl('ingresar-resultados', ['record' => $record])),
+                    ->url(fn (Orden $record) => OrdenResource::getUrl(
+                        'ingresar-resultados',
+                        ['record' => $record]
+                    )),
             ]);
     }
 }

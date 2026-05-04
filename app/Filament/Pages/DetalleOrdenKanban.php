@@ -112,7 +112,7 @@ class DetalleOrdenKanban extends KanbanBoard
                         ->title('Orden creada con éxito')
                         ->body('ID de la orden: ' . $orden->id)
                         ->success()
-                        ->persistent()
+                        ->duration(1000)
                         ->send();
                     session()->forget('from_create_orden');
                 }
@@ -131,9 +131,14 @@ class DetalleOrdenKanban extends KanbanBoard
                 ->action(fn() => $this->printAll()),
 
             Action::make('Volver a Ordenes')
-                ->label('Volver a Ordenes')
-                ->url(route('filament.admin.resources.ordenes.index'))
-                ->openUrlInNewTab(false),
+    ->label('Volver a Ordenes')
+    // Inyectamos el parámetro de búsqueda en la URL
+    ->url(route('filament.admin.resources.ordenes.index', [
+        'tableSearch' => $this->ordenId // <--- Esto pre-carga la búsqueda
+    ]))
+    ->icon('heroicon-o-arrow-left') // Opcional: Un icono para volver
+    ->color('gray') // Opcional: Color neutral
+    ->openUrlInNewTab(false),
         ];
     }
 

@@ -125,6 +125,7 @@ class GrupoEtarioResource extends Resource
                     ->label(fn (GrupoEtario $record) => $record->estado === 1 ? 'Dar de baja' : 'Dar de alta')
                     ->color(fn (GrupoEtario $record) => $record->estado === 1 ? 'danger' : 'success')
                     ->icon(fn (GrupoEtario $record) => $record->estado === 1 ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->visible( auth()->user()->can('cambiar_estado_grupos'))
                     ->requiresConfirmation() // <--- Pide confirmación antes de ejecutar
                     ->modalHeading(fn (GrupoEtario $record) => $record->estado === 1 ? '¿Desactivar Grupo Etario?' : '¿Activar Grupo Etario?')
                     ->modalDescription(fn (GrupoEtario $record) => $record->estado === 1 

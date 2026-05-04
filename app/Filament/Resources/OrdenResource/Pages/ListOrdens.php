@@ -10,6 +10,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListOrdens extends ListRecords
 {
     protected static string $resource = OrdenResource::class;
+    public ?string $activeTab = 'pendiente';
 
     protected function getHeaderActions(): array
     {
@@ -17,7 +18,16 @@ class ListOrdens extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+protected $listeners = [
+        'montarAccionWhatsapp' => 'abrirModalWhatsapp'
+    ];
 
+    public function abrirModalWhatsapp($data)
+    {
+        // Esto busca la acción 'enviarWhatsapp' definida en la tabla y la ejecuta
+        // sobre el registro específico.
+        $this->mountTableAction('enviarWhatsapp', \App\Models\Orden::find($data['recordId']));
+    }
     public function getTabs(): array
     {
         $count = OrdenResource::getEloquentQuery()

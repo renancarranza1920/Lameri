@@ -4,476 +4,995 @@
 <head>
     <meta charset="UTF-8">
     <title>Reporte de Resultados</title>
-    <style>
-        @page {
-            margin: 40px 50px;
-        }
+<style>
 
-        body {
-            font-family: 'Helvetica', sans-serif;
-            font-size: 10px;
-            color: #333;
-        }
+@page {
+    margin: 210px 50px 50px 50px;
+}
 
-        .header {
-            display: table;
-            width: 100%;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
+/* ================= BASE ================= */
 
-        .header-left {
-            display: table-cell;
-            vertical-align: top;
-            width: 45%;
-        }
+body {
+    font-family: 'DejaVu Sans', sans-serif;
+    font-size: 10px; /* antes 11.5px */
+    color: #333;
+}
 
-        .header-left img {
-            max-width: 150px;
-            margin-bottom: 10px;
-        }
+/* ================= AREA TABLE ================= */
 
-        .sello {
-            max-width: 140px;
-            opacity: 0.95;
-            margin-right: 140px;
-        }
+.area-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: none;
+    margin-bottom: 0;
+}
 
-        .header-left .lab-name {
-            font-size: 14px;
-            font-weight: bold;
-            color: #1E73BE;
-            margin: 0;
-        }
+.area-table tfoot {
+    display: table-footer-group;
+}
 
-        .header-left .lab-address {
-            font-size: 9px;
-            margin: 0;
-        }
+.firma-cell {
+    padding-top: -20px;
+    padding-bottom: 5px;
+    border: none;
+}
 
-        .header-right {
-            display: table-cell;
-            vertical-align: top;
-            width: 55%;
-        }
+/* ================= FIRMAS ================= */
 
-        .patient-info {
-            border: 1px solid #000;
-            padding: 8px;
-            font-size: 10px;
-        }
+.firma-wrapper {
+    position: relative;
+    width: 170px;
+    height: 120px;
+    margin: 0 auto;
+    display: inline-block;
+}
 
-        .patient-info table {
-            width: 100%;
-        }
+.firma-img-sello {
+    position: absolute;
+    top: 25px;
+    left: 0;
+    width: 100%;
+    height: 90px;
+    object-fit: contain;
+    opacity: 1;
+}
 
-        .patient-info td {
-            padding: 2px;
-        }
+.firma-img-rubrica {
+    position: absolute;
+    top: -35px;
+    left: 0;
+    width: 100%;
+    height: 105px;
+    object-fit: contain;
+    z-index: 10;
+}
 
-        .tipo-examen-header {
-            font-size: 14px;
-            font-weight: bold;
-            color: #1E73BE;
-            padding: 10px 0;
-            margin-top: 15px;
-            border-bottom: 1px solid #1E73BE;
-        }
+/* ================= TITULO AREA ================= */
 
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            page-break-inside: auto;
-        }
+.area-title-row td {
+    padding-top: 3px;
+    padding-bottom: 5px;
+    border: none;
+}
 
-        .results-table thead th {
-            font-weight: bold;
-            text-transform: uppercase;
-            border-bottom: 2px solid #000;
-            padding: 6px;
-            text-align: left;
-        }
+.area-title {
+    background-color: #f4f4f4;
+    border-left: 5px solid #FFB800;
+    color: #000;
+    padding: 6px 10px;
+    font-weight: bold;
+    font-size: 10.5px; /* antes 12px */
+    text-transform: uppercase;
+}
 
-        .examen-title-row td {
-            font-weight: bold;
-            font-size: 11px;
-            background-color: #f2f2f2;
-            border-bottom: 1px solid #ccc;
-            padding: 8px 6px;
-        }
+/* ================= WATERMARK ================= */
 
-        /* --- ESTILO PARA SUBGRUPOS (TIPO PRUEBA) --- */
-        .group-title-row td {
-            font-weight: bold;
-            font-size: 10px;
-            background-color: #fafafa;
-            color: #444;
-            padding: 5px 6px;
-            border-bottom: 1px solid #eee;
-            font-style: italic;
-        }
+.watermark {
+    position: fixed;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    opacity: 0.08;
+    z-index: -1000;
+}
 
-        .result-row {
-            border-bottom: 1px solid #eee;
-            page-break-inside: avoid;
-        }
+.corner-top {
+    position: fixed;
+    top: -210px;
+    left: -50px;
+    width: 250px;
+    z-index: -1;
+}
 
-        .results-table td {
-            padding: 6px;
-            text-align: left;
-            vertical-align: top;
-        }
+.corner-bottom {
+    position: fixed;
+    bottom: -50px;
+    right: -50px;
+    width: 250px;
+    z-index: -1;
+}
 
-        .result-prueba-name {
-            text-transform: uppercase;
-        }
+/* ================= TABLA RESULTADOS ================= */
 
-        .result-value {
-            font-weight: bold;
-            padding-left: 0;
-        }
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    page-break-inside: auto;
+}
 
-        .matrix-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            page-break-inside: auto;
-        }
+.results-table thead {
+    display: table-header-group;
+}
 
-        .matrix-table th,
-        .matrix-table td {
-            border: 1px solid #ccc;
-            text-align: center;
-            padding: 5px;
-            vertical-align: middle;
-        }
+.results-table thead th {
+    background-color: #FFB800;
+    color: black;
+    border: none;
+    text-align: center;
+    padding: 3px;
+    font-size: 9.5px;
+}
 
-        .matrix-table thead th {
-            font-weight: bold;
-            text-transform: uppercase;
-            background-color: #f2f2f2;
-            border-bottom: 2px solid #000;
-        }
+.results-table tr {
+    page-break-after: auto;
+}
 
-        .matrix-table tbody th {
-            font-weight: bold;
-            background-color: #f2f2f2;
-        }
+.result-row{
+    page-break-inside: avoid;
+}
 
-        .matrix-table td {
-            font-size: 11px;
-            font-weight: bold;
-        }
+.results-table td {
+    padding: 4px;
+    text-align: left;
+    vertical-align: top;
+}
 
-        .matrix-table thead th:first-child {
-            background-color: transparent;
-            border: none;
-        }
+.result-row {
+    border-bottom: 1px solid #eee;
+}
 
-        footer {
-            position: fixed;
-            bottom: -20px;
-            left: 0px;
-            right: 0px;
-            height: 40px;
-            text-align: center;
-            font-size: 9px;
-            color: #888;
-            border-top: 1px solid #ccc;
-            padding-top: 5px;
-        }
+.result-prueba-name {
+    font-style: italic;
+    text-transform: uppercase;
+    padding-left: 15px;
+    font-size: 9.5px;
+}
 
-        footer .page-number:before {
-            content: "Página " counter(page);
-        }
+.result-value {
+    text-align: center;
+    font-weight: bold;
+    font-size: 9.5px;
+}
 
-        .observaciones-box {
-            background-color: #f9f9f9;
-            border: 1px solid #eee;
-            padding: 10px;
-            font-size: 9px;
-            margin-top: 15px;
-            margin-bottom: 20px;
-            page-break-inside: avoid;
-        }
-        .observaciones-box strong {
-            display: block;
-            margin-bottom: 5px;
-            color: #333;
-        }
+.muestra-text {
+    font-weight: bold;
+    font-size: 8.5px; /* antes 10px */
+    margin-bottom: 4px;
+}
 
-        .fuera-de-rango {
-            color: #D90000;
-            font-weight: bold;
-        }
+/* ================= EXAMEN TITLE ================= */
 
-        .header {
-            display: table;
-            width: 100%;
-            border-bottom: 3px solid #1E73BE;
-            padding-bottom: 8px;
-            margin-bottom: 20px;
-        }
+.examen-title-row td {
+    font-weight: bold;
+    font-size: 9.5px;
+    background-color: #f2f2f2;
+    border-bottom: 1px solid #ccc;
+    padding: 6px 5px;
+}
+/* ================= EXAMEN separador si no hay titulo ================= */
 
-        .header-left {
-            display: table-cell;
-            vertical-align: top;
-            width: 55%;
-        }
+.examen-separatora td{
+    background-color: #f2f2f2;
+    border-bottom: 1px solid #ccc;
+    padding: 2px 5px; /* más delgado */
+}
+/* ================= MATRIX ================= */
 
-        .header-right {
-            display: table-cell;
-            vertical-align: top;
-            width: 45%;
-        }
-    </style>
+.matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    page-break-inside: auto;
+}
+
+.matrix-table th,
+.matrix-table td {
+    border: 1px solid #ccc;
+    text-align: center;
+    padding: 4px;
+    vertical-align: middle;
+}
+
+.matrix-table thead th {
+    font-weight: bold;
+    text-transform: uppercase;
+    background-color: #f2f2f2;
+    border-bottom: 2px solid #000;
+    font-size: 9px;
+}
+
+.matrix-table tbody th {
+    font-weight: bold;
+    background-color: #f2f2f2;
+    font-size: 9px;
+}
+
+.matrix-table td {
+    font-size: 9px; /* antes 11px */
+    font-weight: bold;
+}
+
+.matrix-table thead th:first-child {
+    background-color: transparent;
+    border: none;
+}
+
+/* ================= HEADER ================= */
+
+.header-clean {
+    position: fixed;
+    top: -190px;
+    left: 0;
+    right: 0;
+    height: 190px;
+    background: transparent;
+}
+
+.header-bar {
+    display: table;
+    width: 100%;
+    background-color: #f5f5f5;
+    color: black;
+    padding: 10px 18px;
+    border-radius: 18px;
+}
+
+.header-bar-left {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.header-bar-left strong {
+    font-size: 12px; /* antes 14px */
+    letter-spacing: 0.5px;
+}
+
+.header-bar-sub {
+    font-size: 8px; /* antes 9px */
+    opacity: 0.9;
+    margin-top: 2px;
+}
+
+.header-bar-right {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+}
+
+.header-bar-right img {
+    max-height: 45px;
+}
+
+/* ================= PATIENT CARD ================= */
+
+.patient-card {
+    margin: 4px 18px 0;
+    background: #f8f9fb;
+    border-left: 4px solid #FFB800;
+    padding: 6px 10px;
+    border-radius: 10px;
+}
+
+.patient-card table {
+    width: 100%;
+    font-size: 9px; /* antes 10px */
+}
+
+.patient-card td {
+    padding: 3px 5px;
+}
+
+.patient-card span {
+    display: block;
+    font-size: 7px; /* antes 8px */
+    color: #777;
+    text-transform: uppercase;
+    margin-bottom: 1px;
+}
+
+/* ================= OBSERVACIONES ================= */
+
+.observaciones-box {
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    padding: 8px;
+    font-size: 8px; /* antes 9px */
+    margin-top: -20px;
+    margin-bottom: 6px;
+    page-break-inside: avoid;
+}
+
+/* ================= FOOTER ================= */
+
+footer {
+    position: fixed;
+    bottom: -30px;
+    left: 0;
+    right: 0;
+    height: 30px;
+    text-align: center;
+    font-size: 7px; /* antes 8px */
+    color: #888;
+    border-top: 1px solid #eee;
+    padding-top: 4px;
+}
+
+footer .page-number:before {
+    content: "Página " counter(page);
+}
+
+/* ================= MISC ================= */
+
+.seccion-laboratorista {
+    margin-bottom: 6px;
+}
+
+.firma-container {
+    margin-top: 8px;
+    page-break-inside: avoid;
+    width: 100%;
+}
+
+.firma-table {
+    width: 100%;
+}
+
+.salto-pagina {
+    page-break-after: always;
+}
+
+.fuera-de-rango {
+    color: #E57373 !important;
+    font-weight: bold;
+}
+
+</style>
 </head>
 
 <body>
-    <footer>
-        <div>{{ $orden->cliente->nombre ?? 'Nombre Laboratorio' }} - Reporte de Resultados</div>
-        <div class="page-number"></div>
-    </footer>
-
-    <div class="header">
-        <div class="header-left" style="width: 70%; vertical-align: top;">
-            <div style="font-weight: bold; font-size: 13px; color: #003366; margin-top: 3px;">
-                LABORATORIO CLÍNICO MERINO
-            </div>
-            <p style="font-size: 9px; margin: 2px 0;">
-                <span style="color:#444;">4ª CALLE ORIENTE #6, B° SAN FRANCISCO, SAN VICENTE.</span>
-            </p>
-            <p style="font-size: 9px; margin: 0; color: #333; line-height: 1.5;">
-                <span>
-                   
-                </span>
-                <a> </a>
-                <span style="font-weight: bold;">2606-6596</span>
-                <span style="margin-left: 8px; margin-right: 8px; color: #888;">|</span>
-                <span>
-                   
-                </span>
-                 <a> </a>
-                <span style="font-weight: bold;">WhatsApp: 7595-4210</span>
-            </p>
-        </div>
-   <div class="header-right" style="width: 30%; text-align: right;">
-    @if(isset($logo_b64) && $logo_b64)
-        <img src="{{ $logo_b64 }}" alt="Logo" style="max-width: 90px; vertical-align: middle;">
-    @else
-        <span style="color:red; font-weight:bold;">ERROR: IMAGEN NO ENCONTRADA</span>
-    @endif
-</div>
+    <div class="watermark">
+        <img src="{{ storage_path('app/public/iconlab.png') }}" style="width: 100%;">
     </div>
 
-    <div style="margin-top: 5px; padding: 5px; font-size: 9px;">
-        <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-                <td style="width: 35%; font-weight: bold; color: #1E73BE; padding: 2px;">Nombre del Paciente:</td>
-                <td style="width: 65%; border-bottom: 1px solid #ccc; padding: 2px;">{{ $orden->cliente->nombre }} {{ $orden->cliente->apellido }}</td>
-            </tr>
-            <tr>
-                <td style="font-weight: bold; color: #1E73BE; padding: 2px;">Edad:</td>
-                <td style="border-bottom: 1px solid #ccc; padding: 2px;">{{ \Carbon\Carbon::parse($orden->cliente->fecha_nacimiento)->age }} años</td>
-            </tr>
-            <tr>
-                <td style="font-weight: bold; color: #1E73BE; padding: 2px;">Género:</td>
-                <td style="border-bottom: 1px solid #ccc; padding: 2px;">{{ $orden->cliente->genero ?? 'No especificado' }}</td>
-            </tr>
-            <tr>
-                <td style="font-weight: bold; color: #1E73BE; padding: 2px;">Número de Orden:</td>
-                <td style="border-bottom: 1px solid #ccc; padding: 2px;">{{ $orden->id }}</td>
-            </tr>
-            <tr>
-                <td style="font-weight: bold; color: #1E73BE; padding: 2px;">Fecha de Reporte:</td>
-                <td style="border-bottom: 1px solid #ccc; padding: 2px;">{{ now()->format('d/m/Y') }}</td>
-            </tr>
-        </table>
-
-        @if (!empty($orden->observaciones))
-            <div class="observaciones-box" style="margin-top: 10px;">
-                <strong style="color: #1E73BE;">Observaciones:</strong>
-                <p style="margin: 0; padding: 0; color: #333;">{!! nl2br(e($orden->observaciones)) !!}</p>
-            </div>
-        @endif
+    <div class="corner-top">
+        <img src="{{ storage_path('app/public/fl.png') }}" style="width: 100%; opacity: 0.3;">
+    </div>
+    <div class="corner-bottom" style="transform: rotate(180deg);">
+        <img src="{{ storage_path('app/public/fl.png') }}" style="width: 100%; opacity: 0.3;">
     </div>
 
-    @foreach($datos_agrupados as $tipoExamenNombre => $examenes)
-        <div class="tipo-examen-header">{{ $tipoExamenNombre }}</div>
+    @php
+function normalizarSimbolosClinicos($texto)
+{
+    //  Lógica original (desactivada temporalmente para pruebas Unicode)
+    /*
+    return str_replace(
+        ['≥','≤'],
+        ['>=','<='],
+        $texto
+    );
+    */
 
-        @foreach($examenes as $examen)
-            @php
-                // 1. LÓGICA INTELIGENTE: ¿Mostrar Columna Referencia?
-                // Escaneamos todas las pruebas de este examen.
-                $tieneReferencias = false;
-                if (!empty($examen['pruebas_unitarias'])) {
-                    foreach($examen['pruebas_unitarias'] as $p) {
-                        // Si encontramos AL MENOS UNA referencia válida o una unidad, activamos la columna para todo el examen.
-                        // Importante: Filtramos 'N/A' porque tu backend lo pone por defecto si no hay dato.
-                        $refLimpia = trim(strip_tags($p['referencia'] ?? ''));
-                        $uniLimpia = trim($p['unidades'] ?? '');
-                        
-                        if ( ($refLimpia !== '' && $refLimpia !== 'N/A') || $uniLimpia !== '') {
-                            $tieneReferencias = true;
-                            break; // Ya encontramos una, no necesitamos seguir buscando
-                        }
-                    }
+//MODO TEST: no modificar símbolos
+    return $texto;
+}
+
+        $formatearNumerosReferencia = function ($texto) {
+
+            if (empty($texto))
+                return $texto;
+
+            return preg_replace_callback('/\d+(?:\.\d+)?/', function ($match) {
+
+                $numero = $match[0];
+
+                // si tiene decimal → no tocar
+                if (str_contains($numero, '.')) {
+                    return $numero;
                 }
 
-                // 2. AGRUPACIÓN POR TIPO DE PRUEBA
-                $pruebasCollection = collect($examen['pruebas_unitarias']);
-                
-                $agrupadas = $pruebasCollection->groupBy(function($item) {
-                    return $item['tipo_prueba'] ?? ''; 
-                });
+                $numeroLimpio = preg_replace('/[^0-9]/', '', $numero);
+                $longitud = strlen($numeroLimpio);
 
-                $sinGrupo = $agrupadas->pull('') ?? collect();
-                $conGrupo = $agrupadas->sortKeys();
-            @endphp
+                // miles → coma
+                if ($longitud >= 4 && $longitud <= 6) {
+                    return number_format($numeroLimpio, 0, '', ',');
+                }
 
-            <table class="results-table">
-                <thead>
-                    @if (!empty($examen['pruebas_unitarias']))
-                        <tr>
-                            <!-- Ajuste dinámico de anchos -->
-                            <th style="width: {{ $tieneReferencias ? '40%' : '60%' }};">PRUEBA</th>
-                            <th style="width: {{ $tieneReferencias ? '25%' : '40%' }};">RESULTADO</th>
-                            
-                            @if($tieneReferencias)
-                                <th style="width: 35%;">RANGO DE REFERENCIA</th>
-                            @endif
-                        </tr>
+                // millones o más → puntos
+                if ($longitud >= 7) {
+                    return number_format($numeroLimpio, 0, '', '.');
+                }
+
+                return $numero;
+
+            }, $texto);
+        };
+
+    @endphp
+
+    @php
+   $esFueraDeRango = function ($resultado, $referencia, $alertar = false) {
+
+    // PRIORIDAD ABSOLUTA: Si el checkbox de "Colorear" está marcado, siempre es true
+    if ($alertar) {
+        return true;
+    }
+
+    $referencia = normalizarSimbolosClinicos($referencia);
+
+    if (empty($resultado) || empty($referencia)) {
+        return false;
+    }
+
+    $resultadoTexto = strtoupper(strip_tags($resultado));
+    $referenciaTexto = strtoupper(strip_tags($referencia));
+
+    // Si el resultado ya dice POSITIVO / REACTIVO → rojo directo
+    if (str_contains($resultadoTexto, 'POSITIVO') || str_contains($resultadoTexto, 'REACTIVO')) {
+        return true;
+    }
+
+    // =====================================================
+    // ⏱ DETECTAR MINUTOS Y SEGUNDOS
+    // =====================================================
+    $resultadoTextoOriginal = strtoupper(strip_tags($resultado));
+
+    if (str_contains($resultadoTextoOriginal, 'MIN') || str_contains($resultadoTextoOriginal, 'SEG')) {
+        $min = 0; $seg = 0;
+        if (preg_match('/([0-9]+)\s*(MIN|MINUTO|MINUTOS)/', $resultadoTextoOriginal, $m)) { $min = (int) $m[1]; }
+        if (preg_match('/([0-9]+)\s*(SEG|SEGUNDO|SEGUNDOS)/', $resultadoTextoOriginal, $s)) { $seg = (int) $s[1]; }
+        $valor = $min + ($seg / 60);
+    } else {
+        // Lógica normal numérica
+        $valorStr = preg_replace('/[^0-9\.,\-]/', '', str_replace(',', '.', $resultado));
+        if (!is_numeric($valorStr)) { return false; }
+        $valor = (float) $valorStr;
+    }
+
+    /*
+    =====================================================
+    INTERPRETACIÓN CUALITATIVA (CLÍNICA REAL)
+    =====================================================
+    */
+    if (str_contains($referenciaTexto, 'POSITIVO') || str_contains($referenciaTexto, 'NEGATIVO')) {
+        if (preg_match('/POSITIVO\s*>=\s*([0-9\.]+)/', $referenciaTexto, $m)) { if ($valor >= (float)$m[1]) return true; }
+        if (preg_match('/POSITIVO\s*>\s*([0-9\.]+)/', $referenciaTexto, $m)) { if ($valor > (float)$m[1]) return true; }
+        if (preg_match('/POSITIVO\s*<=\s*([0-9\.]+)/', $referenciaTexto, $m)) { if ($valor <= (float)$m[1]) return true; }
+        if (preg_match('/POSITIVO\s*<\s*([0-9\.]+)/', $referenciaTexto, $m)) { if ($valor < (float)$m[1]) return true; }
+        return false;
+    }
+
+    /*
+    =====================================================
+    📊 RANGOS NUMÉRICOS NORMALES
+    =====================================================
+    */
+    
+    // 🚀 NUEVA REGLA ANTI-PÁRRAFOS:
+    // Si la referencia tiene más de 25 letras (es un párrafo explicativo largo), 
+    // no adivinamos nada matemáticamente. Solo respetará el checkbox "Colorear".
+    $soloLetras = preg_replace('/[^A-Z]/', '', $referenciaTexto);
+    if (strlen($soloLetras) > 25) {
+        return false; 
+    }
+
+    preg_match_all('/-?[0-9]+(\.[0-9]+)?/', str_replace(',', '.', $referencia), $matches);
+    $nums = $matches[0];
+
+    if (count($nums) > 2) return false;
+
+    if (count($nums) === 2) {
+        $min = (float)$nums[0];
+        $max = (float)$nums[1];
+        return ($valor < $min || $valor > $max);
+    }
+
+    if (count($nums) === 1) {
+        $limite = (float)$nums[0];
+        if (str_contains($referencia, '<')) return $valor >= $limite;
+        if (str_contains($referencia, '>')) return $valor <= $limite;
+    }
+
+    return false;
+};
+
+//////////////////////////
+function agregarUnidadesPorLinea($referencia, $unidad)
+{
+    if (empty($unidad)) return $referencia;
+
+    // Convertimos <br> a salto real temporal
+    $referencia = str_replace('<br>', "\n", $referencia);
+
+    $lineas = preg_split('/\r\n|\r|\n/', $referencia);
+
+    $lineas = array_map(function ($linea) use ($unidad) {
+
+        $linea = trim($linea);
+        if ($linea === '') return $linea;
+
+        if (!str_contains(strtoupper($linea), strtoupper($unidad))) {
+            $linea .= ' ' . $unidad;
+        }
+
+        // 🔥 Escapamos HTML aquí (esto protege < y >)
+        return e($linea);
+
+    }, $lineas);
+
+    // Volvemos a unir con <br>
+    return implode('<br>', $lineas);
+}
+
+    @endphp
+
+
+
+    <header class="header-clean">
+
+            <div class="header-bar">
+                <div class="header-bar-left">
+                    <strong>LABORATORIO CLÍNICO MERINO</strong>
+                    <div class="header-bar-sub">
+                        4ª Calle Oriente #6, B° San Francisco, San Vicente<br>
+                        Tel: 2606-6596 | WhatsApp: 7595-4210
+                    </div>
+                </div>
+
+                <div class="header-bar-right">
+                    @if(isset($logo_b64) && $logo_b64)
+                        <img src="{{ $logo_b64 }}">
                     @endif
-                </thead>
-                <tbody>
-                    <tr class="examen-title-row">
-                        <td colspan="{{ $tieneReferencias ? 3 : 2 }}">EXAMEN: {{ $examen['nombre'] }}</td>
-                    </tr>
+                </div>
+            </div>
 
-                    {{-- A. PRUEBAS SIN GRUPO (Primero) --}}
-                    @foreach($sinGrupo as $pruebaData)
-                        <tr class="result-row">
-                            <td>
-                                <div class="result-prueba-name">{{ $pruebaData['nombre'] }}</div>
-                            </td>
-                            <td>
-                                <div class="result-value @if($pruebaData['es_fuera_de_rango']) fuera-de-rango @endif">
-                                    {!! $pruebaData['resultado'] !!}
-                                </div>
-                            </td>
-                            @if($tieneReferencias)
-                                <td>{!! $pruebaData['referencia'] !!} {{ $pruebaData['unidades'] }}</td>
+            <div class="patient-card">
+                {{-- PARTE 1: DATOS DEL PACIENTE (Tabla Superior) --}}
+                <table style="width: 100%;">
+                    <tr>
+                        <td>
+                            <span>Paciente</span>
+                            {{ $orden->cliente->nombre }} {{ $orden->cliente->apellido }}
+                        </td>
+
+                        <td>
+                            {{-- CASO 1: Si tiene Fecha de Nacimiento O Edad manual --}}
+                            @if(!empty($orden->cliente->fecha_nacimiento) || !empty($orden->cliente->edad))
+                                <span>Edad</span>
+                                {{-- Llamamos a la función inteligente que dice "meses", "días" o "años" --}}
+                                {{ $orden->cliente->edad_legible }}
+                            
+                            {{-- CASO 2: Si no tiene ni fecha ni edad, mostramos Grupo Etario --}}
+                            @else
+                                <span>Grupo etario</span>
+                                {{ $orden->cliente->getGrupoEtario()->nombre ?? 'No especificado' }}
                             @endif
-                        </tr>
-                    @endforeach
+                        </td>
 
-                    {{-- B. GRUPOS (Tipo A, Tipo B, etc.) --}}
-                    @foreach($conGrupo as $nombreGrupo => $items)
-                        <!-- Fila separadora del grupo -->
-                        <tr class="group-title-row">
-                            <td colspan="{{ $tieneReferencias ? 3 : 2 }}">{{ $nombreGrupo }}</td>
-                        </tr>
-                        
-                        @foreach($items as $pruebaData)
-                            <tr class="result-row">
-                                <td>
-                                    <div class="result-prueba-name">{{ $pruebaData['nombre'] }}</div>
-                                </td>
-                                <td>
-                                    <div class="result-value @if($pruebaData['es_fuera_de_rango']) fuera-de-rango @endif">
-                                        {!! $pruebaData['resultado'] !!}
-                                    </div>
-                                </td>
-                                @if($tieneReferencias)
-                                    <td>{!! $pruebaData['referencia'] !!} {{ $pruebaData['unidades'] }}</td>
-                                @endif
-                            </tr>
-                        @endforeach
-                    @endforeach
+                        <td>
+                            <span>Género</span>
+                            {{ $orden->cliente->genero ?? 'No especificado' }}
+                        </td>
 
-                </tbody>
-            </table>
+                        <td>
+                            <span>Ingreso</span>
+                            {{ $orden->created_at->format('d/m/Y H:i') }}
+                        </td>
 
-            @if (!empty($examen['matrices']))
-                @foreach ($examen['matrices'] as $matriz)
-                    <table class="matrix-table">
-                        <thead>
-                            <tr>
-                                <th></th>
-                                @foreach ($matriz['columnas'] as $columna)
-                                    <th>{{ $columna }}</th>
-                                @endforeach
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($matriz['filas'] as $fila)
-                                <tr>
-                                    <th>{{ $fila }}</th>
-                                    @foreach ($matriz['columnas'] as $columna)
-                                        @php
-                                            $celda = $matriz['data'][$fila][$columna] ?? null;
-                                        @endphp
+                        <td>
+                            <span>Impresión</span>
+                            {{ now()->format('d/m/Y H:i') }}
+                        </td>
+                    </tr>
+                </table>
 
-                                        <td class="@if($celda && $celda['es_fuera_de_rango']) fuera-de-rango @endif">
-                                            {{ $celda['resultado'] ?? 'N/A' }}
-                                        </td>
-                                    @endforeach
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                @endforeach
-            @endif
-            <div style="height: 15px;"></div>
-        @endforeach
-    @endforeach
+                {{-- PARTE 2: DATOS DEL MÉDICO (Inferior) --}}
+                @if($orden->medico)
+                    <div style="border-top: 1px solid #e0e0e0; margin: 4px 0 4px 0;"></div>
 
-    <div style="margin-top: 40px; text-align: right; width: 100%;">
-        <div style="display: inline-block;">
-            
-            {{-- BLOQUE 1: SELLO DEL REGISTRO (Izquierda) --}}
-            <div style="display: inline-block; margin-left: 20px; vertical-align: top;">
-                @php $size = '130px'; @endphp
-                @if ($sello_registro_b64)
-                    <img src="{{ $sello_registro_b64 }}" alt="Sello Registro" style="width: {{ $size }}; height: auto;">
-                @else
-                    {{-- Espacio vacío o mensaje si no hay sello --}}
-                    <div style="width: {{ $size }}; height: 80px; border: 1px dashed #ccc; display:flex; align-items:center; justify-content:center; font-size:9px;">
-                        [Sello Reg.]
+                    <div style="font-size: 9px; padding-left: 6px;">
+                        {{-- Usamos 'display: inline' para forzar que estén en el mismo renglón --}}
+                        <span
+                            style="display: inline; color: #777; text-transform: uppercase; font-size: 8px; margin-right: 5px;">
+                            MÉDICO REFERENTE:
+                        </span>
+
+                        <strong style="color: #333; text-transform: uppercase;">
+                            {{-- Agregamos lógica para poner "DR." si no viene incluido --}}
+                            {{ str_starts_with(strtoupper($orden->medico->nombre), 'DR') ? $orden->medico->nombre : 'DR. ' . $orden->medico->nombre }}
+                        </strong>
                     </div>
                 @endif
             </div>
 
-            {{-- BLOQUE 2: FIRMA Y SELLO DEL LICENCIADO (Derecha) --}}
-            <div style="display: inline-block; margin-left: 20px; vertical-align: top;">
-                <div style="position: relative; width: {{ $size }}; height: 80px; margin-top: 0;">
-                    
-                    {{-- Capa 1: Sello del Usuario (Fondo) --}}
-                    @if ($sello_usuario_b64)
-                        <img src="{{ $sello_usuario_b64 }}" alt="Sello Usuario" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;">
-                    @endif
+        </header>
 
-                    {{-- Capa 2: Firma del Usuario (Superpuesta) --}}
-                    @if ($firma_usuario_b64)
-                        {{-- z-index: 10 asegura que la firma quede encima del sello --}}
-                        <img src="{{ $firma_usuario_b64 }}" alt="Firma" style="position: absolute; top: 8%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; height: auto; object-fit: contain; z-index: 10;">
-                    @endif
 
-                    {{-- Capa 3: Placeholder si no hay nada --}}
-                    @if (!$sello_usuario_b64 && !$firma_usuario_b64)
-                        <div style="width: 100%; height: 100%; border: 1px dashed #ccc; display:flex; align-items:center; justify-content:center; font-size:9px;">
-                            [Sin Firma]
-                        </div>
-                    @endif
-                    
-                </div>
+        <footer>
+            <div style="margin-top: 5px;">
+                <div style="float: left;">{{ $orden->cliente->nombre ?? 'Laboratorio' }} - Orden
+                    #{{ $orden->id }}</div>
+                <div style="float: right;" class="page-number"></div>
+                <div style="clear: both;"></div>
             </div>
+        </footer>
 
-        </div>
-    </div>
+
+
+        {{-- El contenido del cuerpo empieza aquí. Gracias al margin-top del @page, no se solapará con el header --}}
+
+        @if (!empty($orden->observaciones))
+            <div class="observaciones-box">
+                <strong style="color: #1E73BE;">Observaciones Generales:</strong>
+                <p style="margin: 0; padding: 0; color: #333;">{!! nl2br(e($orden->observaciones)) !!}</p>
+            </div>
+        @endif
+
+        {{-- BUCLE PRINCIPAL POR LABORATORISTA --}}
+        @foreach($grupos_por_usuario as $grupo)
+
+            {{-- BUCLE POR TIPO DE EXAMEN (ÁREA) --}}
+            @foreach($grupo['datos'] as $tipoExamenNombre => $examenes)
+
+                {{-- Creamos una tabla MAESTRA por cada Área --}}
+                <table class="area-table">
+
+                    <tbody>
+
+                        {{-- A. Título Visual del Área --}}
+                        <tr class="area-title-row">
+                            <td>
+                                <div class="area-title">
+                                    REPORTE DE: {{ $tipoExamenNombre }}
+                                    @if(!empty($orden->observaciones_por_area[$tipoExamenNombre] ?? null))
+                                        <div class="observaciones-box" style="margin-top:1px;">
+                                            <strong>Observación del Área: </strong>
+                                            {{ $orden->observaciones_por_area[$tipoExamenNombre] }}
+                                        </div>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+
+                        {{-- ===== DETECTAR SI EL ÁREA COMPLETA TIENE REFERENCIAS ===== --}}
+                        @php
+                            $tieneReferenciasArea = false;
+
+                            foreach ($examenes as $ex) {
+                                if (!empty($ex['pruebas_unitarias'])) {
+                                    foreach ($ex['pruebas_unitarias'] as $p) {
+                                        $ref = trim(strip_tags($p['referencia'] ?? ''));
+                                        $uni = trim($p['unidades'] ?? '');
+                                        if (($ref !== '' && $ref !== 'N/A') || $uni !== '') {
+                                            $tieneReferenciasArea = true;
+                                            break 2;
+                                        }
+                                    }
+                                }
+                            }
+                        @endphp
+
+
+                        <tr>
+                            <td style="border:none;">
+
+                                @php
+                                    // 1. VALIDACIÓN EXACTA PARA OCULTAR TÍTULOS DE EXAMEN
+                                    $areaNormalizada = mb_strtoupper(trim($tipoExamenNombre), 'UTF-8');
+                                    
+                                    $areasSinTitulo = [
+                                        'ELECTROLITOS', 'ENDOCRINOLOGÍA', 'INMUNOLOGÍA', 
+                                        'MARCADORES TUMORALES', 'QUÍMICA SANGUÍNEA', 
+                                        'QUÍMICA URINARIA', 'CARDIOVASCULAR', 'MINERALES'
+                                    ];
+                                    
+                                    // Si el área NO está en la lista de arriba, SÍ mostramos el título
+                                    $mostrarTituloExamen = !in_array($areaNormalizada, $areasSinTitulo);
+
+                                    // 2. AGRUPAMOS LOS EXÁMENES EN "CUBETAS"
+                                    $gigantes = [];
+                                    $conRango = [];
+                                    $sinRango = [];
+
+                                    foreach ($examenes as $examen) {
+                                        // A. Detectar Gigantes
+                                        $nombreExamenActual = mb_strtolower(trim($examen['nombre']), 'UTF-8');
+                                        $esGigante = (str_contains($nombreExamenActual, 'general de orina') || str_contains($nombreExamenActual, 'hemograma'));
+
+                                        if ($esGigante) {
+                                            $gigantes[] = $examen;
+                                            continue; // Si es gigante, no lo metemos en los grupos cortos
+                                        }
+
+                                        // B. Detectar si tiene rangos de referencia
+                                        $tieneRef = false;
+                                        if (!empty($examen['pruebas_unitarias'])) {
+                                            foreach ($examen['pruebas_unitarias'] as $p) {
+                                                $ref = trim(strip_tags($p['referencia'] ?? ''));
+                                                $uni = trim($p['unidades'] ?? '');
+                                                if (($ref !== '' && $ref !== 'N/A') || $uni !== '') {
+                                                    $tieneRef = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+
+                                        // C. Meter en la cubeta correspondiente
+                                        if ($tieneRef) {
+                                            $conRango[] = $examen;
+                                        } else {
+                                            $sinRango[] = $examen;
+                                        }
+                                    }
+
+                                    // 3. PREPARAMOS LAS TABLAS A IMPRIMIR
+                                    $bloques = [];
+                                    
+                                    // Primero metemos los gigantes (cada uno en su propia tabla/página)
+                                    foreach ($gigantes as $g) {
+                                        $tieneRef = false;
+                                        if (!empty($g['pruebas_unitarias'])) {
+                                            foreach ($g['pruebas_unitarias'] as $p) {
+                                                $ref = trim(strip_tags($p['referencia'] ?? ''));
+                                                $uni = trim($p['unidades'] ?? '');
+                                                if (($ref !== '' && $ref !== 'N/A') || $uni !== '') { $tieneRef = true; break; }
+                                            }
+                                        }
+                                        $bloques[] = ['tipo' => 'gigante', 'tiene_referencia' => $tieneRef, 'examenes' => [$g]];
+                                    }
+
+                                    // Luego metemos la tabla con TODOS los que tienen rango (3 columnas)
+                                    if (count($conRango) > 0) {
+                                        $bloques[] = ['tipo' => 'con_rango', 'tiene_referencia' => true, 'examenes' => $conRango];
+                                    }
+
+                                    // Finalmente metemos la tabla con TODOS los que NO tienen rango (2 columnas)
+                                    if (count($sinRango) > 0) {
+                                        $bloques[] = ['tipo' => 'sin_rango', 'tiene_referencia' => false, 'examenes' => $sinRango];
+                                    }
+                                @endphp
+
+                                {{-- AHORA IMPRIMIMOS CADA BLOQUE (TABLA) --}}
+                                @foreach($bloques as $indexBloque => $bloque)
+                                    @php
+                                        $esTablaConRef = $bloque['tiene_referencia'];
+                                        $listaExamenes = $bloque['examenes'];
+                                        $esGigante = ($bloque['tipo'] === 'gigante');
+
+                                        // Controlamos los saltos de página
+                                        $saltoPaginaStr = '';
+                                        if ($indexBloque > 0) {
+                                            $bloqueAnterior = $bloques[$indexBloque - 1];
+                                            if ($esGigante || $bloqueAnterior['tipo'] === 'gigante') {
+                                                $saltoPaginaStr = 'page-break-before: always; margin-top: 0px;';
+                                            } else {
+                                                $saltoPaginaStr = 'margin-top: 15px;'; // Margen entre la tabla de 3 cols y la de 2 cols
+                                            }
+                                        }
+
+                                        // Alineación de la cabecera
+                                        $cabeceraAlineacion = 'center'; 
+                                        $cabeceraPadding = '';
+                                        if ($esTablaConRef) {
+                                            foreach ($listaExamenes as $ex_eval) {
+                                                if (!empty($ex_eval['pruebas_unitarias'])) {
+                                                    foreach ($ex_eval['pruebas_unitarias'] as $p_eval) {
+                                                        // 🚀 LA NUEVA REGLA PARA LA CABECERA: CENTRADO A MENOS QUE SEA BETA HCG
+                                                        $nombrePruebaTest = mb_strtoupper(trim($p_eval['nombre'] ?? ''), 'UTF-8');
+                                                        if (str_contains($nombrePruebaTest, 'BETA HCG CUANTITATIVO')) {
+                                                            $cabeceraAlineacion = 'left'; 
+                                                            $cabeceraPadding = 'padding-left: 10px;';
+                                                            break 2;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    @endphp
+
+                                    <table class="results-table" style="width: 100%; {{ $saltoPaginaStr }}">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: {{ $esTablaConRef ? '40%' : '50%' }}">PRUEBA</th>
+                                                <th style="width: {{ $esTablaConRef ? '25%' : '50%' }}">RESULTADO</th>
+                                                @if($esTablaConRef)
+                                                    <th style="width: 35%; text-align: {{ $cabeceraAlineacion }}; {{ $cabeceraPadding }}">RANGO DE REFERENCIA</th>
+                                                @endif
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($listaExamenes as $idxExamen => $examen)
+                                                @php
+                                                    $pruebasCollection = collect($examen['pruebas_unitarias'] ?? []);
+                                                    $agrupadas = $pruebasCollection->groupBy(fn($item) => $item['tipo_prueba'] ?? '');
+                                                    $sinGrupo = $agrupadas->pull('') ?? collect();
+                                                    $ordenMedicoVisual = ['LINEA ROJA'=> 1, 'LINEA BLANCA'=> 2, 'LINEA PLAQUETARIA' => 3];
+                                                    $conGrupo = $agrupadas->sortBy(function ($items, $key) use ($ordenMedicoVisual) { return $ordenMedicoVisual[strtoupper($key)] ?? 999; });
+                                                @endphp
+
+                                                {{-- Separador normal para exámenes en la misma tabla --}}
+                                                @if($idxExamen > 0 && $mostrarTituloExamen)
+                                                    <tr class="examen-separatora">
+                                                        <td style="border:none;height:4px;"></td>
+                                                        <td style="border:none;height:4px;"></td>
+                                                        @if($esTablaConRef)<td style="border:none;height:4px;"></td>@endif
+                                                    </tr>
+                                                @endif
+
+                                                @if($mostrarTituloExamen)
+                                                    <tr class="examen-title-row">
+                                                        <td>EXAMEN: {{ $examen['nombre'] }}</td>
+                                                        <td></td>
+                                                        @if($esTablaConRef) <td></td> @endif
+                                                    </tr>
+                                                @endif
+
+                                                @foreach($sinGrupo as $pruebaData)
+                                                    <tr class="result-row">
+                                                        <td><div class="result-prueba-name">{{ $pruebaData['nombre'] }}</div></td>
+                                                        <td>
+                                                            <div class="result-value @if($esFueraDeRango($pruebaData['resultado'], $pruebaData['referencia'], $pruebaData['alertar'] ?? false)) fuera-de-rango @endif">
+                                                                {{ $formatearNumerosReferencia($pruebaData['resultado']) }}
+                                                            </div>
+                                                        </td>
+                                                        @if($esTablaConRef)
+                                                            @php
+                                                                $refFinal = ''; $alineacion = 'center'; $padding = '';
+                                                                $refTemp = normalizarSimbolosClinicos($pruebaData['referencia'] ?? '');
+                                                                $refTemp = $formatearNumerosReferencia($refTemp);
+                                                                $refFinal = agregarUnidadesPorLinea($refTemp, $pruebaData['unidades'] ?? '');
+                                                                
+                                                                // 🚀 LA NUEVA REGLA PARA EL RESULTADO: CENTRADO A MENOS QUE SEA BETA HCG
+                                                                $nombrePruebaResult = mb_strtoupper(trim($pruebaData['nombre'] ?? ''), 'UTF-8');
+                                                                if(str_contains($nombrePruebaResult, 'BETA HCG CUANTITATIVO')) { 
+                                                                    $alineacion = 'left'; 
+                                                                    $padding = 'padding-left: 10px;'; 
+                                                                }
+                                                            @endphp
+                                                            <td style="text-align: {{ $alineacion }}; {{ $padding }} font-size: 8.5px;">{!! $refFinal !!}</td>
+                                                        @endif
+                                                    </tr>
+                                                @endforeach
+
+                                                @foreach($conGrupo as $nombreGrupo => $items)
+                                                    <tr class="group-title-row"><td colspan="{{ $esTablaConRef ? 3 : 2 }}">{{ $nombreGrupo }}</td></tr>
+                                                    @foreach($items as $pruebaData)
+                                                        <tr class="result-row">
+                                                            <td><div class="result-prueba-name">{{ $pruebaData['nombre'] }}</div></td>
+                                                            <td>
+                                                                <div class="result-value @if($esFueraDeRango($pruebaData['resultado'], $pruebaData['referencia'], $pruebaData['alertar'] ?? false)) fuera-de-rango @endif">
+                                                                    {{ $formatearNumerosReferencia($pruebaData['resultado']) }}
+                                                                </div>
+                                                            </td>
+                                                            @if($esTablaConRef)
+                                                                @php
+                                                                    $refFinal = ''; $alineacion = 'center'; $padding = '';
+                                                                    $refTemp = normalizarSimbolosClinicos($pruebaData['referencia'] ?? '');
+                                                                    $refTemp = $formatearNumerosReferencia($refTemp);
+                                                                    $refFinal = agregarUnidadesPorLinea($refTemp, $pruebaData['unidades'] ?? '');
+                                                                    
+                                                                    // 🚀 LA NUEVA REGLA PARA EL RESULTADO (EN GRUPO): CENTRADO A MENOS QUE SEA BETA HCG
+                                                                    $nombrePruebaResult = mb_strtoupper(trim($pruebaData['nombre'] ?? ''), 'UTF-8');
+                                                                    if(str_contains($nombrePruebaResult, 'BETA HCG CUANTITATIVO')) { 
+                                                                        $alineacion = 'left'; 
+                                                                        $padding = 'padding-left: 10px;'; 
+                                                                    }
+                                                                @endphp
+                                                                <td style="text-align: {{ $alineacion }}; {{ $padding }} font-size: 8.5px;">{!! $refFinal !!}</td>
+                                                            @endif
+                                                        </tr>
+                                                    @endforeach
+                                                @endforeach
+
+                                            @if (!empty($examen['matrices']))
+                                                @foreach ($examen['matrices'] as $matriz)
+                                                    <tr>
+                                                        <td colspan="{{ $tieneReferenciasArea ? 3 : 2 }}" style="padding: 5px 0;">
+                                                            <table class="matrix-table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th></th>
+                                                                        @foreach ($matriz['columnas'] as $columna)
+                                                                            <th>{{ $columna }}</th>
+                                                                        @endforeach
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    @foreach ($matriz['filas'] as $fila)
+                                                                        <tr>
+                                                                            <th>{{ $fila }}</th>
+                                                                            @foreach ($matriz['columnas'] as $columna)
+                                                                                @php
+                                                                                    $celda = $matriz['data'][$fila][$columna] ?? null;
+                                                                                    $fueraRangoMatriz = ($celda && isset($celda['resultado'])) ? $esFueraDeRango($celda['resultado'], $celda['referencia'] ?? '') : false;
+                                                                                @endphp
+                                                                                <td class="@if($fueraRangoMatriz) fuera-de-rango @endif">{{ $celda['resultado'] ?? '-' }}</td>
+                                                                            @endforeach
+                                                                        </tr>
+                                                                    @endforeach
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            @endif
+
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                @endforeach
+
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                    {{-- Esto garantiza que el motor reserve el espacio y lo repita en cada página --}}
+                    <tfoot>
+                        <tr>
+                            <td class="firma-cell">
+                                <div class="firma-container">
+                                    <table class="firma-table" style="width: 100%; border-collapse: collapse;">
+                                        <tr>
+                                            {{-- 1. Celda vacía a la izquierda (30%) --}}
+                                            <td style="width: 30%;"></td>
+
+                                            {{-- 2. Celda derecha (70%) con los dos sellos alineados --}}
+                                            <td style="width: 70%; text-align: center; vertical-align: bottom;">
+
+                                                {{-- Sello Registro (Izquierda) --}}
+                                                <div style="display: inline-block; vertical-align: bottom; margin-right: 30px;">
+                                                    @if ($sello_registro_b64)
+                                                        {{-- AGREGADO: top: 40px para bajarlo al mismo nivel que el otro --}}
+                                                        <img src="{{ $sello_registro_b64 }}"
+                                                            style="width: 130px; position: relative; top: -26.5px; left: 40px">
+                                                    @endif
+                                                </div>
+
+                                                {{-- Sello y Firma (Derecha) --}}
+                                                <div class="firma-wrapper"
+                                                    style="display: inline-block; vertical-align: bottom; margin-left: 10px;">
+                                                    @if ($grupo['sello_b64'])
+                                                        <img class="firma-img-sello" src="{{ $grupo['sello_b64'] }}">
+                                                    @endif
+                                                    @if ($grupo['firma_b64'])
+                                                        <img class="firma-img-rubrica" src="{{ $grupo['firma_b64'] }}">
+                                                    @endif
+                                                </div>
+
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
+
+                </table>
+
+                {{-- SALTO DE PÁGINA AL FINAL DEL ÁREA --}}
+                @if(!($loop->parent->last && $loop->last))
+                    <div class="salto-pagina"></div>
+                @endif
+
+            @endforeach {{-- Fin Foreach Area --}}
+
+        @endforeach {{-- Fin Foreach Laboratorista --}}
+
+
 </body>
-</html>
-</body>
+
 </html>

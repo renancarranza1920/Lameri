@@ -31,9 +31,9 @@ class DatabaseSeeder extends Seeder
         // Crear usuario administrador
         $admin = User::factory()->create([
             'name' => 'Saul Merino',
-            'email' => 'saulmerino@gmail.com',
+            'email' => 'eduardo_hrdz18@hotmail.com',
             'nickname' => 'saulmerino',
-            'password' => Hash::make('saul2025'),
+            'password' => Hash::make('LaboratorioM20'),
         ]);
 
         Log::info('Usuario administrador creado:', ['email' => $admin->email]);
@@ -61,54 +61,16 @@ class DatabaseSeeder extends Seeder
 
 
         cliente::insert([
+           
             [
-                'NumeroExp' => 'EA25001',
-                'nombre' => 'Erick Eduardo',
-                'apellido' => 'Alonzo Dominguez',
-                'fecha_nacimiento' => '1995-05-15',
-                'genero' => 'Masculino',
-                'telefono' => '12345678',
-                'correo' => 'ad18017@ues.edu.sv',
-                'direccion' => 'Calle Falsa 123',
-                'estado' => 'Activo',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'NumeroExp' => 'RC25001',
-                'nombre' => 'Renan Gilberto',
-                'apellido' => 'Carranza Estupinian',
-                'genero' => 'Masculino',
-                'fecha_nacimiento' => '2000-06-15',
-                'telefono' => '09876543',
-                'correo' => 'ce18008@ues.edu.sv',
-                'direccion' => 'Avenida Principal 456',
-                'estado' => 'Activo',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'NumeroExp' => 'MD25001',
+                'NumeroExp' => 'MD26001',
                 'nombre' => 'Manuel Enrique',
                 'apellido' => 'Dominguez Lopez',
-                'fecha_nacimiento' => '2010-06-15',
+                'fecha_nacimiento' => '1996-02-12',
                 'genero' => 'Masculino',
-                'telefono' => '12345678',
-                'correo' => 'ad14017@ues.edu.sv',
-                'direccion' => 'Calle Secundaria 789',
-                'estado' => 'Activo',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'NumeroExp' => 'CC25001',
-                'nombre' => 'Karla Melissa',
-                'apellido' => 'Cortez Cardenas',
-                'fecha_nacimiento' => '1950-06-15',
-                'genero' => 'Femenino',
-                'telefono' => '767685345',
-                'correo' => 'cc14017@ues.edu.sv',
-                'direccion' => 'Calle Tercearia 789',
+                'telefono' => '72001156',
+                'correo' => 'manuenrike@gmail.com',
+                'direccion' => '5a Calle Oritente, Casa #63, Barrio El Santuario,San Vicente.',
                 'estado' => 'Activo',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -270,7 +232,8 @@ class DatabaseSeeder extends Seeder
         $examenes = [
             ['nombre' => 'Células L.E.', 'precio' => 25, 'recipiente' => 'hematologia'],
             ['nombre' => 'Concentrado straut (T.cruzi)', 'precio' => 15, 'recipiente' => 'hematologia'],
-            ['nombre' => 'Eosinófilos sangre nasales', 'precio' => 10, 'recipiente' => 'hematologia'],
+            ['nombre' => 'Eosinófilos nasales', 'precio' => 10, 'recipiente' => 'hematologia'],
+            ['nombre' => 'Eosinófilos en sangre', 'precio' => 10, 'recipiente' => 'hematologia'], // id 45
             ['nombre' => 'Eritrosedimentación', 'precio' => 6, 'recipiente' => 'hematologia'],
             ['nombre' => 'Frotis de sangre periférica', 'precio' => 10, 'recipiente' => 'hematologia'],
             ['nombre' => 'Hb y Ht', 'precio' => 5, 'recipiente' => 'hematologia'],
@@ -278,7 +241,7 @@ class DatabaseSeeder extends Seeder
             ['nombre' => 'Leucograma', 'precio' => 5, 'recipiente' => 'hematologia'],
             ['nombre' => 'Plasmodium (gota gruesa)', 'precio' => 15, 'recipiente' => 'hematologia'],
             ['nombre' => 'Plaquetas', 'precio' => 5, 'recipiente' => 'hematologia'],
-            ['nombre' => 'Reticulocitos', 'precio' => 10, 'recipiente' => 'hematologia'],
+            ['nombre' => 'Reticulocitos', 'precio' => 10, 'recipiente' => 'hematologia'],    // id 53
         ];
 
         foreach ($examenes as $examen) {
@@ -389,7 +352,7 @@ class DatabaseSeeder extends Seeder
             ['nombre' => 'Test O\' Sulivan', 'precio' => 20, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Transaminasa Oxalacética', 'precio' => 6, 'recipiente' => 'quimica_sanguinea'],
             ['nombre' => 'Transaminasa Pirúvica', 'precio' => 6, 'recipiente' => 'quimica_sanguinea'],
-            ['nombre' => 'Triglicéridos', 'precio' => 4, 'recipiente' => 'quimica_sanguinea'],
+            ['nombre' => 'Triglicéridos', 'precio' => 4, 'recipiente' => 'quimica_sanguinea'],  //id 119
         ];
 
         usort($examenesQuimica, fn($a, $b) => strcmp($a['nombre'], $b['nombre']));
@@ -550,29 +513,29 @@ class DatabaseSeeder extends Seeder
 
         // Insertar muestras
         $muestras = [
-            ['nombre' => 'Baciloscopia', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Cabello', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Cultivo de Esputo', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Cultivo de Liquido Cefalorraquideo', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Flema', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Heces', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Hisopado Anal', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Hisopado Bucal', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Hisopado de Heridas', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Hisopado de Oido', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Hisopado Faringeo', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Hisopado Ocular', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Orina', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Plasma', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Sangre Completa', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Secreción de Absceso', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Secreciones Nasales', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Secreciones Uretrales', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Secreciones Vaginales', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Semen', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Suero', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Uñas', 'descripcion' => null, 'instrucciones_paciente' => null],
-            ['nombre' => 'Hisopado Nasal', 'descripcion' => null, 'instrucciones_paciente' => null]
+            ['nombre' => 'Baciloscopia', 'descripcion' => null, 'instrucciones_paciente' => null], //1
+            ['nombre' => 'Cabello', 'descripcion' => null, 'instrucciones_paciente' => null], //2
+            ['nombre' => 'Cultivo de Esputo', 'descripcion' => null, 'instrucciones_paciente' => null], //3
+            ['nombre' => 'Cultivo de Liquido Cefalorraquideo', 'descripcion' => null, 'instrucciones_paciente' => null], //4
+            ['nombre' => 'Flema', 'descripcion' => null, 'instrucciones_paciente' => null], //5
+            ['nombre' => 'Heces', 'descripcion' => null, 'instrucciones_paciente' => null], //6
+            ['nombre' => 'Hisopado Anal', 'descripcion' => null, 'instrucciones_paciente' => null], //7
+            ['nombre' => 'Hisopado Bucal', 'descripcion' => null, 'instrucciones_paciente' => null], //8
+            ['nombre' => 'Hisopado de Heridas', 'descripcion' => null, 'instrucciones_paciente' => null], //9
+            ['nombre' => 'Hisopado de Oido', 'descripcion' => null, 'instrucciones_paciente' => null], //10
+            ['nombre' => 'Hisopado Faringeo', 'descripcion' => null, 'instrucciones_paciente' => null], //11
+            ['nombre' => 'Hisopado Ocular', 'descripcion' => null, 'instrucciones_paciente' => null], //12
+            ['nombre' => 'Orina', 'descripcion' => null, 'instrucciones_paciente' => null], //13
+            ['nombre' => 'Plasma', 'descripcion' => null, 'instrucciones_paciente' => null], //14
+            ['nombre' => 'Sangre Completa', 'descripcion' => null, 'instrucciones_paciente' => null], //15
+            ['nombre' => 'Secreción de Absceso', 'descripcion' => null, 'instrucciones_paciente' => null], //16
+            ['nombre' => 'Secreciones Nasales', 'descripcion' => null, 'instrucciones_paciente' => null], //17
+            ['nombre' => 'Secreciones Uretrales', 'descripcion' => null, 'instrucciones_paciente' => null], //18
+            ['nombre' => 'Secreciones Vaginales', 'descripcion' => null, 'instrucciones_paciente' => null], //19
+            ['nombre' => 'Semen', 'descripcion' => null, 'instrucciones_paciente' => null], //20
+            ['nombre' => 'Suero', 'descripcion' => null, 'instrucciones_paciente' => null], //21
+            ['nombre' => 'Uñas', 'descripcion' => null, 'instrucciones_paciente' => null], //22
+            ['nombre' => 'Hisopado Nasal', 'descripcion' => null, 'instrucciones_paciente' => null] //23
         ];
 
         foreach ($muestras as $muestra) {
@@ -589,13 +552,14 @@ class DatabaseSeeder extends Seeder
 
         // Bactereología - Relación Examen-Muestra
         $relacionesMuestras = [
-            1 => [5],
-            2 => [16, 17, 18, 19, 12],
-            3 => [6],
-            4 => [22, 2],
-            5 => [19, 7, 16, 17, 18, 23, 9],
-            6 => [22, 2],
-            7 => [13]
+            // Examen ID => [Muestra IDs]
+            1 => [5], // baciloscopia - flema
+            2 => [12, 16, 17, 18, 19],  //coloracion gram - hisopado ocular, secrecion de absceso, secreciones nasales, uretrales, vaginales
+            3 => [6], // coprocultivo - heces
+            4 => [2, 22], // hongos en cabello y uñas
+            5 => [7,9,16,17,18,19,23], // hisopado anal, heridas, secrecion de absceso, nasales, uretrales, vaginales, nasal
+            6 => [2, 22], // hisopado faringeo
+            7 => [13], // hisopado de oido
         ];
 
         foreach ($relacionesMuestras as $examen_id => $muestra_ids) {
@@ -607,16 +571,17 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Coagulacion - Relación Examen-Muestra
+        // Coagulación - Relación Examen-Muestra
         $relacionesMuestrasCoagulacion = [
-            8 => [14],
-            9 => [15],
-            10 => [15],
-            11 => [15],
-            12 => [14],
-            13 => [14],
-            14 => [14]
+            8 => [14], // Plasma
+            9 => [15], // sangre completa
+            10 => [15], // sangre completa
+            11 => [15], // sangre completa
+            12 => [14], // Plasma
+            13 => [14], // Plasma
+            14 => [14], // Plasma
         ];
+
         foreach ($relacionesMuestrasCoagulacion as $examen_id => $muestra_ids) {
             $examen = Examen::find($examen_id);
             if ($examen) {
@@ -625,14 +590,14 @@ class DatabaseSeeder extends Seeder
                 Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
             }
         }
-        
-        // Coprologia - Relación Examen-Muestra
+
+        // coprologia - Relación Examen-Muestra
         $relacionesMuestrasCoprologia = [
-            15 => [6],
-            16 => [6],
-            17 => [6],
-            18 => [6],
-            19 => [6]
+            15 => [6], // heces
+            16 => [6], // heces
+            17 => [6], // heces
+            18 => [6], // heces
+            19 => [6], // heces
         ];
         foreach ($relacionesMuestrasCoprologia as $examen_id => $muestra_ids) {
             $examen = Examen::find($examen_id);
@@ -643,14 +608,14 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Electrolitos - Relación Examen-Muestra
+        //Electrolitos - Relación Examen-Muestra
         $relacionesMuestrasElectrolitos = [
-            20 => [21],
-            21 => [21],
-            22 => [21],
-            23 => [21],
-            24 => [21],
-            25 => [21]
+            20 => [21], // suero
+            21 => [21], // suero
+            22 => [21], // suero
+            23 => [21], // suero
+            24 => [21], // suero
+            25 => [21], // suero
         ];
         foreach ($relacionesMuestrasElectrolitos as $examen_id => $muestra_ids) {
             $examen = Examen::find($examen_id);
@@ -660,26 +625,25 @@ class DatabaseSeeder extends Seeder
                 Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
             }
         }
-        
-        
-        // Endocrinologia - Relación Examen-Muestra
+
+        //Endocrinología - Relación Examen-Muestra
         $relacionesMuestrasEndocrinologia = [
-            26 => [21],
-            27 => [21],
-            28 => [21],
-            29 => [21],
-            30 => [21],
-            31 => [21],
-            32 => [21],
-            33 => [21],
-            34 => [21],
-            35 => [21],
-            36 => [21],
-            37 => [21],
-            38 => [21],
-            39 => [21],
-            40 => [21],
-            41 => [21]
+            26 => [21], // suero
+            27 => [21], // suero
+            28 => [21], // suero
+            29 => [21], // suero
+            30 => [21], // suero
+            31 => [21], // suero
+            32 => [21], // suero
+            33 => [21], // suero
+            34 => [21], // suero
+            35 => [21], // suero
+            36 => [21], // suero
+            37 => [21], // suero
+            38 => [21], // suero
+            39 => [21], // suero
+            40 => [21], // suero
+            41 => [21], // suero
         ];
         foreach ($relacionesMuestrasEndocrinologia as $examen_id => $muestra_ids) {
             $examen = Examen::find($examen_id);
@@ -690,19 +654,20 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Hematologia - Relación Examen-Muestra
+        // Hematología - Relación Examen-Muestra
         $relacionesMuestrasHematologia = [
-            42 => [15],
-            43 => [15],
-            44 => [15,23],
-            45 => [15],
-            46 => [15],
-            47 => [15],
-            48 => [15],
-            49 => [15],
-            50 => [15],
-            51 => [15],
-            52 => [15]
+            42 => [15], // sangre completa
+            43 => [15], // sangre completa
+            44 => [23], // hisopado nasal
+            45 => [15], // sangre completa
+            46 => [15], // sangre completa
+            47 => [15], // sangre completa
+            48 => [15], // sangre completa
+            49 => [15], // sangre completa
+            50 => [15], // sangre completa
+            51 => [15], // sangre completa
+            52 => [15], // sangre completa
+            53 => [15], // sangre completa
         ];
         foreach ($relacionesMuestrasHematologia as $examen_id => $muestra_ids) {
             $examen = Examen::find($examen_id);
@@ -713,54 +678,54 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        //Immunologia - Relación Examen-Muestra
-        $relacionesMuestrasImmunologia = [
-            53 => [21],
-            54 => [21],
-            55 => [21],
-            56 => [23],
-            57 => [21],
-            58 => [21],
-            59 => [21],
-            60 => [21],
-            61 => [21],
-            62 => [21],
-            63 => [21],
-            64 => [21],
-            65 => [21],
-            66 => [21],
-            67 => [21],
-            68 => [21],
-            69 => [21],
-            70 => [21],
-            71 => [21],
-            72 => [21],
-            73 => [21],
-            74 => [21],
-            75 => [21],
-            76 => [21],
-            77 => [21],
-            78 => [21],
-            79 => [21]
+        // inmunología - Relación Examen-Muestra
+        $relacionesMuestrasInmunologia = [
+            54 => [21], // suero
+            55 => [21], // suero
+            56 => [21], // suero
+            57 => [21], // suero
+            58 => [21], // suero
+            59 => [21], // suero
+            60 => [21], // suero
+            61 => [21], // suero
+            62 => [21], // suero
+            63 => [21], // suero
+            64 => [21], // suero
+            65 => [21], // suero
+            66 => [21], // suero
+            67 => [21], // suero
+            68 => [21], // suero
+            69 => [21], // suero
+            70 => [21], // suero
+            71 => [21], // suero
+            72 => [21], // suero
+            73 => [21], // suero
+            74 => [21], // suero
+            75 => [21], // suero
+            76 => [21], // suero
+            77 => [21], // suero
+            78 => [21], // suero
+            79 => [21], // suero
+            80 => [21], // suero
         ];
-        foreach ($relacionesMuestrasImmunologia as $examen_id => $muestra_ids) {
+        foreach ($relacionesMuestrasInmunologia as $examen_id => $muestra_ids) {
             $examen = Examen::find($examen_id);
             if ($examen) {
                 // Sincronizar las muestras con el examen
                 $examen->muestras()->sync($muestra_ids, false);
                 Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
             }
-        }
+        }   
 
-        // Tumorales - Relación Examen-Muestra
+        // Marcadores Tumorales - Relación Examen-Muestra
         $relacionesMuestrasTumorales = [
-            80 => [21],
-            81 => [21],
-            82 => [21],
-            83 => [21],
-            84 => [21],
-            85 => [21],
-            86 => [21]
+            81 => [21], // suero
+            82 => [21], // suero
+            83 => [21], // suero
+            84 => [21], // suero
+            85 => [21], // suero
+            86 => [21], // suero
+            87 => [21], // suero
         ];
         foreach ($relacionesMuestrasTumorales as $examen_id => $muestra_ids) {
             $examen = Examen::find($examen_id);
@@ -771,68 +736,60 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Quimica Sanguinea - Relación Examen-Muestra 22
-        $relacionesMuestrasQuimicaSanguinea = [
-            87 => [21],
-            88 => [21],
-            89 => [21],
-            90 => [21],
-            91 => [21],
-            92 => [21],
-            93 => [21],
-            94 => [21],
-            95 => [21],
-            96 => [21],
-            97 => [21],
-            98 => [21],
-            99 => [21],
-            100 => [21],
-            101 => [21],
-            102 => [21],
-            103 => [21],
-            104 => [21],
-            105 => [21],
-            106 => [21],
-            107 => [21],
-            108 => [15],
-            109 => [21],
-            110 => [21],
-            111 => [21],
-            112 => [21],
-            113 => [21],
-            114 => [21],
-            115 => [21],
-            116 => [21],
-            117 => [21],
-            118 => [21],
-            119 => [21],
-            120 => [21],
-            121 => [21],
-            122 => [21],
-            123 => [21],
-            124 => [21],
-            125 => [21],
-            126 => [21]
+        // Química Sanguínea - Relación Examen-Muestra
+        $relacionesMuestrasQuimica = [
+            88 => [21], // suero
+            89 => [21], // suero
+            90 => [21], // suero
+            91 => [21], // suero
+            92 => [21], // suero
+            93 => [21], // suero
+            94 => [21], // suero
+            95 => [21], // suero
+            96 => [21], // suero
+            97 => [21], // suero
+            98 => [21], // suero
+            99 => [21], // suero
+            100 => [21], // suero
+            101 => [21], // suero
+            102 => [21], // suero
+            103 => [21], // suero
+            104 => [21], // suero
+            105 => [21], // suero
+            106 => [21], // suero
+            107 => [21], // suero
+            108 => [21], // suero
+            109 => [15], // sangre completa
+            110 => [21], //suero
+            111 => [21], // suero
+            112 => [21], // suero
+            113 => [21], // suero
+            114 => [21], // suero
+            115 => [21], // suero
+            116 => [21], // suero
+            117 => [21], // suero
+            118 => [21], // suero
+            119 => [21], // suero
         ];
-        foreach ($relacionesMuestrasQuimicaSanguinea as $examen_id => $muestra_ids) {
+        foreach ($relacionesMuestrasQuimica as $examen_id => $muestra_ids) {
             $examen = Examen::find($examen_id);
             if ($examen) {
                 // Sincronizar las muestras con el examen
                 $examen->muestras()->sync($muestra_ids, false);
                 Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
             }
-        } 
+        }
 
-        //Quimica Urinaria - Relación Examen-Muestra
+        //Química Urinaria - Relación Examen-Muestra
         $relacionesMuestrasQuimicaUrinaria = [
-            127 => [13],
-            128 => [13],
-            129 => [13],
-            130 => [13],
-            131 => [13],
-            132 => [13],
-            133 => [13],
-            134 => [13]
+            120 => [13], // orina
+            121 => [13], // orina
+            122 => [13], // orina
+            123 => [13], // orina
+            124 => [13], // orina
+            125 => [13], // orina
+            126 => [13], // orina
+            127 => [13], // orina
         ];
         foreach ($relacionesMuestrasQuimicaUrinaria as $examen_id => $muestra_ids) {
             $examen = Examen::find($examen_id);
@@ -843,10 +800,10 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Uroanalisis - Relación Examen-Muestra
+        // Uroanálisis - Relación Examen-Muestra
         $relacionesMuestrasUroanalisis = [
-            135 => [13],
-            136 => [13]
+            128 => [13], // orina
+            129 => [13], // orina
         ];
         foreach ($relacionesMuestrasUroanalisis as $examen_id => $muestra_ids) {
             $examen = Examen::find($examen_id);
@@ -856,6 +813,8 @@ class DatabaseSeeder extends Seeder
                 Log::info("Examen {$examen_id} asociado con muestras", ['muestras' => $muestra_ids]);
             }
         }
+
+        
 
         //grupos etarios
         DB::table('grupos_etarios')->insert([
@@ -963,6 +922,9 @@ class DatabaseSeeder extends Seeder
         //// // --- Permisos Granulares para PRUEBAS ---
         $pruebaActions = [
             'ver_pruebas_conjuntas', // Para el botón de la cabecera "Ver Pruebas en Matriz"
+            'editar_pruebas_conjuntas',
+            'eliminar_pruebas_conjuntas',
+            'cambiar_estado_pruebas',
         ];
 
         foreach ($pruebaActions as $permission) {
@@ -1007,7 +969,27 @@ class DatabaseSeeder extends Seeder
         foreach ($kanbanActions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
+        
+                //// --- Permisos Granulares para GRUPO ETARIOS ---
+        $grupoEtarios = [
+            'cambiar_estado_grupos', // Para todos los botones de imprimir (ZPL)
+                // Para poder arrastrar y soltar tarjetas
+        ];
 
+        foreach ($grupoEtarios as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+    
+    
+                   //// --- Permisos Granulares para WIDGETS ---
+        $widget = [
+            'ingresos_diarios', // Para todos los botones de imprimir (ZPL)
+                // Para poder arrastrar y soltar tarjetas
+        ];
+
+        foreach ($widget as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
         //
 
         // Permisos por recurso
@@ -1057,7 +1039,7 @@ class DatabaseSeeder extends Seeder
         // =====================================================================
         // 1. ROL: RECEPCIÓN
         // =====================================================================
-        $roleRecepcion = Role::firstOrCreate(['name' => 'recepcion']);
+        $roleRecepcion = Role::firstOrCreate(['name' => 'Recepcion']);
         $roleRecepcion->syncPermissions([
             // --- Acceso General ---
             'access_admin_panel',
@@ -1099,35 +1081,12 @@ class DatabaseSeeder extends Seeder
         ]);
         Log::info('Rol Recepción configurado.');
 
-        // =====================================================================
-        // 2. ROL: TOMA DE MUESTRAS
-        // =====================================================================
-        $roleTomaMuestras = Role::firstOrCreate(['name' => 'toma_muestras']);
-        $roleTomaMuestras->syncPermissions([
-            'access_admin_panel',
-
-            // --- Órdenes (Solo ver para procesar) ---
-            'view_any_orden',
-            'view_orden',
-
-            // --- Operativo Muestras ---
-            //age_DetalleOrdenKanban',    // Acceso al tablero
-            'imprimir_etiquetas_kanban',  // Imprimir stickers
-            'mover_etiquetas_kanban',     // Cambiar estado de tubos
-            'procesar_muestras_orden',    // Botón de recibir muestra en la lista
-            'imprimir_etiquetas_orden',   // Botón en la lista
-
-            // --- Consultas básicas ---
-            'view_any_clientes', // Para confirmar identidad
-            'view_clientes',
-            'view_any_muestra',  // Ver catálogo de tubos
-        ]);
-        Log::info('Rol Toma de Muestras configurado.');
+       
 
         // =====================================================================
         // 3. ROL: LABORATORISTA
         // =====================================================================
-        $roleLaboratorista = Role::firstOrCreate(['name' => 'laboratorista']);
+        $roleLaboratorista = Role::firstOrCreate(['name' => 'Laboratorista']);
         $roleLaboratorista->syncPermissions([
             'access_admin_panel',
             // 'view_dashboard',
@@ -1169,5 +1128,3 @@ class DatabaseSeeder extends Seeder
     }
 
 }
-
-

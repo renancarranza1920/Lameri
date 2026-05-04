@@ -33,7 +33,10 @@ class ZebraLabelService
         date_default_timezone_set('America/El_Salvador');
         
         $examen = strtoupper(substr($detalle->nombre_examen, 0, 30));
-        $paciente = strtoupper(substr($detalle->orden->cliente->nombre ?? 'PACIENTE', 0, 30));
+        $paciente = strtoupper(trim(
+    ($detalle->orden->cliente->nombre ?? '') . ' ' .
+    ($detalle->orden->cliente->apellido ?? '')
+));
         // Fecha actual en formato dd/mm/yyyy
         $fecha = date('d/m/Y');
         $hora = date('h:i A');
@@ -44,43 +47,26 @@ class ZebraLabelService
         }
         $ordenId = $detalle->orden->id;
 
-        return "
+      return "
 ^XA
 ^PW406
 ^LL203
-^ci27
+^CI28
 
-// --- SECCION 1: ENCABEZADO (FONDO NEGRO OPCIONAL O TEXTO CENTRADO) ---
-// Marco Exterior
-^FO2,2^GB402,199,2^FS
-
-// Nombre del Laboratorio Centrado (^FB = Field Block para centrar)
 ^FO0,15^FB406,1,0,C,0^A0N,26,26^FDLABORATORIO MERINO^FS
-
-// Línea separadora 1
 ^FO10,45^GB386,1,1^FS
 
+^FO15,55^FB376,2,0,L,0^A0N,18,18^FDPaciente: {$paciente}^FS
 
-// --- SECCION 2: INFORMACION DEL PACIENTE ---
-// Paciente
-^FO15,55^A0N,20,20^FDPaciente: {$paciente}^FS
+^FO15,90^A0N,18,18^FDRecip.: {$recipiente}^FS
+^FO270,90^A0N,18,18^FD{$fecha}^FS
 
-// Recipiente y Fecha (En la misma línea para ahorrar espacio)
-^FO15,80^A0N,20,20^FDRecip.: {$recipiente}^FS
-^FO240,80^A0N,20,20^FD{$fecha}^FS
+^FO10,115^GB386,1,1^FS
 
-// Línea separadora 2
-^FO10,105^GB386,1,1^FS
+^FO0,130^FB406,2,0,C,0^A0N,22,22^FD{$examen}^FS
 
-
-// --- SECCION 3: DETALLE DEL EXAMEN (DESTACADO) ---
-// Nombre del examen centrado y un poco más grande
-^FO0,120^FB406,2,0,C,0^A0N,24,24^FD{$examen}^FS
-
-
-// --- SECCION 4: PIE DE PAGINA (Pequeño) ---
-^FO15,175^A0N,18,18^FDHora: {$hora}^FS
-^FO280,175^A0N,18,18^FDOrd: #{$ordenId}^FS
+^FO15,180^A0N,15,15^FDHora: {$hora}^FS
+^FO280,180^A0N,15,15^FDOrd: #{$ordenId}^FS
 
 ^XZ
 \n\n";
@@ -99,7 +85,7 @@ class ZebraLabelService
         $tokensApellido = preg_split('/\s+/', trim($apellido));
         $primerApellido = $tokensApellido[0] ?? '';
 
-        $paciente = strtoupper(trim($primerNombre . ' ' . $primerApellido));
+       $paciente = strtoupper(trim($nombre . ' ' . $apellido));
 
         // Recipiente (color)
         $recipiente = $color;
@@ -138,7 +124,7 @@ class ZebraLabelService
     $lineHeight = 25;
 
     foreach ($bloque->values() as $index => $examen) {
-        $examenTexto = strtoupper(substr($examen, 0, 16));
+        $examenTexto = strtoupper(substr($examen, 0, 20));
         $col = $index % 2; // 0 = primera columna, 1 = segunda
         $row = intdiv($index, 2); // fila dentro del bloque
         $posX = $col === 0 ? 30 : 200;
@@ -153,26 +139,21 @@ $ordenId = $items->first()->orden->id;
 $zpl .= "^XA
 ^PW406
 ^LL203
-^ci27
+^CI28
 
-// 1. ENCABEZADO
-^FO2,2^GB402,199,2^FS
 ^FO0,15^FB406,1,0,C,0^A0N,24,24^FDLABORATORIO MERINO^FS
 ^FO10,42^GB386,1,1^FS
 
-// 2. DATOS PACIENTE Y RECIPIENTE
-^FO15,50^A0N,20,20^FDPaciente: {$paciente}^FS
-^FO15,75^A0N,20,20^FDRecip.: {$recipiente}^FS
-^FO220,75^A0N,20,20^FD{$fecha}^FS
+^FO15,50^FB376,2,0,L,0^A0N,18,18^FDPaciente: {$paciente}^FS
 
-// 3. SEPARADOR Y CUERPO (LISTA)
-^FO10,105^GB386,1,1^FS
+^FO15,90^A0N,18,18^FDRecip.: {$recipiente}^FS
+^FO270,90^A0N,18,18^FD{$fecha}^FS
+
+^FO10,115^GB386,1,1^FS
 {$examenLines}
 
-// 4. PIE DE PAGINA (Hora y Orden)
 ^FO15,180^A0N,15,15^FDHora: {$hora}^FS
-// Si tienes la variable $ordenId disponible, descomenta la siguiente linea:
-// ^FO280,180^A0N,18,18^FDOrd: #{$ordenId}^FS
+^FO280,180^A0N,15,15^FDOrd: #{$ordenId}^FS
 ^XZ\n\n";
 }
 
@@ -186,28 +167,22 @@ $zpl .= "^XA
 $zpl .= "^XA
 ^PW406
 ^LL203
-^ci27
+^CI28
 
-// 1. ENCABEZADO
-^FO2,2^GB402,199,2^FS
 ^FO0,15^FB406,1,0,C,0^A0N,24,24^FDLABORATORIO MERINO^FS
 ^FO10,42^GB386,1,1^FS
 
-// 2. DATOS PACIENTE
-^FO15,50^A0N,20,20^FDPaciente: {$paciente}^FS
-^FO15,75^A0N,20,20^FDRecip.: {$recipiente}^FS
-^FO220,75^A0N,20,20^FD{$fecha}^FS
+^FO15,50^FB376,2,0,L,0^A0N,18,18^FDPaciente: {$paciente}^FS
 
-// 3. SEPARADOR Y EXAMEN DESTACADO
-^FO10,105^GB386,1,1^FS
+^FO15,90^A0N,18,18^FDRecip.: {$recipiente}^FS
+^FO270,90^A0N,18,18^FD{$fecha}^FS
 
-// Nombre del examen centrado automáticamente en el área inferior
-^FO0,125^FB406,2,0,C,0^A0N,24,24^FD{$examenTexto}^FS
+^FO10,115^GB386,1,1^FS
 
-// 4. PIE DE PAGINA
+^FO0,130^FB406,2,0,C,0^A0N,22,22^FD{$examenTexto}^FS
+
 ^FO15,180^A0N,15,15^FDHora: {$hora}^FS
-// Si tienes $ordenId:
-// ^FO280,180^A0N,18,18^FDOrd: #{$ordenId}^FS
+^FO280,180^A0N,15,15^FDOrd: #{$ordenId}^FS
 ^XZ\n\n";
 }
 

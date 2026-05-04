@@ -9,27 +9,32 @@ use Illuminate\Support\Facades\DB;
 class EstadosOrdenesChart extends ChartWidget
 {
     protected static ?string $heading = 'Distribución de Estados de Órdenes';
-    protected static ?int $sort = -1; // Orden en el dashboard
+    protected static ?int $sort = 1;
+
+    protected int | string | array $columnSpan = 1;
 
     protected function getData(): array
     {
         $data = Orden::query()
-            ->select('estado', DB::raw('count(*) as total'))
+            ->select('estado', DB::raw('COUNT(*) as total'))
             ->groupBy('estado')
             ->get();
+
+        $colors = [
+            'pendiente'  => '#FDBA74',
+            'en proceso' => '#60A5FA',
+            'finalizado' => '#34D399',
+            'cancelado'  => '#9CA3AF',
+        ];
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Órdenes',
                     'data' => $data->pluck('total')->toArray(),
-           'backgroundColor' => [
-    '#ffcb47ff' , // pendiente (Más suave)
-    '#60A5FA', // En Proceso (Más suave)
-    '#34D399', // finalizado (Más suave)
-    '#F87171', // Pausada (Más suave)
-    '#9CA3AF', // Cancelado (Gris medio)
-],
+                    'backgroundColor' => $data->pluck('estado')->map(
+                        fn ($estado) => $colors[strtolower($estado)] ?? '#E5E7EB'
+                    )->toArray(),
+                    'borderWidth' => 0,
                 ],
             ],
             'labels' => $data->pluck('estado')->toArray(),
@@ -38,6 +43,21 @@ class EstadosOrdenesChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'doughnut'; // Gráfica de dona
+        return 'doughnut';
+    }
+
+    protected function getOptions(): array
+    {
+        return [
+            'plugins' => [
+                'legend' => [
+                    'position' => 'bottom',
+                    'labels' => [
+                        'usePointStyle' => true,
+                    ],
+                ],
+            ],
+            'cutout' => '65%',
+        ];
     }
 }
