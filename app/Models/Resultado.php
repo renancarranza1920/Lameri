@@ -18,6 +18,9 @@ class Resultado extends Model
     use HasFactory, LogsActivity;
 
     protected $guarded = [];
+    protected $casts = [
+    'alertar' => 'boolean',
+];
     public function realizadoPor()
     {
         return $this->belongsTo(User::class, 'user_id');

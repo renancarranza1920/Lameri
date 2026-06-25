@@ -25,18 +25,22 @@ class Orden extends Model
         'codigo_id', // <-- AÑADIR
         'fecha',
         'observaciones',
+        'observaciones_por_area',
         'estado',
         'muestras_recibidas', 
         'semanas_gestacion',
         'toma_muestra_user_id',
         'fecha_toma_muestra',
+        'medico_id',
     ];
 
     protected $casts = [
         'muestras_recibidas' => 'array',
         'fecha_toma_muestra' => 'datetime',
          'fecha' => 'datetime',
+         'observaciones_por_area' => 'array',
     ];
+   
 
     public function cliente(): BelongsTo
     {
@@ -46,6 +50,11 @@ class Orden extends Model
     public function tomaMuestraUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'toma_muestra_user_id');
+    }
+    
+    public function medico()
+    {
+        return $this->belongsTo(Medico::class);
     }
 
     // --- ¡NUEVA RELACIÓN! ---

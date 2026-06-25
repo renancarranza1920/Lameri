@@ -34,12 +34,23 @@
                         <!-- Contenedor para los botones de acción -->
                         <!-- Con más espacio -->
 <div class="flex items-center space-x-4">
-    <!-- Botón de Editar -->
-    {{ $this->editConjuntoAction()->arguments(['tipo_conjunto' => $matriz['tipo_conjunto']]) }}
-    
-    <!-- Botón de Eliminar -->
-    {{ $this->deleteConjuntoAction()->arguments(['tipo_conjunto' => $matriz['tipo_conjunto']]) }}
+    {{-- Botón Editar --}}
+    @if ($editAction = $this->editConjuntoAction())
+        {{ $editAction->arguments([
+            'tipo_conjunto' => $matriz['tipo_conjunto']
+        ]) }}
+    @endif
+
+    {{-- Botón Eliminar --}}
+    @if ($deleteAction = $this->deleteConjuntoAction())
+        {{ $deleteAction->arguments([
+            'tipo_conjunto' => $matriz['tipo_conjunto']
+        ]) }}
+    @endif
 </div>
+
+
+
                     </div>
 
                     <!-- Tabla de la Matriz -->

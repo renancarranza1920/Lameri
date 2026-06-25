@@ -82,45 +82,62 @@ class ListPruebasConjuntas extends Page implements HasForms, HasActions
         })->values()->all();
     }
 
-    public function deleteConjuntoAction(): Action
-    {
-        return Action::make('deleteConjunto')
-            ->label('Eliminar Conjunto')
-            ->requiresConfirmation()
-            ->modalHeading('Eliminar conjunto de pruebas')
-            ->modalDescription('¿Estás seguro de que deseas eliminar todas las pruebas de este conjunto? Esta acción no se puede deshacer.')
-            ->color('danger')
-             ->extraAttributes([
-                'style' => 'margin-left: 8px;',
-            ])
-            ->action(function (Action $action) {
-                // Obtenemos los argumentos que se pasaron al montar la acción.
-                $arguments = $action->getArguments();
-                $tipoConjunto = $arguments['tipo_conjunto'] ?? null;
-                
-                if ($tipoConjunto) {
-                    DB::transaction(function () use ($tipoConjunto) {
-                        Prueba::where('tipo_conjunto', $tipoConjunto)->delete();
-                    });
+   public function deleteConjuntoAction(): ?Action
+{
+    if (! auth()->user()->can('eliminar_pruebas_conjuntas')) {
+        return null;
+    }
 
-                    Notification::make()
-                        ->title('Conjunto eliminado')
-                        ->body('Todas las pruebas del conjunto han sido eliminadas exitosamente.')
-                        ->success()
-                        ->send();
+    return Action::make('deleteConjunto')
+        ->label('Eliminar Conjunto')
+        ->requiresConfirmation()
+        ->modalHeading('Eliminar conjunto de pruebas')
+        ->modalDescription(
+            '¿Estás seguro de que deseas eliminar todas las pruebas de este conjunto? Esta acción no se puede deshacer.'
+        )
+        ->color('danger')
+        ->extraAttributes([
+            'style' => 'margin-left: 8px;',
+        ])
+        ->action(function (Action $action) {
+            $arguments = $action->getArguments();
+            $tipoConjunto = $arguments['tipo_conjunto'] ?? null;
 
-                    $this->reconstruirMatrices();
-                }
+            if (! $tipoConjunto) {
+                return;
+            }
+
+            DB::transaction(function () use ($tipoConjunto) {
+                Prueba::where('tipo_conjunto', $tipoConjunto)->delete();
             });
+
+            Notification::make()
+                ->title('Conjunto eliminado')
+                ->body('Todas las pruebas del conjunto han sido eliminadas exitosamente.')
+                ->success()
+                ->send();
+
+            $this->reconstruirMatrices();
+        });
+}
+
+
+public function editConjuntoAction(): ?Action
+{
+    if (! auth()->user()->can('editar_pruebas_conjuntas')) {
+        return null;
     }
-       public function editConjuntoAction(): Action
-    {
-        return Action::make('editConjunto')
-            ->label('Editar')
-            ->icon('heroicon-o-pencil-square')
-            ->color('primary')
-            ->url(fn (array $arguments): string => PruebaResource::getUrl('edit-conjunta', ['record' => $arguments['tipo_conjunto']]));
-    }
+
+    return Action::make('editConjunto')
+        ->label('Editar')
+        ->icon('heroicon-o-pencil-square')
+        ->color('primary')
+        ->url(fn (array $arguments): string =>
+            PruebaResource::getUrl('edit-conjunta', [
+                'record' => $arguments['tipo_conjunto']
+            ])
+        );
+}
 
    
     //boton para volver a la lista de pruebas unitarias

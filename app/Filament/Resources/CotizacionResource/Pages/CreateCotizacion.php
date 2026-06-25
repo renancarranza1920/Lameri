@@ -52,39 +52,37 @@ class CreateCotizacion extends ResourcePage implements HasForms
     {
         return [
             Step::make('Datos del Cliente')
-                ->schema([
-                    TextInput::make('nombre_completo')
-                        ->label('Nombre Completo del Cliente')
-                        ->required()
-                        ->placeholder('Ingrese el nombre completo del cliente')
-                        ->maxLength(255)
-                        ->validationMessages([
-        'required' => 'Por favor, ingrese el nombre completo del cliente.',
-    ]),
-                    TextInput::make('whatsapp')
-                        ->label('Número de WhatsApp')
-                        ->tel()
-                        ->minLength(8)
-                        ->prefix('+503')
-                         ->mask('9999-9999')
-                          ->rules('min:8') 
-                        ->helperText('Ingresar solo los 8 dígitos del número.')
-                        ->required()
-                        ->validationMessages([
-        'required' => 'Por favor, ingrese el número de WhatsApp del cliente.',
-        'min' => 'El número de celular debe tener al menos 8 dígitos.',
-    ]),
-                   
+    ->schema([
+        // 1. NOMBRE COMPLETO (Opcional)
+        TextInput::make('nombre_completo')
+            ->label('Nombre Completo del Cliente')
+            ->placeholder('Ingrese el nombre completo del cliente')
+            ->maxLength(255)
+            ->nullable(), // <--- Coma normal, NO cierres el esquema aquí
+
+        // 2. WHATSAPP (Opcional)
+        TextInput::make('whatsapp')
+            ->label('Número de WhatsApp')
+            ->tel()
+            ->nullable() // Permite vacío
+            ->prefix('+503')
+            ->mask('9999-9999')
+            ->helperText('Opcional. Ingresar solo si el cliente lo proporciona.')
+            ->rule('min:8') // Solo valida si escriben algo
+            ->validationMessages([
+                'min' => 'Si ingresa un número, debe tener al menos 8 dígitos.',
+            ]), // <--- Coma normal
+
+        // 3. EMAIL (Opcional)
         TextInput::make('email')
-                        ->label('Correo Electrónico (Opcional)')
-                        ->email()
-                        ->helperText('Ingrese el correo electrónico del cliente si desea enviar una copia.')
-                        ->nullable()
-                        ->rules('email')
-                        ->validationMessages([
-                            'email' => 'Ingrese un correo electrónico válido.',
-                        ]),
-                ]),
+            ->label('Correo Electrónico (Opcional)')
+            ->email() // Esto ya valida que sea formato email
+            ->helperText('Ingrese el correo electrónico del cliente si desea enviar una copia.')
+            ->nullable()
+            ->validationMessages([
+                'email' => 'Ingrese un correo electrónico válido.',
+            ]),
+    ]), // <--- AQUÍ SÍ se cierra el esquema y el Step
 
             Step::make('Selección de Estudios')
                 ->schema(OrdenResource::getOrdenStep()),

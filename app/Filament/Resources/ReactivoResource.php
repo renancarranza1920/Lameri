@@ -44,14 +44,20 @@ class ReactivoResource extends Resource
                                 // --- CAMBIO 1: Relación Múltiple ---
                                 Select::make('pruebas')
                                     ->relationship(
-                                        'pruebas',
-                                        'nombre',
-                                        // Aquí aplicamos el filtro: Solo pruebas donde tipo_conjunto es NULL
-                                        fn($query) => $query->whereNull('tipo_conjunto')
-                                         ->where('estado', 'activo')
+                                        name: 'pruebas',
+                                        titleAttribute: 'nombre', // Mantenemos 'nombre' para la búsqueda base
+                                        modifyQueryUsing: fn ($query) => $query
+                                            ->with('examen') // <--- CLAVE: Cargamos el examen para usar su nombre
+                                            ->whereNull('tipo_conjunto')
+                                            ->where('estado', 'activo')
+                                    )
+                                    // --- AQUÍ LA MAGIA: Personalizamos cómo se ve cada opción ---
+                                    ->getOptionLabelFromRecordUsing(fn ($record) => 
+                                        // Concatenamos: Nombre Prueba + Nombre Examen
+                                        $record->nombre . ' (' . ($record->examen->nombre ?? '') . ')'
                                     )
                                     ->multiple()
-                                    ->preload()
+                                    ->preload() // Necesario para que el filtrado en el buscador funcione con el nombre personalizado
                                     ->searchable()
                                     ->required()
                                     ->label('Pruebas Asignadas'),
@@ -85,7 +91,14 @@ $activeTab = request()->query('table');
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('pruebas.nombre')
+                    ->label('Pruebas')
                     ->badge()
+                    ->getStateUsing(function ($record) {
+                        // Iteramos sobre las pruebas del reactivo y formateamos el texto
+                        return $record->pruebas->map(function ($prueba) {
+                            return $prueba->nombre . ' (' . ($prueba->examen->nombre ?? 'Sin Examen') . ')';
+                        });
+                    })
                     ->searchable(),
                 Tables\Columns\BadgeColumn::make('estado')
                     ->colors([
@@ -291,16 +304,21 @@ $activeTab = request()->query('table');
                                                                         Forms\Components\Select::make('prueba_id')
                                                                             ->label('Aplica a la Prueba')
                                                                             ->placeholder('General (Aplica a todas)')
-                                                                            // Usamos $record (Reactivo) capturado del scope superior
                                                                             ->options(function () use ($record) {
+                                                                                // Definimos el formato: "Nombre Prueba (Nombre Examen)"
+                                                                                $formatear = fn($p) => $p->nombre . ' (' . ($p->examen->nombre ?? '') . ')';
+                                                                        
                                                                                 if ($record && $record->exists) {
-                                                                                    return $record->pruebas->pluck('nombre', 'id');
+                                                                                    // Caso 1: Reactivo existente -> Solo pruebas asignadas a este reactivo
+                                                                                    // Usamos with('examen') para optimizar la consulta
+                                                                                    return $record->pruebas()->with('examen')->get()
+                                                                                        ->mapWithKeys(fn($p) => [$p->id => $formatear($p)]);
                                                                                 }
-
-                                                                                // Si aún no existe (ej: creando un reactivo), mostrar TODAS las pruebas
-                                                                                return \App\Models\Prueba::pluck('nombre', 'id');
+                                                                        
+                                                                                // Caso 2: Nuevo reactivo -> Todas las pruebas del sistema
+                                                                                return \App\Models\Prueba::with('examen')->get()
+                                                                                    ->mapWithKeys(fn($p) => [$p->id => $formatear($p)]);
                                                                             })
-
                                                                             ->searchable()
                                                                             ->preload()
                                                                             ->columnSpan(1),
@@ -371,7 +389,7 @@ $activeTab = request()->query('table');
                                                                         TextInput::make('unidades')
                                                                             ->label('Unidades')
                                                                             ->placeholder('mg/dL')
-                                                                            ->datalist(['mg/dL', 'g/dL', '%', 'U/L'])
+                                                                            ->datalist(['mg/dL', 'g/dL', '%', 'U/L', 'mm/Hora', 'UI/mL', 'mg/L'])
                                                                             ->columnSpan(1),
                                                                     ]),
                                                             ]),
@@ -385,7 +403,7 @@ $activeTab = request()->query('table');
 
                                                                 TextInput::make('nota')
                                                                     ->label('Nota interna')
-                                                                    ->placeholder('Comentario para el bacteriólogo')
+                                                                    ->placeholder('')
                                                                     ->columnSpan(1),
                                                             ]),
                                                     ])
@@ -396,7 +414,7 @@ $activeTab = request()->query('table');
                                                     ->defaultItems(0)
                                                     ->deleteAction(fn($action) => $action->requiresConfirmation()),
                                             ]),
-                                    ])->visible( !$record->es_historico),
+                                    ])->visible( !$record->es_historico && auth()->user()->can('gestionar_valores_ref')),
                             ])
                         ];
                     })
